@@ -21,6 +21,19 @@ knitr::opts_chunk$set(echo = TRUE)
 <img src="man/figures/dust.png" alt="" style="width:30%;"/>
 </center>
 
+## Introduction
+
+The `dust` package contains methods **for detecting multiple change-points within time-series** based on the optimal partitioning algorithm, which is a dynamic programming (DP) algorithm. Our algorithms optimize a penalized likelihood and the DP algorithm is encoded with pruning rules for reducing execution time. The novelty of the `dust` package consists in its pruning step. We use a **new pruning rule**, different from the two standard ones: [PELT rule (2012)](\doi{10.1080/01621459.2012.737745}) and [FPOP rule  (2017)](\doi{10.1007/s11222-016-9636-3}).
+
+We called this method the **DUST** pruning rule, standing for **Du**ality **S**imple **T**est. This method is based on considering some optimization problems under inequality constraints and its dual for discarding indices in the search for the last change-point index.
+
+We propose change-point detection algorithms working with different models derived from the **exponential family** (Gauss, Poisson, Exponential...). 
+
+We provide a polymorphic structure in Rcpp that enables users **to easily add custom cost functions of their choice**. Detailed instructions are available [in this Section](#rcpp), and users only need to define a few Rcpp functions: the minimal cost function, the dual function, and its derivative, along with some domain information for the dual.
+
+Various tests and simulations are included in this **README file** and the **simulations folder**, demonstrating that the DUST dual approach is **highly efficient across all regimes** (whether detecting few or many changes) and shows improved computational efficiency compared to PELT and FPOP. Additionally, unlike these methods, DUST can also reduce computation time for multivariate cost functions (See Section [pruning](#pruning)).
+
+
 > [Quick start](#start)
 
 > [Rcpp Object Structure](#rcpp)
@@ -36,19 +49,6 @@ knitr::opts_chunk$set(echo = TRUE)
 <center>
 <img src="man/figures/sep.png" alt="" style="width:100%;"/>
 </center>
-
-
-## Introduction
-
-The `dust` package contains methods **for detecting multiple change-points within time-series** based on the optimal partitioning algorithm, which is a dynamic programming (DP) algorithm. Our algorithms optimize a penalized likelihood and the DP algorithm is encoded with pruning rules for reducing execution time. The novelty of the `dust` package consists in its pruning step. We use a **new pruning rule**, different from the two standard ones: [PELT rule (2012)](\doi{10.1080/01621459.2012.737745}) and [FPOP rule  (2017)](\doi{10.1007/s11222-016-9636-3}).
-
-We called this method the **DUST** pruning rule, standing for **Du**ality **S**imple **T**est. This method is based on considering some optimization problems under inequality constraints and its dual for discarding indices in the search for the last change-point index.
-
-We propose change-point detection algorithms working with different models derived from the **exponential family** (Gauss, Poisson, Exponential...). 
-
-We provide a polymorphic structure in Rcpp that enables users **to easily add custom cost functions of their choice**. Detailed instructions are available [in this Section](#rcpp), and users only need to define a few Rcpp functions: the minimal cost function, the dual function, and its derivative, along with some domain information for the dual.
-
-Various tests and simulations are included in this **README file** and the **simulations folder**, demonstrating that the DUST dual approach is **highly efficient across all regimes** (whether detecting few or many changes) and shows improved computational efficiency compared to PELT and FPOP. Additionally, unlike these methods, DUST can also reduce computation time for multivariate cost functions (See Section [pruning](#pruning)).
 
 <a id="start"></a>
 
