@@ -78,14 +78,14 @@ following command:
 
 and imported with:
 
-    library(dust0)
+    library(dust)
 
 ### A simple example
 
 We generate some 1D time series of length `400` from the Gaussian model
 and one change in the middle of the sequence.
 
-    library(dust0)
+    library(dust)
     set.seed(2)
     data <- dataGenerator_1D(chpts = c(200,400), c(0,1), type = "gauss")
 
@@ -302,7 +302,7 @@ We start with one simple example with the `exp` model:
     data <- dataGenerator_1D(chpts = c(5*1e5,1e6), parameters = c(2,1), type = "exp")
     system.time(res <- dust.1D(data = data, model = "exp"))[[1]]
 
-    ## [1] 0.846
+    ## [1] 0.817
 
     res$changepoints
 
