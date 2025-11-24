@@ -1,0 +1,10 @@
+exportPattern("^[[:alpha:]]+")
+importFrom(Rcpp, evalCpp)
+useDynLib(dust, .registration = TRUE)
+importFrom(Rcpp, loadModule)
+
+importFrom(methods, new)
+
+import("stats")
+importFrom("graphics", "abline", "barplot")
+

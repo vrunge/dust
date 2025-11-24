@@ -1,0 +1,25 @@
+Package: dust
+Type: Package
+Title: Multiple Change-Point Detection in Multivariate Time Series Using the DUST Pruning Method
+Version: 0.2.0
+Authors@R: c(
+    person("Simon", "Querné", email = "simon.querne@gmail.com", role = c("aut")),
+    person("Vincent", "Runge", email = "vincent.runge@univ-evry.fr", role = c("aut", "cre")),
+    person("Charles", "Truong", email = "ctruong@ens-paris-saclay.fr", role = c("ctb"))
+            )
+Maintainer: Vincent Runge <vincent.runge@univ-evry.fr>
+Description: Implements algorithms for detecting multiple change points in multivariate time series. Detection is based on the minimization of a penalized likelihood. The package uses a dynamic programming approach called optimal partitioning with a new efficient pruning method: DUality Simple Test (DUST).
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Imports: Rcpp (>= 1.0.10), methods, RcppArmadillo
+Suggests:
+    devtools,
+    ggplot2,
+    rmarkdown,
+    testthat (>= 3.0.0)
+LinkingTo: Rcpp, RcppArmadillo
+RoxygenNote: 7.3.3
+Config/testthat/edition: 3
+URL: https://github.com/vrunge/dust
+BugReports: https://github.com/vrunge/dust/issues
