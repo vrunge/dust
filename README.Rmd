@@ -23,13 +23,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 > [Quick start](#start)
 
+> [Rcpp Object Structure](#rcpp)
+
+> [dust Algorithms](#dust1D)
+
 > [Models And Data Generators](#Models)
 
-> [dust 1D and MD Algorithms](#dust1D)
-
-> [dust 2D Algorithms](#dust2D)
-
-> [Rcpp Structure and new cost integration](#rcpp)
+> [New cost integration](#cost)
 
 > [Pruning Capacity](#pruning)
 
@@ -79,8 +79,8 @@ We generate some 1D time series of length `400` from the Gaussian model and two 
 
 ```{r, message=FALSE}
 library(dust)
-set.seed(2)
-data <- dataGenerator_1D(chpts = c(110, 260, 400), c(0,0.8,0), type = "gauss")
+set.seed(11)
+data <- dataGenerator_1D(chpts = c(40, 160, 200), c(0,1.3,0), type = "gauss")
 ```
 
 We segment data using the dust 1D method coded in Rcpp.
@@ -95,7 +95,7 @@ Here the penalty value is by default set to `2 log(n)` for `n` data points and t
 The `penalty` value and the type of `model` can be explicitly given. It can be one of the following: `"gauss"` (additional parameters `sdNoise` and `gamma`), `"exp"`, `"poisson"`, `"geom"`, `"bern"`, `"binom"` (additional parameter `nbTrials`), `"negbin"` (additional parameter `nbSuccess`) and `variance`. See next [Section](#Models).
  
 
-The result is a list whose elements are:
+*The result is a list whose elements are:*
 
 - `changepoints `: A vector of change points (the index ending each of the segments)
 
@@ -126,6 +126,38 @@ dust.MD(data, model = "poisson", method = "randIndex_Eval0")
 
 [(Back to Top)](#top)
 
+
+<center>
+<img src="man/figures/sep.png" alt="" style="width:100%;"/>
+</center>
+
+<a id="rcpp"></a>
+
+## Rcpp Object Structure
+
+
+```{r}
+obj_dust <- new(DUST_1D, "gauss", "randIndex_Eval3", 5)
+obj_dust$get_info()
+```
+
+
+
+
+```{r}
+data <- dataGenerator_1D(chpts = c(500,1000), parameters = c(0,1), type = "gauss")
+obj_dust$append_c(data, 2*log(5000))
+
+obj_dust$update_partition()
+obj_dust$get_info()
+```
+
+
+
+[(Back to Top)](#top)
+
+
+
 <center>
 <img src="man/figures/sep.png" alt="" style="width:100%;"/>
 </center>
@@ -133,7 +165,6 @@ dust.MD(data, model = "poisson", method = "randIndex_Eval0")
 <a id="Models"></a>
 
 ## Models And Data Generators
-
 
 ### Data Generators in 1D and MultiD
 
@@ -190,7 +221,7 @@ Additional information and examples are easily accessible in the help of these f
 
 <a id="dust1D"></a>
 
-## dust 1D and MD Algorithms
+## dust Algorithms
 
 
 We start with one simple example with the `exp` model:
@@ -209,33 +240,22 @@ It is saved into the field `nb`.
 
 [(Back to Top)](#top)
 
-<center>
-<img src="man/figures/sep.png" alt="" style="width:100%;"/>
-</center>
-
-<a id="dust2D"></a>
-
-## dust 2D Algorithms
-
-
-
-[(Back to Top)](#top)
-
 
 <center>
 <img src="man/figures/sep.png" alt="" style="width:100%;"/>
 </center>
 
-<a id="rcpp"></a>
 
-## Rcpp Structure and new cost integration
+<a id="cost"></a>
 
-[(Back to Top)](#top)
+## Cost Integration
 
 
 <center>
 <img src="man/figures/sep.png" alt="" style="width:100%;"/>
 </center>
+
+
 
 <a id="pruning"></a>
 

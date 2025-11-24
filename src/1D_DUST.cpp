@@ -14,7 +14,9 @@ using namespace Rcpp;
 ////////////////////////////////////////////////////////////////////////////////
 
 // --- // Constructor // --- //
-DUST_1D::DUST_1D(int dual_max_type, int constraints_type, Nullable<int> nbLoops)
+DUST_1D::DUST_1D(int dual_max_type,
+                 int constraints_type,
+                 Nullable<int> nbLoops)
   : dual_max_type(dual_max_type),
     constraints_type(constraints_type),
     indices(nullptr),
@@ -111,11 +113,14 @@ void DUST_1D::update_partition()
   double lastCost;
   unsigned int nbt = nb_indices.back();
 
-  // Main loop
+
+  ////////////// Main loop
+  ////////////// Main loop
+  ////////////// Main loop
   for (unsigned t = indices->get_first() + 1; t <= n; t++)
   {
-    // OP step
-    // OP step
+    //////// OP step ////////
+    //////// OP step ////////
     indices->reset();
     double minCost = std::numeric_limits<double>::infinity();
     unsigned argMin = 0;
@@ -131,8 +136,8 @@ void DUST_1D::update_partition()
       indices->next();
     }
     while(indices->is_not_the_last());
-    // END (OP step)
-    // END (OP step)
+    //////// END (OP step) ////////
+    //////// END (OP step) ////////
 
     // OP update minCost and save values
     // minCost = Q_t. Here + beta to get Q_t = Q_i + C(y_it) + beta
@@ -144,8 +149,8 @@ void DUST_1D::update_partition()
     // DUST step
     indices->reset_pruning();
 
-    // DUST loop
-    // DUST loop
+    //////// DUST loop
+    //////// DUST loop
     while (indices->is_not_the_last_pruning()) // is true, while we are not on the smallest index
     {
       // prune as needs pruning
@@ -162,8 +167,8 @@ void DUST_1D::update_partition()
         indices->next_pruning();
       }
     }
-    // END (DUST loop)
-    // END (DUST loop)
+    //////// END (DUST loop)
+    //////// END (DUST loop)
 
     // Prune the last index (analogous with a "mu* = 0" duality simple test)
     // this is the smallest available index = PELT RULE
@@ -267,8 +272,11 @@ bool DUST_1D::isSpecialCase(double objectiveMean, double constraintMean)
 
 /// if special_cases == true => return true;
 
-bool DUST_1D::specialCasePruning(double objectiveMean, double constraintMean,
-                                 double linearTerm, double constantTerm, double mu_max)
+bool DUST_1D::specialCasePruning(double objectiveMean,
+                                 double constraintMean,
+                                 double linearTerm,
+                                 double constantTerm,
+                                 double mu_max)
 {
   ///
   /// case "objectiveMean = 0"
@@ -317,7 +325,10 @@ bool DUST_1D::specialCasePruning(double objectiveMean, double constraintMean,
 
 /// RANDOM EVAL
 
-bool DUST_1D::dualMaxAlgo0(double minCost, unsigned int t, unsigned int s, unsigned int r)
+bool DUST_1D::dualMaxAlgo0(double minCost,
+                           unsigned int t,
+                           unsigned int s,
+                           unsigned int r)
 {
   return (dualEval(dist(engine), minCost, t, s, r) > 0);
 }
@@ -347,7 +358,10 @@ bool DUST_1D::dualMaxAlgo1(double minCost, unsigned int t, unsigned int s, unsig
 
 /// Golden-section search
 
-bool DUST_1D::dualMaxAlgo2(double minCost, unsigned int t, unsigned int s, unsigned int r)
+bool DUST_1D::dualMaxAlgo2(double minCost,
+                           unsigned int t,
+                           unsigned int s,
+                           unsigned int r)
 {
   double a = (cumsum[t] - cumsum[s]) / (t - s);
   double b = (cumsum[s] - cumsum[r]) / (s - r);
@@ -398,7 +412,10 @@ bool DUST_1D::dualMaxAlgo2(double minCost, unsigned int t, unsigned int s, unsig
 // binary search. At each step, we evaluate the tangent line to the current point
 // at its max to stop the search at early step (when possible)
 
-bool DUST_1D::dualMaxAlgo3(double minCost, unsigned int t, unsigned int s, unsigned int r)
+bool DUST_1D::dualMaxAlgo3(double minCost,
+                           unsigned int t,
+                           unsigned int s,
+                           unsigned int r)
 {
   double a = (cumsum[t] - cumsum[s]) / (t - s);
   double b = (cumsum[s] - cumsum[r]) / (s - r);
@@ -460,7 +477,10 @@ bool DUST_1D::dualMaxAlgo3(double minCost, unsigned int t, unsigned int s, unsig
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool DUST_1D::dualMaxAlgo4(double minCost, unsigned int t, unsigned int s, unsigned int r)
+bool DUST_1D::dualMaxAlgo4(double minCost,
+                           unsigned int t,
+                           unsigned int s,
+                           unsigned int r)
 {
   ///
   /// TEST PELT in MU = 0
@@ -593,7 +613,10 @@ bool DUST_1D::dualMaxAlgo4(double minCost, unsigned int t, unsigned int s, unsig
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool DUST_1D::dualMaxAlgo5(double minCost, unsigned int t, unsigned int s, unsigned int r)
+bool DUST_1D::dualMaxAlgo5(double minCost,
+                           unsigned int t,
+                           unsigned int s,
+                           unsigned int r)
 {
   double objectiveMean = (cumsum[t] - cumsum[s]) / (t - s);
   double constantTerm = (costRecord[s] - minCost) / (t - s);
@@ -610,7 +633,10 @@ bool DUST_1D::dualMaxAlgo5(double minCost, unsigned int t, unsigned int s, unsig
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool DUST_1D::dualMaxAlgo6(double minCost, unsigned int t, unsigned int s, unsigned int r)
+bool DUST_1D::dualMaxAlgo6(double minCost,
+                           unsigned int t,
+                           unsigned int s,
+                           unsigned int r)
 {
   //Rcout << "START START START" << std::endl;
 
