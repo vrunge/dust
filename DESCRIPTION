@@ -11,7 +11,6 @@ Maintainer: Vincent Runge <vincent.runge@univ-evry.fr>
 Description: Implements algorithms for detecting multiple change points in multivariate time series. Detection is based on the minimization of a penalized likelihood. The package uses a dynamic programming approach called optimal partitioning with a new efficient pruning method: DUality Simple Test (DUST).
 License: GPL-3
 Encoding: UTF-8
-LazyData: true
 Imports: Rcpp (>= 1.0.10), methods, RcppArmadillo
 Suggests:
     devtools,

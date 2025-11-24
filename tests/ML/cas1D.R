@@ -3,7 +3,7 @@ getwd()
 
 # nombre de données à générer
 n <- 10000
-library(dust0)
+library(dust)
 
 #####
 ##### GENERATE DATA

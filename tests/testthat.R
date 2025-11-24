@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/reference/test_package.html#special-files
 
 library(testthat)
-library(dust0)
+library(dust)
 
-test_check("dust0")
+test_check("dust")

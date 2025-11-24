@@ -1,5 +1,5 @@
 library(testthat)
-library(dust0)
+library(dust)
 
 
 ########## OP_R_1D with constant limit values ##########
