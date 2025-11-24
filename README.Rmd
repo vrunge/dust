@@ -80,7 +80,7 @@ We generate some 1D time series of length `400` from the Gaussian model and two 
 ```{r, message=FALSE}
 library(dust)
 set.seed(2)
-data <- dataGenerator_1D(chpts = c(110, 260, 400), c(0,0.4,0), type = "gauss")
+data <- dataGenerator_1D(chpts = c(110, 260, 400), c(0,0.8,0), type = "gauss")
 ```
 
 We segment data using the dust 1D method coded in Rcpp.
