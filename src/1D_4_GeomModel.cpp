@@ -1,7 +1,7 @@
 #include <Rcpp.h>
 #include <cmath>
 
-#include "1D_A4_GeomModel.h"
+#include "1D_4_GeomModel.h"
 
 using namespace Rcpp;
 

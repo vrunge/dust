@@ -16,18 +16,18 @@ public:
   // --- // Methods // --- //
   void reset();
   void next();
-  bool check();
+  bool is_not_the_last();
 
   void set_init_size(const unsigned int& size);
-  void add(const unsigned int& value);
+  void add_first(const unsigned int& value);
 
   unsigned int get_first();
   std::vector<unsigned int> get_list();
   void remove_last();
 
   /////// --- // virtual Methods // --- ///////
-  virtual void reset_prune() = 0;
-  virtual void next_prune() = 0;
+  virtual void reset_pruning() = 0;
+  virtual void next_pruning() = 0;
   virtual void prune_current() = 0;
 
   virtual std::vector<unsigned int> get_constraints_l() = 0;
@@ -54,8 +54,8 @@ public:
   DeterministicIndices_MD();
   DeterministicIndices_MD(const unsigned int& nb_l_, const unsigned int& nb_r_);
 
-  void reset_prune() override;
-  void next_prune() override;
+  void reset_pruning() override;
+  void next_pruning() override;
   void prune_current() override;
 
   std::vector<unsigned int> get_constraints_l() override;
@@ -76,8 +76,8 @@ public:
   RandomIndices_MD();
   RandomIndices_MD(const unsigned int& nb_l_, const unsigned int& nb_r_);
 
-  void reset_prune() override;
-  void next_prune() override;
+  void reset_pruning() override;
+  void next_pruning() override;
   void prune_current() override;
 
   std::vector<unsigned int> get_constraints_l() override;

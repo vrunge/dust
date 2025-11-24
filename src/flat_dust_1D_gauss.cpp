@@ -1,7 +1,7 @@
 #include <Rcpp.h>
 #include <cmath>
 
-#include "1D_B_Indices.h"
+#include "1D_Indices.h"
 #include "preProcessing.h"
 
 using namespace Rcpp;
@@ -37,7 +37,7 @@ double DualMax(const double& minCost, const unsigned int& t, const unsigned int&
 
 List flat_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty = R_NilValue)
 {
-  DeterministicIndices_1D indices;
+  Indices_1D_Det indices;
 
   const unsigned int n = inData.size();
 
@@ -56,7 +56,7 @@ List flat_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty 
   costRecord.reserve(n + 1);
   costRecord.push_back(-penalty);
 
-  indices.add(0);
+  indices.add_first(0);
 
   // Initialize OP step value
   double lastCost; // temporarily stores the cost for the model with last changepoint at some i
@@ -92,7 +92,7 @@ List flat_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty 
       }
       indices.next();
     }
-    while(indices.check());
+    while(indices.is_not_the_last());
     // END (OP step)
 
     // OP update
@@ -101,10 +101,10 @@ List flat_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty 
     changepointRecord.push_back(argMin);
 
     // DUST step
-    indices.reset_prune();
+    indices.reset_pruning();
 
     // DUST loop
-    while (indices.check_prune())
+    while (indices.is_not_the_last_pruning())
     {
       if (DualMax(minCost, t, indices.get_current(), indices.get_constraint(), cumsum, costRecord) > 0) // prune as needs pruning
       {
@@ -115,7 +115,7 @@ List flat_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty 
       else
       {
         // increment all cursors
-        indices.next_prune();
+        indices.next_pruning();
       }
     }
     // END (DUST loop)
@@ -127,7 +127,7 @@ List flat_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty 
     }
 
     // update the available indices
-    indices.add(t);
+    indices.add_first(t);
   }
 
   std::forward_list<unsigned int> changepoints {n};
@@ -152,7 +152,7 @@ List flat_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty 
 
 List flat2_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty = R_NilValue)
 {
-  DeterministicIndices_1D indices;
+  Indices_1D_Det indices;
 
   const unsigned int n = inData.size();
 
@@ -168,7 +168,7 @@ List flat2_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty
   std::vector<double> costRecord(n + 1);
   costRecord[0] = -penalty;
 
-  indices.add(0);
+  indices.add_first(0);
 
   // Initialize OP step value
   double lastCost; // temporarily stores the cost for the model with last changepoint at some i
@@ -204,7 +204,7 @@ List flat2_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty
       }
       indices.next();
     }
-    while(indices.check());
+    while(indices.is_not_the_last());
     // END (OP step)
 
     // OP update
@@ -213,10 +213,10 @@ List flat2_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty
     changepointRecord[t] = argMin;
 
     // DUST step
-    indices.reset_prune();
+    indices.reset_pruning();
 
     // DUST loop
-    while (indices.check_prune())
+    while (indices.is_not_the_last_pruning())
     {
       if (DualMax(minCost, t, indices.get_current(), indices.get_constraint(), cumsum, costRecord) > 0) // prune as needs pruning
       {
@@ -227,7 +227,7 @@ List flat2_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty
       else
       {
         // increment all cursors
-        indices.next_prune();
+        indices.next_pruning();
       }
     }
     // END (DUST loop)
@@ -239,7 +239,7 @@ List flat2_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty
     }
 
     // update the available indices
-    indices.add(t);
+    indices.add_first(t);
   }
 
   std::forward_list<unsigned int> changepoints {n};

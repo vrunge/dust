@@ -164,8 +164,8 @@ void DUST_reg::init(DataFrame& inData, Nullable<double> inPenalty)
 
   init_method();
 
-  indices->add(0);
-  indices->add(1);
+  indices->add_first(0);
+  indices->add_first(1);
 
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -229,7 +229,7 @@ void DUST_reg::compute()
       }
       indices->next();
     }
-    while(indices->check());
+    while(indices->is_not_the_last());
     // END (OP step)
 
     // OP update
@@ -238,10 +238,10 @@ void DUST_reg::compute()
     changepointRecord[t] = argMin;
 
     // DUST step
-    indices->reset_prune();
+    indices->reset_pruning();
 
     // DUST loop
-    while (indices->check())
+    while (indices->is_not_the_last())
     {
       if ((this->*current_test)(minCost, t, *(indices->current), indices->get_constraint_l())) // prune as needs pruning
       {
@@ -253,7 +253,7 @@ void DUST_reg::compute()
       else
       {
         // increment all cursors
-        indices->next_prune();
+        indices->next_pruning();
       }
     }
     // END (DUST loop)
@@ -269,7 +269,7 @@ void DUST_reg::compute()
     }
 
     // update the available indices
-    indices->add(t);
+    indices->add_first(t);
     nb_indices[t - 1] = nbt;
     nbt++;
   }

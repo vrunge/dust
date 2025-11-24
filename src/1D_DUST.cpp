@@ -1,7 +1,7 @@
 #include <Rcpp.h>
 #include <cmath>
 #include <random> /// FOR RANDOM NUMBER IN DUAL EVAL
-#include "1D_A_DUST.h"
+#include "1D_DUST.h"
 #include "preProcessing.h"
 
 #include <fstream> /////// T0 WRITE  EMMELINE
@@ -41,8 +41,8 @@ void DUST_1D::pruning_method()
   /// /// ///
   /// /// /// index METHOD
   /// /// ///
-  if(constraints_type == 0){indices = new RandomIndices_1D();}
-  else{indices = new DeterministicIndices_1D;}
+  if(constraints_type == 0){indices = new Indices_1D_Rand();}
+  else{indices = new Indices_1D_Det;}
 
   /// /// ///
   /// /// /// dual_max_type METHOD
@@ -91,7 +91,7 @@ void DUST_1D::append(std::vector<double>& inData, Nullable<double> inPenalty)
     nb_indices.push_back(1);
 
     pruning_method();
-    indices->add(0);
+    indices->add_first(0);
   }
 
   // store data by updating the cumsum
@@ -130,7 +130,7 @@ void DUST_1D::update_partition()
       }
       indices->next();
     }
-    while(indices->check());
+    while(indices->is_not_the_last());
     // END (OP step)
     // END (OP step)
 
@@ -142,11 +142,11 @@ void DUST_1D::update_partition()
 
     // DUST step
     // DUST step
-    indices->reset_prune();
+    indices->reset_pruning();
 
     // DUST loop
     // DUST loop
-    while (indices->check_prune()) // is true, while we are not on the smallest index
+    while (indices->is_not_the_last_pruning()) // is true, while we are not on the smallest index
     {
       // prune as needs pruning
       if ((this->*current_test)(minCost, t, indices->get_current(), indices->get_constraint()))
@@ -159,7 +159,7 @@ void DUST_1D::update_partition()
       else
       {
         // increment all cursors
-        indices->next_prune();
+        indices->next_pruning();
       }
     }
     // END (DUST loop)
@@ -174,7 +174,7 @@ void DUST_1D::update_partition()
     }
 
     // update the available indices
-    indices->add(t);
+    indices->add_first(t);
     nb_indices.push_back(nbt);
     nbt++;
   }

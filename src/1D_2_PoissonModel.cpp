@@ -4,7 +4,7 @@
 
 #include <random>
 
-#include "1D_A2_PoissonModel.h"
+#include "1D_2_PoissonModel.h"
 
 using namespace Rcpp;
 

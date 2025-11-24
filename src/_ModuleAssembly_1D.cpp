@@ -1,14 +1,14 @@
 #include <Rcpp.h>
 
 // --- // Models // --- //
-#include "1D_A1_GaussModel.h"
-#include "1D_A2_PoissonModel.h"
-#include "1D_A3_ExpModel.h"
-#include "1D_A4_GeomModel.h"
-#include "1D_A5_BernModel.h"
-#include "1D_A6_BinomModel.h"
-#include "1D_A7_NegbinModel.h"
-#include "1D_A8_VarianceModel.h"
+#include "1D_1_GaussModel.h"
+#include "1D_2_PoissonModel.h"
+#include "1D_3_ExpModel.h"
+#include "1D_4_GeomModel.h"
+#include "1D_5_BernModel.h"
+#include "1D_6_BinomModel.h"
+#include "1D_7_NegbinModel.h"
+#include "1D_8_VarianceModel.h"
 
 using namespace Rcpp;
 

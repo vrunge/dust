@@ -1,7 +1,7 @@
 #include <Rcpp.h>
 #include <cmath>
 
-#include "1D_A3_ExpModel.h"
+#include "1D_3_ExpModel.h"
 
 using namespace Rcpp;
 

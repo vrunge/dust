@@ -1,7 +1,7 @@
 #include <Rcpp.h>
 #include <cmath>
 
-#include "1D_A1_GaussModel.h"
+#include "1D_1_GaussModel.h"
 
 using namespace Rcpp;
 

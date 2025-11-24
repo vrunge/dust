@@ -16,17 +16,17 @@ public:
   // --- // Methods // --- //
   void reset();
   void next();
-  bool check();
+  bool is_not_the_last();
 
   void set_init_size(const unsigned int& size);
-  void add(const unsigned int& value);
+  void add_first(const unsigned int& value);
 
   std::vector<unsigned int> get_list();
   void remove_last();
 
   /////// --- // virtual Methods // --- ///////
-  virtual void reset_prune() = 0;
-  virtual void next_prune() = 0;
+  virtual void reset_pruning() = 0;
+  virtual void next_pruning() = 0;
   virtual void prune_current() = 0;
 
   virtual unsigned int get_constraint_l() = 0;
@@ -48,8 +48,8 @@ class DeterministicIndices_2D : public Indices_2D2
 public:
   DeterministicIndices_2D();
 
-  void reset_prune() override;
-  void next_prune() override;
+  void reset_pruning() override;
+  void next_pruning() override;
   void prune_current() override;
 
   unsigned int get_constraint_l() override;
@@ -66,8 +66,8 @@ class DeterministicIndices_2D2 : public Indices_2D2
 public:
   DeterministicIndices_2D2();
 
-  void reset_prune() override;
-  void next_prune() override;
+  void reset_pruning() override;
+  void next_pruning() override;
   void prune_current() override;
 
   unsigned int get_constraint_l() override;
@@ -88,8 +88,8 @@ class RandomIndices_2D : public Indices_2D2
 public:
   RandomIndices_2D();
 
-  void reset_prune() override;
-  void next_prune() override;
+  void reset_pruning() override;
+  void next_pruning() override;
   void prune_current() override;
 
   unsigned int get_constraint_l() override;
@@ -112,8 +112,8 @@ class RandomIndices_2D2 : public Indices_2D2
 public:
   RandomIndices_2D2();
 
-  void reset_prune() override;
-  void next_prune() override;
+  void reset_pruning() override;
+  void next_pruning() override;
   void prune_current() override;
 
   unsigned int get_constraint_l() override;

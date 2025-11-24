@@ -1,15 +1,15 @@
-#ifndef Geom_1D_H
-#define Geom_1D_H
+#ifndef Exp_1D_H
+#define Exp_1D_H
 
 #include <Rcpp.h>
 
-#include "1D_A_DUST.h"
+#include "1D_DUST.h"
 
 using namespace Rcpp;
 
-class Geom_1D : public DUST_1D {
+class Exp_1D : public DUST_1D {
 public:
-  Geom_1D(int dual_max_type, int constraints_type, Nullable<int> nbLoops = Nullable<int>());
+  Exp_1D(int dual_max_type, int constraints_type, Nullable<int> nbLoops = Nullable<int>());
 protected:
   double Cost(unsigned int t, unsigned int s) const override;
   double statistic(double& data) const override;

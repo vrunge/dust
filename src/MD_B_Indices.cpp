@@ -6,7 +6,7 @@ using namespace Rcpp;
 //
 // This class allows drawing elements of a forwardlist at random, uniformly, among
 // the elements following the current position of the forwardlist iterator created
-// by Indices_MD::reset_prune() and incremented by Indices_MD::next_prune()
+// by Indices_MD::reset_pruning() and incremented by Indices_MD::next_pruning()
 // This class was tailored to be used in the DUST algorithm
 //
 // Parameters:
@@ -21,10 +21,10 @@ Indices_MD::~Indices_MD() {}
 
 void Indices_MD::reset() { current = list.begin(); }
 void Indices_MD::next() { ++current; }
-bool Indices_MD::check() { return current != list.end(); }
+bool Indices_MD::is_not_the_last() { return current != list.end(); }
 
 void Indices_MD::set_init_size(const unsigned int& size) { list.reserve(size); }
-void Indices_MD::add(const unsigned int& value){list.push_back(value);}
+void Indices_MD::add_first(const unsigned int& value){list.push_back(value);}
 
 unsigned int Indices_MD::get_first() { return list.back(); }
 std::vector<unsigned int> Indices_MD::get_list() { return list; }
@@ -42,7 +42,7 @@ DeterministicIndices_MD::DeterministicIndices_MD(const unsigned int& nb_l_, cons
   Indices_MD(nb_l_, nb_r_)  { }
 
 // full reset for pruning step
-void DeterministicIndices_MD::reset_prune()
+void DeterministicIndices_MD::reset_pruning()
 {
   // reset iterators
   if (list.size() > 1)
@@ -69,7 +69,7 @@ void DeterministicIndices_MD::reset_prune()
 }
 
 ////
-void DeterministicIndices_MD::next_prune()
+void DeterministicIndices_MD::next_pruning()
 {
   ++current;
   /// move begin_l if too many indices bwn begin_l and current
@@ -129,14 +129,14 @@ RandomIndices_MD::RandomIndices_MD(const unsigned int& nb_l_, const unsigned int
 
 
 // full reset for pruning step,
-void RandomIndices_MD::reset_prune()
+void RandomIndices_MD::reset_pruning()
 {
   if (list.size() > 1){current = list.begin() + 1;} /// FAIRE SLT  current = list.begin() + 1;
   else current = list.begin();
 }
 
 // full next for pruning step
-void RandomIndices_MD::next_prune() { ++current; }
+void RandomIndices_MD::next_pruning() { ++current; }
 
 // remove current index and its pointer
 void RandomIndices_MD::prune_current() { current = list.erase(current); }

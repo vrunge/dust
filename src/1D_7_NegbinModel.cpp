@@ -1,7 +1,7 @@
 #include <Rcpp.h>
 #include <cmath>
 
-#include "1D_A7_NegbinModel.h"
+#include "1D_7_NegbinModel.h"
 
 using namespace Rcpp;
 

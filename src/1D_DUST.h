@@ -4,7 +4,7 @@
 #include <Rcpp.h>
 #include <random> /// FOR RANDOM NUMBER IN DUAL EVAL
 
-#include "1D_B_Indices.h"
+#include "1D_Indices.h"
 
 using namespace Rcpp;
 

@@ -124,7 +124,7 @@ void DUST_MD::append(const arma::dmat& inData,
 
     pruning_method();
     indices->set_init_size(n);
-    indices->add(0);
+    indices->add_first(0);
 
     // Initialize optim objects
     mu             = arma::rowvec(nb_max);
@@ -198,7 +198,7 @@ void DUST_MD::update_partition()
       }
       indices->next();
     }
-    while(indices->check());
+    while(indices->is_not_the_last());
     // END (OP step)
     // END (OP step)
 
@@ -209,10 +209,10 @@ void DUST_MD::update_partition()
 
     // DUST step
     // DUST step
-    indices->reset_prune();
+    indices->reset_pruning();
 
     // DUST loop
-    while (indices->check())
+    while (indices->is_not_the_last())
     {
       ///// OUTPUTLOG
       //Rcout << "fetching constraints" << std::endl;
@@ -229,7 +229,7 @@ void DUST_MD::update_partition()
       else
       {
         // increment all cursors
-        indices -> next_prune();
+        indices -> next_pruning();
       }
     }
     // END (DUST loop)
@@ -243,7 +243,7 @@ void DUST_MD::update_partition()
     // }
 
 
-    indices->add(t);
+    indices->add_first(t);
     nb_indices.push_back(nbt);
     nbt++;
   }

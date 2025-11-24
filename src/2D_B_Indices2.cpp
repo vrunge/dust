@@ -15,10 +15,10 @@ Indices_2D2::~Indices_2D2(){}
 
 void Indices_2D2::reset() { current = list.begin(); }
 void Indices_2D2::next() { ++current; }
-bool Indices_2D2::check() { return current != list.end(); }
+bool Indices_2D2::is_not_the_last() { return current != list.end(); }
 
 void Indices_2D2::set_init_size(const unsigned int& size) { list.reserve(size); }
-void Indices_2D2::add(const unsigned int& value){list.push_back(value);}
+void Indices_2D2::add_first(const unsigned int& value){list.push_back(value);}
 
 std::vector<unsigned int> Indices_2D2::get_list() { return list; }
 void Indices_2D2::remove_last() { list.pop_back(); }
@@ -33,7 +33,7 @@ void Indices_2D2::remove_last() { list.pop_back(); }
 DeterministicIndices_2D::DeterministicIndices_2D() : Indices_2D2() {}
 
 // full reset for pruning step
-void DeterministicIndices_2D::reset_prune()
+void DeterministicIndices_2D::reset_pruning()
 {
   // reset iterators
   if (list.size() > 1)
@@ -44,7 +44,7 @@ void DeterministicIndices_2D::reset_prune()
 }
 
 ////
-void DeterministicIndices_2D::next_prune()
+void DeterministicIndices_2D::next_pruning()
 {
   ++current;
 }
@@ -77,7 +77,7 @@ unsigned int DeterministicIndices_2D::get_constraint_r()
 DeterministicIndices_2D2::DeterministicIndices_2D2() : Indices_2D2() {}
 
 // full reset for pruning step
-void DeterministicIndices_2D2::reset_prune()
+void DeterministicIndices_2D2::reset_pruning()
 {
   // reset iterators
   if (list.size() > 1)
@@ -89,7 +89,7 @@ void DeterministicIndices_2D2::reset_prune()
 
 
 ////
-void DeterministicIndices_2D2::next_prune()
+void DeterministicIndices_2D2::next_pruning()
 {
   ++current;
 }
@@ -129,14 +129,14 @@ unsigned int DeterministicIndices_2D2::get_constraint_r()
 RandomIndices_2D::RandomIndices_2D() : Indices_2D2() {}
 
 // full reset for pruning step,
-void RandomIndices_2D::reset_prune()
+void RandomIndices_2D::reset_pruning()
 {
   if (list.size() > 1){current = list.begin() + 1;}
   else current = list.begin();
 }
 
 // full next for pruning step
-void RandomIndices_2D::next_prune() { ++current; }
+void RandomIndices_2D::next_pruning() { ++current; }
 
 // remove current index and its pointer
 void RandomIndices_2D::prune_current() { current = list.erase(current); }
@@ -170,14 +170,14 @@ unsigned int RandomIndices_2D::get_constraint_r()
 RandomIndices_2D2::RandomIndices_2D2() : Indices_2D2() {}
 
 // full reset for pruning step,
-void RandomIndices_2D2::reset_prune()
+void RandomIndices_2D2::reset_pruning()
 {
   if (list.size() > 1){current = list.begin() + 1;}
   else current = list.begin();
 }
 
 // full next for pruning step
-void RandomIndices_2D2::next_prune() { ++current; }
+void RandomIndices_2D2::next_pruning() { ++current; }
 
 // remove current index and its pointer
 void RandomIndices_2D2::prune_current() { current = list.erase(current); }

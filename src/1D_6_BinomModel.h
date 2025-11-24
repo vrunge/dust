@@ -3,7 +3,7 @@
 
 #include <Rcpp.h>
 
-#include "1D_A_DUST.h"
+#include "1D_DUST.h"
 
 using namespace Rcpp;
 

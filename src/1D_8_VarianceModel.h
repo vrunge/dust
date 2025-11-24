@@ -1,15 +1,15 @@
-#ifndef Exp_1D_H
-#define Exp_1D_H
+#ifndef Variance_1D_H
+#define Variance_1D_H
 
 #include <Rcpp.h>
 
-#include "1D_A_DUST.h"
+#include "1D_DUST.h"
 
 using namespace Rcpp;
 
-class Exp_1D : public DUST_1D {
+class Variance_1D : public DUST_1D {
 public:
-  Exp_1D(int dual_max_type, int constraints_type, Nullable<int> nbLoops = Nullable<int>());
+  Variance_1D(int dual_max_type, int constraints_type, Nullable<int> nbLoops = Nullable<int>());
 protected:
   double Cost(unsigned int t, unsigned int s) const override;
   double statistic(double& data) const override;

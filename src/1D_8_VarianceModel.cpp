@@ -1,7 +1,7 @@
 #include <Rcpp.h>
 #include <cmath>
 
-#include "1D_A8_VarianceModel.h"
+#include "1D_8_VarianceModel.h"
 
 using namespace Rcpp;
 

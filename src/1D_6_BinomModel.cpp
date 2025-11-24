@@ -1,7 +1,7 @@
 #include <Rcpp.h>
 #include <cmath>
 
-#include "1D_A6_BinomModel.h"
+#include "1D_6_BinomModel.h"
 
 using namespace Rcpp;
 

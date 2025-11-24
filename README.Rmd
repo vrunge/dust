@@ -37,11 +37,8 @@ knitr::opts_chunk$set(echo = TRUE)
 <img src="man/figures/sep.png" alt="" style="width:100%;"/>
 </center>
 
-<a id="start"></a>
 
-## Quick start
-
-### Introduction
+## Introduction
 
 The `dust` package contains methods **for detecting multiple change-points within time-series** based on the optimal partitioning algorithm, which is a dynamic programming (DP) algorithm. Our algorithms optimize a penalized likelihood and the DP algorithm is encoded with pruning rules for reducing execution time. The novelty of the `dust` package consists in its pruning step. We use a **new pruning rule**, different from the two standard ones: [PELT rule (2012)](\doi{10.1080/01621459.2012.737745}) and [FPOP rule  (2017)](\doi{10.1007/s11222-016-9636-3}).
 
@@ -53,6 +50,9 @@ We provide a polymorphic structure in Rcpp that enables users **to easily add cu
 
 Various tests and simulations are included in this **README file** and the **simulations folder**, demonstrating that the DUST dual approach is **highly efficient across all regimes** (whether detecting few or many changes) and shows improved computational efficiency compared to PELT and FPOP. Additionally, unlike these methods, DUST can also reduce computation time for multivariate cost functions (See Section [pruning](#pruning)).
 
+<a id="start"></a>
+
+## Quick start
 
 ### Installing the dust Rcpp package
 
@@ -75,22 +75,24 @@ library(dust)
 
 ### A simple example
 
-We generate some 1D time series of length `400` from the Gaussian model and one change in the middle of the sequence.
+We generate some 1D time series of length `400` from the Gaussian model and two changes in the sequence.
 
 ```{r, message=FALSE}
 library(dust)
 set.seed(2)
-data <- dataGenerator_1D(chpts = c(200,400), c(0,1), type = "gauss")
+data <- dataGenerator_1D(chpts = c(110, 260, 400), c(0,0.4,0), type = "gauss")
 ```
 
-We segment data using the dust 1D method coded in Rcpp. We give data, the penalty value and the type of cost to be used. It can be one of the following: `"gauss"` (additional parameters `sdNoise` and `gamma`), `"exp"`, `"poisson"`, `"geom"`, `"bern"`, `"binom"` (additional parameter `nbTrials`), `"negbin"` (additional parameter `nbSuccess`) and `variance`. See next [Section](#Models).
+We segment data using the dust 1D method coded in Rcpp.
 
 ```{r, message=FALSE}
 dust.1D(data)
 ```
 
-Here the penalty value is by default set to `2 log(n)` for `n` data points and the model to `gauss`. That is, we did
-`dust.1D(data,  penalty = 2*log(length(data)), model = "gauss")`
+
+Here the penalty value is by default set to `2 log(n)` for `n` data points and the model to `gauss`. That is, we did `dust.1D(data,  penalty = 2*log(length(data)), model = "gauss")`
+ 
+The `penalty` value and the type of `model` can be explicitly given. It can be one of the following: `"gauss"` (additional parameters `sdNoise` and `gamma`), `"exp"`, `"poisson"`, `"geom"`, `"bern"`, `"binom"` (additional parameter `nbTrials`), `"negbin"` (additional parameter `nbSuccess`) and `variance`. See next [Section](#Models).
  
 
 The result is a list whose elements are:
@@ -103,11 +105,26 @@ The result is a list whose elements are:
 
 - `costQ` The minimal (penalized) cost of the optimization problem at each time step.
 
-Vector `nb` is a kind of complexity control vector, its values are directly related to the algorithm's time complexity.
+Vector `nb` is a kind of complexity control vector, its values are directly related to the algorithm's time complexity. 
+
+
+And we can also use multivariate data with Poisson model.
+
+```{r, message=FALSE}
+library(dust)
+set.seed(5)
+data <- dataGenerator_MD(chpts = c(50,100,150),
+                 parameters = data.frame(ts1 = c(1,4,5),ts2 = c(10,10,5)),
+                 type = "poisson")
+```
+
+
+```{r, message=FALSE}
+dust.MD(data, model = "poisson", method = "randIndex_Eval0")
+```
 
 
 [(Back to Top)](#top)
-
 
 <center>
 <img src="man/figures/sep.png" alt="" style="width:100%;"/>

@@ -16,9 +16,6 @@ test_that("returns is a vector",
 test_that("returns is a dataframe",
           {expect_equal(is.data.frame(dataGenerator_Reg()), TRUE)
           })
-test_that("returns is a vector",
-          {expect_equal(is.vector(dataGenerator_AR1()), TRUE)
-          })
 
 
 ### ERRORS CHECK ###

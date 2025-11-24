@@ -1,7 +1,7 @@
 #include <Rcpp.h>
 #include <cmath>
 
-#include "1D_A5_BernModel.h"
+#include "1D_5_BernModel.h"
 
 using namespace Rcpp;
 
