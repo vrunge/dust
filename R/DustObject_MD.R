@@ -61,13 +61,6 @@ dust.object.MD <- function(
     , nbLoops = 10
 )
 {
-  partitioner <- new(DUST_MD, model, method, nbLoops)
-
-  assign(
-    "append",
-    function(data, penalty = NULL, nb_l = NULL, nb_r = NULL)
-      partitioner$append_c(data, penalty, nb_l, nb_r),
-    envir = partitioner
-  )
-  return(partitioner)
+  object <- new(DUST_MD, model, method, nbLoops)
+  return(object)
 }

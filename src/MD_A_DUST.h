@@ -24,10 +24,10 @@ public:
 
   // --- // Setup // --- //
   // append is accessible by user
-  void append(const arma::dmat& inData,
-            Nullable<double> inPenalty = Nullable<double>(),
-            Nullable<unsigned int> inNbL = Nullable<unsigned int>(),
-            Nullable<unsigned int> inNbR = Nullable<unsigned int>());
+  void append_data(const arma::dmat& inData,
+                Nullable<double> inPenalty = Nullable<double>(),
+                Nullable<unsigned int> inNbL = Nullable<unsigned int>(),
+                Nullable<unsigned int> inNbR = Nullable<unsigned int>());
 
   // --- // Main computation accessible by user
   void update_partition(); ///
@@ -38,11 +38,11 @@ public:
   List get_info();
 
   // --- // Wrapper method for quick use of the class // --- //
-  // one_dust is accessible by user
-  List one_dust(const arma::dmat& inData,
-             Nullable<double> inPenalty = Nullable<double>(),
-             Nullable<unsigned int> inNbL = Nullable<unsigned int>(),
-             Nullable<unsigned int> inNbR = Nullable<unsigned int>());
+  // dust is accessible by user
+  List dust(const arma::dmat& inData,
+            Nullable<double> inPenalty = Nullable<double>(),
+            Nullable<unsigned int> inNbL = Nullable<unsigned int>(),
+            Nullable<unsigned int> inNbR = Nullable<unsigned int>());
 
   ////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////
@@ -145,7 +145,7 @@ private:
   std::vector<int> nb_indices;
   double penalty;
 
-  std::vector<int> changepointRecord;
+  std::vector<int> chptRecord;
 
   ///////////////////////////////////////
   ///

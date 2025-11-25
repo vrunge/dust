@@ -41,7 +41,7 @@
 #'
 #' \code{\link{data_normalization_1D}} — To normalize input data prior to applying \code{dust.1D}.
 #'
-#' \code{\link{dust.object.1D}} — An object-oriented version of this function that supports incremental updates via \code{append_c} and \code{update_partition}.
+#' \code{\link{dust.object.1D}} — An object-oriented version of this function that supports incremental updates via \code{append} and \code{update_partition}.
 #'
 #' @examples
 #' y <- rnorm(100)
@@ -64,9 +64,9 @@ dust.1D <- function(
     , nbLoops = 10
 )
 {
-  partitioner <- new(DUST_1D, model, method, nbLoops)
-  partitioner$one_dust(data, penalty)
-  return(partitioner$get_partition())
+  object <- new(DUST_1D, model, method, nbLoops)
+  object$dust(data, penalty)
+  return(object$get_partition())
 }
 
 

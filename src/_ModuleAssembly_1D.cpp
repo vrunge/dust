@@ -22,7 +22,10 @@ DUST_1D *newModule1D(const std::string& model,
                      const std::string& method,
                      Nullable<int> nbLoops)
 {
-  ///////////////////  method separation into 2 ///////////////////
+  ///////////////////  method separation                        ///////////////////
+  ///////////////////  part 1 = randIndex = 0, detIndex = 1     ///////////////////
+  ///////////////////  part 2 = Algo type, from Eval0 to Eval6  ///////////////////
+
   std::vector<std::string> method_INFO;
   size_t pos = method.find('_');  // Find the position of the underscore
 
@@ -59,22 +62,14 @@ DUST_1D *newModule1D(const std::string& model,
   else if (method_INFO[1] == "Eval5"){dual_max_type = 5;} //algo5
   else if (method_INFO[1] == "Eval6"){dual_max_type = 6;} //algo6
 
-  if (model == "gauss")
-    return new Gauss_1D(dual_max_type, constraints_type, nbLoops);
-  if (model == "poisson")
-    return new Poisson_1D(dual_max_type, constraints_type, nbLoops);
-  if (model == "exp")
-    return new Exp_1D(dual_max_type, constraints_type, nbLoops);
-  if (model == "geom")
-    return new Geom_1D(dual_max_type, constraints_type, nbLoops);
-  if (model == "bern")
-    return new Bern_1D(dual_max_type, constraints_type, nbLoops);
-  if (model == "binom")
-    return new Binom_1D(dual_max_type, constraints_type, nbLoops);
-  if (model == "negbin")
-    return new Negbin_1D(dual_max_type, constraints_type, nbLoops);
-  if (model == "variance")
-    return new Variance_1D(dual_max_type, constraints_type, nbLoops);
+  if (model == "gauss")  return new Gauss_1D(dual_max_type, constraints_type, nbLoops);
+  else if (model == "poisson") return new Poisson_1D(dual_max_type, constraints_type, nbLoops);
+  else if (model == "exp") return new Exp_1D(dual_max_type, constraints_type, nbLoops);
+  else if (model == "geom") return new Geom_1D(dual_max_type, constraints_type, nbLoops);
+  else if (model == "bern") return new Bern_1D(dual_max_type, constraints_type, nbLoops);
+  else if (model == "binom") return new Binom_1D(dual_max_type, constraints_type, nbLoops);
+  else if (model == "negbin") return new Negbin_1D(dual_max_type, constraints_type, nbLoops);
+  else if (model == "variance") return new Variance_1D(dual_max_type, constraints_type, nbLoops);
   return nullptr;
 }
 
@@ -100,11 +95,11 @@ RCPP_MODULE(DUSTMODULE1D)
 
     .factory<const std::string&, const std::string&, Nullable<int>>(newModule1D)
 
-    .method("append_c", &DUST_1D::append)
+    .method("append_data", &DUST_1D::append_data)
     .method("update_partition", &DUST_1D::update_partition)
     .method("get_partition", &DUST_1D::get_partition)
     .method("get_info", &DUST_1D::get_info)
-    .method("one_dust", &DUST_1D::one_dust)
+    .method("dust", &DUST_1D::dust)
   ;
 }
 

@@ -68,8 +68,11 @@ computation time for multivariate cost functions (See Section
 
 ### Installing the dust Rcpp package
 
-**REQUIREMENTS:** - R &gt;= 3.4 - devtools :
-`install.packages('devtools')`
+**REQUIREMENTS:**
+
+-   R &gt;= 3.4
+
+-   devtools : `install.packages('devtools')`
 
 The package can then be installed from the github repo with the
 following command:
@@ -82,7 +85,7 @@ and imported with:
 
 ### A simple example
 
-We generate some 1D time series of length `400` from the Gaussian model
+We generate some 1D time series of length `200` from the Gaussian model
 and two changes in the sequence.
 
     library(dust)
@@ -151,7 +154,7 @@ We segment data using the dust 1D method coded in Rcpp.
 
 Here the penalty value is by default set to `2 log(n)` for `n` data
 points and the model to `gauss`. That is, we did
-`dust.1D(data,  penalty = 2*log(length(data)), model = "gauss")`
+`dust.1D(data,  penalty = 2*log(length(data)), model = "gauss")`.
 
 The `penalty` value and the type of `model` can be explicitly given. It
 can be one of the following: `"gauss"` (additional parameters `sdNoise`
@@ -176,7 +179,7 @@ and `gamma`), `"exp"`, `"poisson"`, `"geom"`, `"bern"`, `"binom"`
 Vector `nb` is a kind of complexity control vector, its values are
 directly related to the algorithm’s time complexity.
 
-And we can also use multivariate data with Poisson model.
+And we can also use multivariate data, for instance with Poisson model.
 
     library(dust)
     set.seed(5)
@@ -192,17 +195,17 @@ And we can also use multivariate data with Poisson model.
     ## [1]  50 100 150
     ## 
     ## $lastIndexSet
-    ##  [1] 150 149 148 147 145 144 143 142 141 140 139 136 135 132 130 128 124 117 108
-    ## [20] 105 102 101 100  99  98  97  96  95  52  51  50  49  48  47  46  44  43  42
-    ## [39]  40  39  37  36   0
+    ##  [1] 150 149 148 147 146 145 144 143 142 141 140 139 138 135 134 131 128 125 124
+    ## [20] 121 120 114 102 101 100  98  97  96  89  52  51  50  49  48  47  45  44  43
+    ## [39]  42  40  36  35   0
     ## 
     ## $nb
-    ##   [1]  1  1  1  2  3  4  2  2  2  2  3  4  5  2  2  3  2  3  2  3  4  4  3  4  5
-    ##  [26]  5  4  3  3  4  4  4  4  5  6  7  7  7  7  8  8  9  9  9 10 11 12 13 14 15
-    ##  [51] 15 16 17 18 19 20 21 21 21 22 23 23 20 21 22 23 22 22 23 24 25 25 24 25 24
-    ##  [76] 22 23 24 24 25 23 23 23 23 24 25 25 26 25 24 25 24 24 25 26 27 28 27 27 26
-    ## [101] 25 26 25 26 27 28 29 30 31 32 33 34 35 36 36 37 37 38 39 40 40 40 41 42 42
-    ## [126] 43 42 43 43 42 43 44 44 45 42 41 42 43 44 43 43 43 43 44 44 43 43 44 43 42
+    ##   [1]  1  1  1  2  3  2  2  1  2  2  3  4  3  3  4  5  3  3  4  4  5  2  2  3  4
+    ##  [26]  4  5  4  4  5  5  5  4  5  6  7  7  6  7  7  8  9 10 10 11 12 13 14 15 16
+    ##  [51] 16 17 18 19 20 21 22 23 23 24 24 23 22 22 23 24 24 25 25 26 27 27 27 25 25
+    ##  [76] 24 25 26 25 26 24 23 24 25 25 26 26 27 26 27 28 26 26 26 27 27 28 29 29 26
+    ## [101] 23 24 25 26 27 28 29 30 31 32 33 34 35 36 36 36 37 38 37 37 38 39 40 41 41
+    ## [126] 41 41 41 39 40 41 41 42 41 42 43 43 44 44 45 46 47 47 45 46 46 45 45 44 42
     ## 
     ## $costQ
     ##   [1]   -10.77502   -29.06055   -40.74796   -52.89471   -60.59678   -74.84412
@@ -243,7 +246,10 @@ And we can also use multivariate data with Poisson model.
 
 We can create a `DUST_1D` object with the `new` operator as follows:
 
-    obj_dust <- new(DUST_1D, "gauss", "randIndex_Eval3", 5)
+    obj_dust <- dust.object.1D( 
+                    model = "gauss", 
+                    method = "randIndex_Eval3", 
+                    nbLoops = 5)
     obj_dust$get_info()
 
     ## $data_statistic
@@ -267,14 +273,14 @@ We can create a `DUST_1D` object with the `new` operator as follows:
     ## $pruning_nb_loops
     ## [1] 5
 
-The object is empty. We append data to this object using `append_c` and
+The object is empty. We append data to this object using `append` and
 run the dynamic programming algorithm with `update_partition()`. The
 current partition is returned using a backtracking algorithm with
 `get_partition()`.
 
     set.seed(1)
     data <- dataGenerator_1D(chpts = c(50,100), parameters = c(0,2), type = "gauss")
-    obj_dust$append_c(data, 2*log(100))
+    obj_dust$append_data(data, 2*log(100))
 
     obj_dust$update_partition()
     obj_dust$get_partition()
@@ -283,12 +289,12 @@ current partition is returned using a backtracking algorithm with
     ## [1]  50 100
     ## 
     ## $lastIndexSet
-    ## [1] 100  98  97  96  50  49
+    ## [1] 100  99  98  96  50  49
     ## 
     ## $nb
-    ##   [1] 1 1 1 2 1 1 1 1 1 1 2 2 2 3 3 3 2 2 3 2 3 3 3 3 4 4 3 4 4 5 3 4 3 2 3 3 3
-    ##  [38] 3 2 2 3 2 2 2 2 3 3 3 1 2 3 3 4 4 5 6 6 6 4 4 4 5 4 4 4 3 4 3 4 5 5 5 4 4
-    ##  [75] 5 5 6 4 4 5 6 6 4 4 5 4 4 3 2 2 3 3 4 5 4 4 4 5 5 5
+    ##   [1] 1 1 1 2 1 1 1 1 1 1 2 2 2 3 4 3 1 2 2 2 3 4 3 3 4 4 3 4 4 5 4 4 4 1 2 3 2
+    ##  [38] 2 2 3 2 2 2 2 2 3 2 2 1 2 3 3 4 3 4 5 4 5 5 4 4 4 4 3 4 3 4 4 3 4 4 4 4 4
+    ##  [75] 5 4 5 4 4 5 6 6 5 4 5 4 4 3 3 2 3 3 4 5 6 5 4 5 5 5
     ## 
     ## $costQ
     ##   [1] -1.962222e-01 -4.902028e-02 -2.724011e-01 -1.254858e-02 -4.177676e-02
@@ -316,7 +322,7 @@ We can add data to the current time series and run again the algorithm:
 
     set.seed(13)
     data <- rnorm(40, mean = 1)
-    obj_dust$append_c(data, 2*log(100))
+    obj_dust$append_data(data, 2*log(100))
 
     obj_dust$update_partition()
     obj_dust$get_partition()
@@ -328,10 +334,10 @@ We can add data to the current time series and run again the algorithm:
     ##  [1] 140 139 138 126 123 110 108 107  96  50  49
     ## 
     ## $nb
-    ##   [1] 1 1 1 2 1 1 1 1 1 1 2 2 2 3 3 3 2 2 3 2 3 3 3 3 4 4 3 4 4 5 3 4 3 2 3 3 3
-    ##  [38] 3 2 2 3 2 2 2 2 3 3 3 1 2 3 3 4 4 5 6 6 6 4 4 4 5 4 4 4 3 4 3 4 5 5 5 4 4
-    ##  [75] 5 5 6 4 4 5 6 6 4 4 5 4 4 3 2 2 3 3 4 5 4 4 4 5 5 5 4 5 5 4 4 4 3 4 4 5 6
-    ## [112] 6 7 8 9 8 9 7 7 6 6 6 7 7 6 6 7 8 9 8 8 9 9 7 7 8 7 7 8 9
+    ##   [1] 1 1 1 2 1 1 1 1 1 1 2 2 2 3 4 3 1 2 2 2 3 4 3 3 4 4 3 4 4 5 4 4 4 1 2 3 2
+    ##  [38] 2 2 3 2 2 2 2 2 3 2 2 1 2 3 3 4 3 4 5 4 5 5 4 4 4 4 3 4 3 4 4 3 4 4 4 4 4
+    ##  [75] 5 4 5 4 4 5 6 6 5 4 5 4 4 3 3 2 3 3 4 5 6 5 4 5 5 5 4 5 5 5 6 4 3 3 4 5 6
+    ## [112] 6 6 7 8 7 8 6 7 5 6 7 6 7 7 6 7 8 9 9 8 9 8 9 9 9 8 7 8 9
     ## 
     ## $costQ
     ##   [1] -1.962222e-01 -4.902028e-02 -2.724011e-01 -1.254858e-02 -4.177676e-02
@@ -440,7 +446,7 @@ We start with one simple example with the `exp` model:
     data <- dataGenerator_1D(chpts = c(5*1e5,1e6), parameters = c(2,1), type = "exp")
     system.time(res <- dust.1D(data = data, model = "exp"))[[1]]
 
-    ## [1] 0.85
+    ## [1] 0.889
 
     res$changepoints
 

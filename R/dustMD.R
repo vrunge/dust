@@ -58,8 +58,8 @@ dust.MD <- function(
   {
     stop("negative nbLoops passed to dust.MD")
   }
-  partitioner <- new(DUST_MD, model, method, nbLoops)
-  return(partitioner$one_dust(data, penalty, constraints_l, constraints_r))
+  object <- new(DUST_MD, model, method, nbLoops)
+  return(object$dust(data, penalty, constraints_l, constraints_r))
 }
 
 

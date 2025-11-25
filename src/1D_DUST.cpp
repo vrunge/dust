@@ -4,12 +4,11 @@
 #include "1D_DUST.h"
 #include "preProcessing.h"
 
-#include <fstream> /////// T0 WRITE  EMMELINE
-#include <iostream>  /////// T0 WRITE  EMMELINE
+#include <fstream>
+#include <iostream>
 
 using namespace Rcpp;
 
-////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -26,13 +25,13 @@ DUST_1D::DUST_1D(int dual_max_type,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 DUST_1D::~DUST_1D()
 {
   delete indices;
 }
 
-////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -64,32 +63,32 @@ void DUST_1D::pruning_method()
   dist = std::uniform_real_distribution<double>(0.0, 1.0);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// --- // append_data, i. e. initializes all data-dependent vectors // --- //
+// --- // append_data, i. e. initializes all data-dependent vectors // --- //
+// --- // append_data, i. e. initializes all data-dependent vectors // --- //
 
-// --- // Fits the data, i. e. initializes all data-dependent vectors // --- //
-// --- // Fits the data, i. e. initializes all data-dependent vectors // --- //
-// --- // Fits the data, i. e. initializes all data-dependent vectors // --- //
-
-void DUST_1D::append(std::vector<double>& inData, Nullable<double> inPenalty)
+void DUST_1D::append_data(std::vector<double>& inData,
+                       Nullable<double> inPenalty)
 {
   bool first_execution = (n == 0);
-
-  // update total size
-  n += inData.size();
+  n += inData.size();   // update total size
 
   // Reserve memory for all vectors
   cumsum.reserve(n + 1);
-  changepointRecord.reserve(n + 1);
+  chptRecord.reserve(n + 1);
   costRecord.reserve(n + 1);
   nb_indices.reserve(n + 1);
 
+  // On first execution: initialize all vectors
   if (first_execution)
   {
-    // On first execution: initialize all vectors
     if (inPenalty.isNull()) { penalty = 2 * std::log(n); } else { penalty = as<double>(inPenalty); }
 
     cumsum.push_back(0);
     costRecord.push_back(-penalty);
-    changepointRecord.push_back(0);
+    chptRecord.push_back(0);
     nb_indices.push_back(1);
 
     pruning_method();
@@ -101,29 +100,22 @@ void DUST_1D::append(std::vector<double>& inData, Nullable<double> inPenalty)
     cumsum.push_back(cumsum.back() + statistic(*current_datum));
 }
 
-////////////////////////////////////////////////////////////////////////////////
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-
-// --- // Algorithm-specific method // --- //
 void DUST_1D::update_partition()
 {
   // Initialize OP step value
   double lastCost;
   unsigned int nbt = nb_indices.back();
-
-
-  ////////////// Main loop
-  ////////////// Main loop
-  ////////////// Main loop
   for (unsigned t = indices->get_first() + 1; t <= n; t++)
   {
-    //////// OP step ////////
-    //////// OP step ////////
+    ///////////// OP step /////////////
+    ///////////// OP step /////////////
     indices->reset();
     double minCost = std::numeric_limits<double>::infinity();
-    unsigned argMin = 0;
+    unsigned int argMin = 0;
     do
     {
       unsigned int s = indices->get_current();
@@ -143,17 +135,24 @@ void DUST_1D::update_partition()
     // minCost = Q_t. Here + beta to get Q_t = Q_i + C(y_it) + beta
     minCost += penalty;
     costRecord.push_back(minCost);
-    changepointRecord.push_back(argMin);
+    chptRecord.push_back(argMin);
 
-    // DUST step
-    // DUST step
+    ///////////// DUST step /////////////
+    ///////////// DUST step /////////////
+
     indices->reset_pruning();
 
     //////// DUST loop
     //////// DUST loop
+    // we use :
+    // is_not_the_last_pruning
+    // current_test
+    // prune_current
+    // next_pruning
+    // prune_last
     while (indices->is_not_the_last_pruning()) // is true, while we are not on the smallest index
     {
-      // prune as needs pruning
+      // valid if we prune the index get_current using index in get_constraint
       if ((this->*current_test)(minCost, t, indices->get_current(), indices->get_constraint()))
       {
         // remove the pruned index and its pointer
@@ -178,7 +177,8 @@ void DUST_1D::update_partition()
       nbt--;
     }
 
-    // update the available indices
+    ///////////// Update to next index /////////////
+    ///////////// Update to next index /////////////
     indices->add_first(t);
     nb_indices.push_back(nbt);
     nbt++;
@@ -188,37 +188,34 @@ void DUST_1D::update_partition()
 
 // --- // Wrapper method for quickly computing               // --- //
 // --- // and retrieving the optimal partition of input data // --- //
-List DUST_1D::one_dust(std::vector<double>& inData, Nullable<double> inPenalty)
+List DUST_1D::dust(std::vector<double>& inData, Nullable<double> inPenalty)
 {
-  append(inData, inPenalty);
+  append_data(inData, inPenalty);
   update_partition();
   return get_partition();
 }
 
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 // --- // Builds changepoints // --- //
 // --- // Builds changepoints // --- //
 // --- // Builds changepoints // --- //
 std::forward_list<unsigned int> DUST_1D::backtrack_changepoints()
 {
   std::forward_list<unsigned int> changepoints {n};
-  for (int newChangepoint = changepointRecord[n]; newChangepoint != 0; newChangepoint = changepointRecord[newChangepoint])
+  for (int tau = chptRecord[n]; tau != 0; tau = chptRecord[tau])
   {
-    changepoints.push_front(newChangepoint);
+    changepoints.push_front(tau);
   }
   return changepoints;
 }
 
-// --- // Retrieves optimal partition // --- //
-// --- // Retrieves optimal partition // --- //
-// --- // Retrieves optimal partition // --- //
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// --- // optimal partition info // --- //
+// --- // optimal partition info // --- //
+// --- // optimal partition info // --- //
 List DUST_1D::get_partition()
 {
   std::forward_list<unsigned int> chpts = backtrack_changepoints();

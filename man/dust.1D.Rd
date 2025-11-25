@@ -72,5 +72,5 @@ dust.1D(data = y, model = "poisson")
 
 \code{\link{data_normalization_1D}} — To normalize input data prior to applying \code{dust.1D}.
 
-\code{\link{dust.object.1D}} — An object-oriented version of this function that supports incremental updates via \code{append_c} and \code{update_partition}.
+\code{\link{dust.object.1D}} — An object-oriented version of this function that supports incremental updates via \code{append} and \code{update_partition}.
 }

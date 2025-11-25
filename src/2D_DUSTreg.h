@@ -105,7 +105,7 @@ public:
   NumericVector data_y;
   double penalty;
 
-  std::vector<int> changepointRecord;
+  std::vector<int> chptRecord;
 
 };
 

@@ -63,10 +63,10 @@ void DUST_MD::pruning_method()
 
 
 // --- // Fits the data, i. e. initializes all data-dependent vectors // --- //
-void DUST_MD::append(const arma::dmat& inData,
-                     Nullable<double> inPenalty,
-                     Nullable<unsigned int> inNbL,
-                     Nullable<unsigned int> inNbR)
+void DUST_MD::append_data(const arma::dmat& inData,
+                       Nullable<double> inPenalty,
+                       Nullable<unsigned int> inNbL,
+                       Nullable<unsigned int> inNbR)
 {
   bool first_execution = (n == 0);
 
@@ -85,7 +85,7 @@ void DUST_MD::append(const arma::dmat& inData,
   if (inPenalty.isNull()){penalty = 2 * dim * std::log(n);}else{penalty = as<double>(inPenalty);}
 
   /// RETURN
-  changepointRecord.reserve(n + 1);
+  chptRecord.reserve(n + 1);
   nb_indices.reserve(n);
   costRecord.reserve(n + 1);
 
@@ -94,7 +94,7 @@ void DUST_MD::append(const arma::dmat& inData,
 
   if (first_execution)
   {
-    changepointRecord.push_back(0);
+    chptRecord.push_back(0);
     nb_indices.push_back(1);
     costRecord.push_back(-penalty);
     for (unsigned row = 0; row < dim; row++)
@@ -205,7 +205,7 @@ void DUST_MD::update_partition()
     // OP update
     minCost += penalty;
     costRecord.push_back(minCost);
-    changepointRecord.push_back(argMin);
+    chptRecord.push_back(argMin);
 
     // DUST step
     // DUST step
@@ -266,7 +266,7 @@ void DUST_MD::update_partition()
 std::forward_list<unsigned int> DUST_MD::backtrack_changepoints()
 {
   std::forward_list<unsigned int> changepoints {n};
-  for (int newChangepoint = changepointRecord[n]; newChangepoint != 0; newChangepoint = changepointRecord[newChangepoint])
+  for (int newChangepoint = chptRecord[n]; newChangepoint != 0; newChangepoint = chptRecord[newChangepoint])
   {
     changepoints.push_front(newChangepoint);
   }
@@ -308,12 +308,12 @@ List DUST_MD::get_partition()
 
 // --- // Wrapper method for quickly computing               // --- //
 // --- // and retrieving the optimal partition of input data // --- //
-List DUST_MD::one_dust(const arma::dmat& inData,
-                       Nullable<double> inPenalty,
-                       Nullable<unsigned int> inNbL,
-                       Nullable<unsigned int> inNbR)
+List DUST_MD::dust(const arma::dmat& inData,
+                   Nullable<double> inPenalty,
+                   Nullable<unsigned int> inNbL,
+                   Nullable<unsigned int> inNbR)
 {
-  append(inData, inPenalty, inNbL, inNbR);
+  append_data(inData, inPenalty, inNbL, inNbR);
   update_partition();
   return get_partition();
 }

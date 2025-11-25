@@ -95,7 +95,7 @@ public:
   unsigned int n; // number of observations
   double penalty;
 
-  std::vector<int> changepointRecord;
+  std::vector<int> chptRecord;
 };
 
 #endif

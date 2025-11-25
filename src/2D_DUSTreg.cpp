@@ -157,7 +157,7 @@ void DUST_reg::init(DataFrame& inData, Nullable<double> inPenalty)
   E = std::vector<double>(n + 1, 0.);
   F = std::vector<double>(n + 1, 0.);
 
-  changepointRecord = std::vector<int>(n + 1, 0);
+  chptRecord = std::vector<int>(n + 1, 0);
   nb_indices = std::vector<int>(n, 0);
 
   costRecord = std::vector<double>(n + 1, -penalty);
@@ -201,7 +201,7 @@ void DUST_reg::compute()
   nb_indices[0] = 1;
 
   costRecord[1] = Cost(t, s);
-  changepointRecord[1] = 0;
+  chptRecord[1] = 0;
 
   // Main loop
   for (t = 2; t <= n; t++)
@@ -235,7 +235,7 @@ void DUST_reg::compute()
     // OP update
     minCost += penalty;
     costRecord[t] = minCost;
-    changepointRecord[t] = argMin;
+    chptRecord[t] = argMin;
 
     // DUST step
     indices->reset_pruning();
@@ -284,7 +284,7 @@ void DUST_reg::compute()
 std::forward_list<unsigned int> DUST_reg::backtrack_changepoints()
 {
   std::forward_list<unsigned int> changepoints {n};
-  for (int newChangepoint = changepointRecord[n]; newChangepoint != 0; newChangepoint = changepointRecord[newChangepoint])
+  for (int newChangepoint = chptRecord[n]; newChangepoint != 0; newChangepoint = chptRecord[newChangepoint])
   {
     changepoints.push_front(newChangepoint);
   }

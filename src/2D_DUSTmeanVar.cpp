@@ -288,7 +288,7 @@ void DUST_meanVar::init(std::vector<double>& inData, Nullable<double> inPenalty)
     penalty = as<double>(inPenalty);
   }
 
-  changepointRecord = std::vector<int>(n + 1, 0);
+  chptRecord = std::vector<int>(n + 1, 0);
   nb_indices = std::vector<int>(n, 0);
 
   cumsum = std::vector<double>(n + 1, 0.);
@@ -322,7 +322,7 @@ void DUST_meanVar::compute(std::vector<double>& inData)
   cumsum[1] = inData[0];
   cumsum2[1] = inData[0] * inData[0];
   costRecord[1] = Cost(t, s);
-  changepointRecord[1] = 0;
+  chptRecord[1] = 0;
 
   int nbt = 2;
   nb_indices[0] = 1;
@@ -354,7 +354,7 @@ void DUST_meanVar::compute(std::vector<double>& inData)
     // OP update
     minCost += penalty;
     costRecord[t] = minCost;
-    changepointRecord[t] = argMin;
+    chptRecord[t] = argMin;
 
     // DUST step
     indices->reset_pruning();
@@ -405,7 +405,7 @@ void DUST_meanVar::compute(std::vector<double>& inData)
 std::forward_list<unsigned int> DUST_meanVar::backtrack_changepoints()
 {
   std::forward_list<unsigned int> changepoints {n};
-  for (int newChangepoint = changepointRecord[n]; newChangepoint != 0; newChangepoint = changepointRecord[newChangepoint])
+  for (int newChangepoint = chptRecord[n]; newChangepoint != 0; newChangepoint = chptRecord[newChangepoint])
   {
     changepoints.push_front(newChangepoint);
   }

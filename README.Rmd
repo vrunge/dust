@@ -57,8 +57,11 @@ Various tests and simulations are included in this **README file** and the **sim
 ### Installing the dust Rcpp package
 
 **REQUIREMENTS:**
+
 - R >= 3.4
+
 - devtools : `install.packages('devtools')`
+
 
 The package can then be installed from the github repo with the following command:
 
@@ -75,7 +78,7 @@ library(dust)
 
 ### A simple example
 
-We generate some 1D time series of length `400` from the Gaussian model and two changes in the sequence.
+We generate some 1D time series of length `200` from the Gaussian model and two changes in the sequence.
 
 ```{r, message=FALSE}
 library(dust)
@@ -90,7 +93,7 @@ dust.1D(data)
 ```
 
 
-Here the penalty value is by default set to `2 log(n)` for `n` data points and the model to `gauss`. That is, we did `dust.1D(data,  penalty = 2*log(length(data)), model = "gauss")`
+Here the penalty value is by default set to `2 log(n)` for `n` data points and the model to `gauss`. That is, we did `dust.1D(data,  penalty = 2*log(length(data)), model = "gauss")`.
  
 The `penalty` value and the type of `model` can be explicitly given. It can be one of the following: `"gauss"` (additional parameters `sdNoise` and `gamma`), `"exp"`, `"poisson"`, `"geom"`, `"bern"`, `"binom"` (additional parameter `nbTrials`), `"negbin"` (additional parameter `nbSuccess`) and `variance`. See next [Section](#Models).
  
@@ -108,7 +111,7 @@ The `penalty` value and the type of `model` can be explicitly given. It can be o
 Vector `nb` is a kind of complexity control vector, its values are directly related to the algorithm's time complexity. 
 
 
-And we can also use multivariate data with Poisson model.
+And we can also use multivariate data, for instance with Poisson model.
 
 ```{r, message=FALSE}
 library(dust)
@@ -138,17 +141,20 @@ dust.MD(data, model = "poisson", method = "randIndex_Eval0")
 We can create a `DUST_1D` object with the `new` operator as follows:
 
 ```{r}
-obj_dust <- new(DUST_1D, "gauss", "randIndex_Eval3", 5)
+obj_dust <- dust.object.1D( 
+                model = "gauss", 
+                method = "randIndex_Eval3", 
+                nbLoops = 5)
 obj_dust$get_info()
 ```
 
-The object is empty. We append data to this object using `append_c` and run the dynamic programming algorithm with `update_partition()`. The current partition is returned using a backtracking algorithm with `get_partition()`. 
+The object is empty. We append data to this object using `append` and run the dynamic programming algorithm with `update_partition()`. The current partition is returned using a backtracking algorithm with `get_partition()`. 
 
 
 ```{r}
 set.seed(1)
 data <- dataGenerator_1D(chpts = c(50,100), parameters = c(0,2), type = "gauss")
-obj_dust$append_c(data, 2*log(100))
+obj_dust$append_data(data, 2*log(100))
 
 obj_dust$update_partition()
 obj_dust$get_partition()
@@ -160,17 +166,14 @@ We can add data to the current time series and run again the algorithm:
 ```{r}
 set.seed(13)
 data <- rnorm(40, mean = 1)
-obj_dust$append_c(data, 2*log(100))
+obj_dust$append_data(data, 2*log(100))
 
 obj_dust$update_partition()
 obj_dust$get_partition()
 ```
 
 
-
-
 [(Back to Top)](#top)
-
 
 
 <center>
@@ -216,7 +219,6 @@ and some other examples with integer-valued cost (`"poisson"`,`"geom"`, `"binom"
 **dataGenerator_MD** concatenates `p` copies of `dataGenerator_1D` function.
 
 Additional information and examples are easily accessible in the help of these functions (e.g. run `?dataGenerator_MD`).
-
 
 
 ### Data Generators in 2D

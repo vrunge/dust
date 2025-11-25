@@ -27,9 +27,9 @@ List flat_OP_1D(const std::vector<double>& inData, Nullable<double> inPenalty = 
   double penalty;
   if (inPenalty.isNull()){penalty = 2 * std::log(n);}else{penalty = as<double>(inPenalty);}
 
-  std::vector<int> changepointRecord;
-  changepointRecord.reserve(n + 1);
-  changepointRecord.push_back(0);
+  std::vector<int> chptRecord;
+  chptRecord.reserve(n + 1);
+  chptRecord.push_back(0);
 
   std::vector<double> cumsum;
   cumsum.reserve(n + 1);
@@ -53,7 +53,7 @@ List flat_OP_1D(const std::vector<double>& inData, Nullable<double> inPenalty = 
 
   cumsum.push_back(inData[0]);
   costRecord.push_back(- .5 * pow(cumsum[t] - cumsum[s], 2) / (t - s));
-  changepointRecord.push_back(0);
+  chptRecord.push_back(0);
 
   // Main loop
   for (t = 2; t <= n; t++)
@@ -76,11 +76,11 @@ List flat_OP_1D(const std::vector<double>& inData, Nullable<double> inPenalty = 
 
     // OP update
     costRecord.push_back(minCost + penalty);
-    changepointRecord.push_back(argMin);
+    chptRecord.push_back(argMin);
   }
 
   std::forward_list<unsigned int> changepoints {n};
-  for (int newChangepoint = changepointRecord[n]; newChangepoint != 0; newChangepoint = changepointRecord[newChangepoint])
+  for (int newChangepoint = chptRecord[n]; newChangepoint != 0; newChangepoint = chptRecord[newChangepoint])
   {
     changepoints.push_front(newChangepoint);
   }

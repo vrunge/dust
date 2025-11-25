@@ -44,9 +44,9 @@ List flat_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty 
   double penalty;
   if (inPenalty.isNull()){penalty = 2 * std::log(n);}else{penalty = as<double>(inPenalty);}
 
-  std::vector<int> changepointRecord;
-  changepointRecord.reserve(n + 1);
-  changepointRecord.push_back(0);
+  std::vector<int> chptRecord;
+  chptRecord.reserve(n + 1);
+  chptRecord.push_back(0);
 
   std::vector<double> cumsum;
   cumsum.reserve(n + 1);
@@ -70,7 +70,7 @@ List flat_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty 
   unsigned int s = 0;
   cumsum.push_back(inData[0]);
   costRecord.push_back(Cost(t, s, cumsum));
-  changepointRecord.push_back(0);
+  chptRecord.push_back(0);
 
   // Main loop
   for (t = 2; t <= n; t++)
@@ -98,7 +98,7 @@ List flat_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty 
     // OP update
     minCost += penalty;
     costRecord.push_back(minCost);
-    changepointRecord.push_back(argMin);
+    chptRecord.push_back(argMin);
 
     // DUST step
     indices.reset_pruning();
@@ -131,7 +131,7 @@ List flat_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty 
   }
 
   std::forward_list<unsigned int> changepoints {n};
-  for (int newChangepoint = changepointRecord[n]; newChangepoint != 0; newChangepoint = changepointRecord[newChangepoint])
+  for (int newChangepoint = chptRecord[n]; newChangepoint != 0; newChangepoint = chptRecord[newChangepoint])
   {
     changepoints.push_front(newChangepoint);
   }
@@ -159,8 +159,8 @@ List flat2_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty
   double penalty;
   if (inPenalty.isNull()){penalty = 2 * std::log(n);}else{penalty = as<double>(inPenalty);}
 
-  std::vector<int> changepointRecord(n + 1);
-  changepointRecord[0] = 0;
+  std::vector<int> chptRecord(n + 1);
+  chptRecord[0] = 0;
 
   std::vector<double> cumsum(n + 1);
   cumsum[0] = 0;
@@ -182,7 +182,7 @@ List flat2_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty
   unsigned int s = 0;
   cumsum[1] = inData[0];
   costRecord[1] = Cost(t, s, cumsum);
-  changepointRecord[1] = 0;
+  chptRecord[1] = 0;
 
   // Main loop
   for (t = 2; t <= n; t++)
@@ -210,7 +210,7 @@ List flat2_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty
     // OP update
     minCost += penalty;
     costRecord[t] = minCost;
-    changepointRecord[t] = argMin;
+    chptRecord[t] = argMin;
 
     // DUST step
     indices.reset_pruning();
@@ -243,7 +243,7 @@ List flat2_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty
   }
 
   std::forward_list<unsigned int> changepoints {n};
-  for (int newChangepoint = changepointRecord[n]; newChangepoint != 0; newChangepoint = changepointRecord[newChangepoint])
+  for (int newChangepoint = chptRecord[n]; newChangepoint != 0; newChangepoint = chptRecord[newChangepoint])
   {
     changepoints.push_front(newChangepoint);
   }

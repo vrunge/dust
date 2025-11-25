@@ -16,7 +16,7 @@ test_that("object dust = dust GAUSS",
             {
               data <- dataGenerator_1D(chpts = c(500,1000), parameters = c(0,1), type = "gauss")
               data_all <- c(data_all, data)
-              obj_dust$append_c(data, penalty)
+              obj_dust$append_data(data, penalty)
               obj_dust$update_partition()
             }
             resObject <- obj_dust$get_partition()
@@ -39,7 +39,7 @@ test_that("object dust = dust VARIANCE many changes detected",
             {
               data <- dataGenerator_1D(chpts = c(500,1000), parameters = c(1,1.5), type = "variance")
               data_all <- c(data_all, data)
-              obj_dust$append_c(data, penalty)
+              obj_dust$append_data(data, penalty)
               obj_dust$update_partition()
             }
             resObject <- obj_dust$get_partition()
@@ -63,7 +63,7 @@ test_that("object dust = dust POISSON one by one",
             {
               data <- rpois(1, 100)
               data_all <- c(data_all, data)
-              obj_dust$append_c(data, penalty)
+              obj_dust$append_data(data, penalty)
               obj_dust$update_partition()
             }
             resObject <- obj_dust$get_partition()
