@@ -17,9 +17,9 @@ library(dust)
 epsilon <- 0.3
 data <- dataGenerator_1D(chpts = (1:10)*n/10, parameters = 1:10*epsilon)
 plot(data)
-dust.1D(data, method = "detIndex_Eval6", model = "gauss")
+dust.1D(data, method = "det_DUST", model = "gauss")
 data <- c(rep(0,1000),rep(1,1000))
-dust.1D(data, method = "detIndex_Eval6", model = "gauss")
+dust.1D(data, method = "det_DUST", model = "gauss")
 
 ###
 ### poisson
@@ -27,10 +27,10 @@ dust.1D(data, method = "detIndex_Eval6", model = "gauss")
 
 data <- dataGenerator_1D(chpts = n, parameters = 5, type = "poisson")
 plot(data)
-dust.1D(data, method = "detIndex_Eval6", model = "poisson")
+dust.1D(data, method = "det_DUST", model = "poisson")
 data <- dataGenerator_1D(chpts = n, parameters = 0.5, type = "poisson")
 plot(data)
-dust.1D(data, method = "detIndex_Eval6", model = "poisson")
+dust.1D(data, method = "det_DUST", model = "poisson")
 
 
 ###
@@ -39,10 +39,10 @@ dust.1D(data, method = "detIndex_Eval6", model = "poisson")
 
 data <- dataGenerator_1D(chpts = n, parameters = 50, type = "exp")
 plot(data)
-dust.1D(data, method = "detIndex_Eval6", model = "exp")
+dust.1D(data, method = "det_DUST", model = "exp")
 data <- dataGenerator_1D(chpts = n, parameters = 0.01, type = "exp")
 plot(data)
-dust.1D(data, method = "detIndex_Eval6", model = "exp")
+dust.1D(data, method = "det_DUST", model = "exp")
 
 
 ###
@@ -51,10 +51,10 @@ dust.1D(data, method = "detIndex_Eval6", model = "exp")
 
 data <- dataGenerator_1D(chpts = n, parameters = 0.01, type = "geom")
 plot(data)
-res <- dust.1D(data, method = "detIndex_Eval6", model = "geom")
+res <- dust.1D(data, method = "det_DUST", model = "geom")
 data <- dataGenerator_1D(chpts = n, parameters = 0.95, type = "geom")
 plot(data)
-res <- dust.1D(data, method = "detIndex_Eval6", model = "geom")
+res <- dust.1D(data, method = "det_DUST", model = "geom")
 
 
 
@@ -64,10 +64,10 @@ res <- dust.1D(data, method = "detIndex_Eval6", model = "geom")
 
 data <- dataGenerator_1D(chpts = n, parameters = 0.9, type = "bern")
 plot(data)
-res <- dust.1D(data, method = "detIndex_Eval6", model = "bern")
+res <- dust.1D(data, method = "det_DUST", model = "bern")
 data <- dataGenerator_1D(chpts = n, parameters = 0.05, type = "bern")
 plot(data)
-res <- dust.1D(data, method = "detIndex_Eval6", model = "bern")
+res <- dust.1D(data, method = "det_DUST", model = "bern")
 
 ###
 ### binom
@@ -76,11 +76,11 @@ res <- dust.1D(data, method = "detIndex_Eval6", model = "bern")
 data <- dataGenerator_1D(chpts = n, parameters = 0.95, type = "binom", nbTrials = 100)
 plot(data)
 data <- data_normalization_1D(data, type = "binom")
-res <- dust.1D(data, method = "detIndex_Eval6", model = "binom")
+res <- dust.1D(data, method = "det_DUST", model = "binom")
 
 data <- dataGenerator_1D(chpts = n, parameters = 0.05, type = "binom")
 data <- data_normalization_1D(data, type = "binom")
-res <- dust.1D(data, method = "detIndex_Eval6", model = "binom")
+res <- dust.1D(data, method = "det_DUST", model = "binom")
 
 
 
@@ -92,13 +92,13 @@ data <- dataGenerator_1D(chpts = n, parameters = 0.3, type = "negbin", nbSuccess
 plot(data)
 data <- data_normalization_1D(data, type = "negbin")
 plot(data)
-res <- dust.1D(data, method = "detIndex_Eval6", model = "negbin")
+res <- dust.1D(data, method = "det_DUST", model = "negbin")
 
 data <- dataGenerator_1D(chpts = n, parameters = 0.95, type = "negbin")
 plot(data)
 data <- data_normalization_1D(data, type = "negbin")
 plot(data)
-res <- dust.1D(data, method = "detIndex_Eval6", model = "negbin")
+res <- dust.1D(data, method = "det_DUST", model = "negbin")
 
 
 
@@ -109,9 +109,9 @@ res <- dust.1D(data, method = "detIndex_Eval6", model = "negbin")
 epsilon <- 0.3
 data <- dataGenerator_1D(chpts = (1:10)*n/10, parameters = 1:10*epsilon, type = "variance")
 plot(data)
-dust.1D(data, method = "detIndex_Eval6", model = "variance")
+dust.1D(data, method = "det_DUST", model = "variance")
 data <- c(rep(0,1000),rep(1,1000))
-dust.1D(data, method = "detIndex_Eval6", model = "variance")
+dust.1D(data, method = "det_DUST", model = "variance")
 
 #####
 ##### LOAD DATA

@@ -12,28 +12,6 @@
 #' @export
 NULL
 
-#' @title MyModule: Exposing DUST_meanVar to R
-#'
-#' @name DUST_meanVar
-#'
-#' @description
-#' This module exposes the \code{DUST_meanVar} C++ class to R, allowing you to create
-#' instances of \code{DUST_meanVar} and call its methods directly from R.
-#'
-#' @export
-NULL
-
-#' @title MyModule: Exposing DUST_reg to R
-#'
-#' @name DUST_reg
-#'
-#' @description
-#' This module exposes the \code{DUST_reg} C++ class to R, allowing you to create
-#' instances of \code{DUST_reg} and call its methods directly from R.
-#'
-#' @export
-NULL
-
 #' @title MyModule: Exposing DUST_MD to R
 #'
 #' @name DUST_MD
@@ -158,85 +136,5 @@ data_normalization_1D <- function(y, type = "gauss") {
 #' @export
 data_normalization_MD <- function(y, type = "gauss") {
     .Call(`_dust_data_normalization_MD`, y, type)
-}
-
-#' Cumulative Sum (cs1): No Copy of Input Vector
-#'
-#' Computes the cumulative sum of the input vector \code{x} without copying the data into a new container.
-#'
-#' @param x A numeric vector.
-#' @return A double value (currently always returns 0, but the cumulative sum is computed).
-#' @examples
-#' \dontrun{
-#'   x <- c(1, 2, 3, 4, 5)
-#'   cs1(x)  # Returns 0, but the cumulative sum is computed internally
-#' }
-#' @export
-cs1 <- function(x) {
-    .Call(`_dust_cs1`, x)
-}
-
-#' Cumulative Sum (cs2): Copy Input Vector to std::vector
-#'
-#' Computes the cumulative sum of the input vector \code{x} after copying it into a \code{std::vector}.
-#'
-#' @param x A numeric vector.
-#' @return A double value (currently always returns 0, but the cumulative sum is computed internally).
-#' @examples
-#' \dontrun{
-#'   x <- c(1, 2, 3, 4, 5)
-#'   cs2(x)  # Returns 0, but the cumulative sum is computed internally
-#' }
-#' @export
-cs2 <- function(x) {
-    .Call(`_dust_cs2`, x)
-}
-
-#' Cumulative Sum (cs3): No Copy of Input Vector to NumericVector
-#'
-#' Computes the cumulative sum of the input vector \code{x} without copying the data into a new container.
-#'
-#' @param x A numeric vector.
-#' @return A double value (currently always returns 0, but the cumulative sum is computed internally).
-#' @examples
-#' \dontrun{
-#'   x <- c(1, 2, 3, 4, 5)
-#'   cs3(x)  # Returns 0, but the cumulative sum is computed internally
-#' }
-#' @export
-cs3 <- function(x) {
-    .Call(`_dust_cs3`, x)
-}
-
-#' Cumulative Sum (cs4): Copy Input Vector to NumericVector
-#'
-#' Computes the cumulative sum of the input vector \code{x} after copying it into a \code{NumericVector}.
-#'
-#' @param x A numeric vector.
-#' @return A double value (currently always returns 0, but the cumulative sum is computed internally).
-#' @examples
-#' \dontrun{
-#'   x <- c(1, 2, 3, 4, 5)
-#'   cs4(x)  # Returns 0, but the cumulative sum is computed internally
-#' }
-#' @export
-cs4 <- function(x) {
-    .Call(`_dust_cs4`, x)
-}
-
-#' Cumulative Sum (cs5): Move Input Vector to NumericVector
-#'
-#' Computes the cumulative sum of the input vector \code{x} after moving it into a \code{NumericVector}.
-#'
-#' @param x A numeric vector.
-#' @return A double value (currently always returns 0, but the cumulative sum is computed internally).
-#' @examples
-#' \dontrun{
-#'   x <- c(1, 2, 3, 4, 5)
-#'   cs5(x)  # Returns 0, but the cumulative sum is computed internally
-#' }
-#' @export
-cs5 <- function(x) {
-    .Call(`_dust_cs5`, x)
 }
 

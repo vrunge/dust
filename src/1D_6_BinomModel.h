@@ -9,7 +9,7 @@ using namespace Rcpp;
 
 class Binom_1D : public DUST_1D {
 public:
-  Binom_1D(int dual_max_type, int constraints_type, Nullable<int> nbLoops = Nullable<int>());
+  Binom_1D(std::string dualmax_algo, std::string constr_index, Nullable<int> nbLoops = Nullable<int>());
 protected:
   double Cost(unsigned int t, unsigned int s) const override;
   double statistic(double& data) const override;

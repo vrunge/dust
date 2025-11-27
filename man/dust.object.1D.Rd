@@ -4,7 +4,7 @@
 \alias{dust.object.1D}
 \title{dust.object.1D}
 \usage{
-dust.object.1D(model = "gauss", method = "detIndex_Eval4", nbLoops = 10)
+dust.object.1D(model = "gauss", method = "det_DUST", nbLoops = 10)
 }
 \arguments{
 \item{model}{A character string specifying the model for the data. The default
@@ -24,32 +24,24 @@ is \code{"gauss"}. Available models are:
 }}
 
 \item{method}{A character string specifying the method used to handle indices
-  and pruning tests in the algorithm. The default is \code{"detIndex_Eval4"},
+  and pruning tests in the algorithm. The default is \code{"det_DUST"},
   which generally selects an efficient method for the chosen model. Other
   available methods are:
   \itemize{
-    \item \code{"randIndex_Eval0"} to \code{"randIndex_Eval6"}: Random
-      index-based methods with different dual maximization algorithms
-      (0 through 6).
-    \item \code{"detIndex_Eval0"} to \code{"detIndex_Eval6"}: Deterministic
-      index-based methods with different dual maximization algorithms
-      (0 through 6).
+    \item \code{"rand_PRUNING"}: Random index-based methods with different dual maximization algorithms
+    \item \code{"det_PRUNING"}: Deterministic index-based methods with different dual maximization algorithms
   }
 
-  The \code{"Eval"} suffix controls the algorithm used to maximize the dual
+  The \code{"PRUNING"} suffix controls the algorithm used to maximize the dual
   function. Currently implemented options are:
   \itemize{
-    \item \code{"Eval0"}: Random evaluation of the dual (uniform sampling).
-    \item \code{"Eval1"}: Closed-form maximizer (Gaussian model only);
-      otherwise no pruning is performed and the classical OP algorithm is
-      recovered.
-    \item \code{"Eval2"}: Golden-section search.
-    \item \code{"Eval3"}: Binary search, with an early stopping rule based on
-      the tangent line at the current point.
-    \item \code{"Eval4"}: Quasi-Newton method with an Armijo line-search
-      condition (often the most efficient choice in practice).
-    \item \code{"Eval5"}: PELT pruning rule.
-    \item \code{"Eval6"}: OP pruning rule.
+    \item \code{"DUSTr"}: Random evaluation of the dual (uniform sampling)
+    \item \code{"DUST"}: Closed-form maximizer of the decision function
+    \item \code{"DUSTgs"}: Golden-section search
+    \item \code{"DUSTbs"}: Binary search, with an early stopping rule based on the tangent line at the current point
+    \item \code{"DUSTqn"}: Quasi-Newton method with an Armijo line-search condition (the most efficient iterative method).
+    \item \code{"PELT"}: PELT pruning rule.
+    \item \code{"OP"}: OP pruning rule.
   }}
 
 \item{nbLoops}{Integer; number of iterations used in the algorithm for

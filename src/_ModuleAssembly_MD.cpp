@@ -21,9 +21,9 @@ DUST_MD *newModuleMD(const std::string& model,
                      const std::string& method,
                      Nullable<unsigned> nbLoops)
 {
-  ///////////////////  method separation                        ///////////////////
-  ///////////////////  part 1 = randIndex = 0, detIndex = 1     ///////////////////
-  ///////////////////  part 2 = Algo type, from Eval0 to Eval6  ///////////////////
+  ///////////////////  method separation                ///////////////////
+  ///////////////////  part 1 = rand = 0, det = 1       ///////////////////
+  ///////////////////  part 2 = Algo type for pruning   ///////////////////
   std::vector<std::string> method_INFO;
   size_t pos = method.find('_');  // Find the position of the underscore
 
@@ -38,36 +38,30 @@ DUST_MD *newModuleMD(const std::string& model,
     method_INFO.push_back(method);
   }
 
-  ///////////////////  DEFAULT CHOICE  /////////////////////////////////
   ///////////////////  DEFAULT CHOICE  = best choice ///////////////////
-  ///////////////////  DEFAULT CHOICE  /////////////////////////////////
-  /// FASTEST CHOICE
-  /// FASTEST CHOICE
-  int dual_max_type = 4; /// quasi newton
-  int constraints_type = 0; /// deterministic choice
-  if(model == "gauss"){dual_max_type = 1;}
-  /// FASTEST CHOICE
-  /// FASTEST CHOICE
+  std::string dualmax_algo = "DUSTqn"; /// quasi newton
+  std::string constr_index = "det"; /// deterministic choice
 
-  if (method_INFO[0] == "randIndex"){constraints_type = 0;} // rand index choice
-  else if (method_INFO[0] == "detIndex"){constraints_type = 1;} // det index choice
+  if (method_INFO[0] == "rand"){constr_index = "rand";} // rand index choice
+  else if (method_INFO[0] == "det"){constr_index = "det";} // det index choice
 
-  if (method_INFO[1] == "Eval0") {dual_max_type = 0;} //algo0
-  else if (method_INFO[1] == "Eval1"){dual_max_type = 1;} //algo1
-  else if (method_INFO[1] == "Eval2"){dual_max_type = 2;} //algo2
-  else if (method_INFO[1] == "Eval3"){dual_max_type = 3;} //algo3
-  else if (method_INFO[1] == "Eval4"){dual_max_type = 4;} //algo4
-  else if (method_INFO[1] == "Eval5"){dual_max_type = 5;} //algo5
-  else if (method_INFO[1] == "Eval6"){dual_max_type = 6;} //algo6
+  if (method_INFO[1] == "DUSTr") {dualmax_algo = "DUSTr";} //algo0
+  else if (method_INFO[1] == "DUST"){dualmax_algo = "DUST";} //algo1
+  else if (method_INFO[1] == "DUSTgs"){dualmax_algo = "DUSTgs";} //algo2
+  else if (method_INFO[1] == "DUSTbs"){dualmax_algo = "DUSTbs";} //algo3
+  else if (method_INFO[1] == "DUSTqn"){dualmax_algo = "DUSTqn";} //algo4
+  else if (method_INFO[1] == "PELT"){dualmax_algo = "PELT";} //algo5
+  else if (method_INFO[1] == "OP"){dualmax_algo = "OP";} //algo6
 
-  if (model == "gauss") return new Gauss_MD(dual_max_type, constraints_type, nbLoops);
-  else if (model == "poisson") return new Poisson_MD(dual_max_type, constraints_type, nbLoops);
-  else if (model == "exp") return new Exp_MD(dual_max_type, constraints_type, nbLoops);
-  else if (model == "geom") return new Geom_MD(dual_max_type, constraints_type, nbLoops);
-  else if (model == "bern") return new Bern_MD(dual_max_type, constraints_type, nbLoops);
-  else if (model == "binom") return new Binom_MD(dual_max_type, constraints_type, nbLoops);
-  else if (model == "negbin") return new Negbin_MD(dual_max_type, constraints_type, nbLoops);
-  else if (model == "variance") return new Variance_MD(dual_max_type, constraints_type, nbLoops);
+  if (model == "gauss") return new Gauss_MD(dualmax_algo, constr_index, nbLoops);
+  else if (model == "poisson") return new Poisson_MD(dualmax_algo, constr_index, nbLoops);
+  else if (model == "exp") return new Exp_MD(dualmax_algo, constr_index, nbLoops);
+  else if (model == "geom") return new Geom_MD(dualmax_algo, constr_index, nbLoops);
+  else if (model == "bern") return new Bern_MD(dualmax_algo, constr_index, nbLoops);
+  else if (model == "binom") return new Binom_MD(dualmax_algo, constr_index, nbLoops);
+  else if (model == "negbin") return new Negbin_MD(dualmax_algo, constr_index, nbLoops);
+  else if (model == "variance") return new Variance_MD(dualmax_algo, constr_index, nbLoops);
+  else return new Gauss_MD(dualmax_algo, constr_index, nbLoops); /// DEFAULT GAUSS
   return nullptr;
 }
 

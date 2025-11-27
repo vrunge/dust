@@ -4,7 +4,7 @@
 \alias{dust.object.MD}
 \title{dust.object.MD}
 \usage{
-dust.object.MD(model = "gauss", method = "detIndex_Eval4", nbLoops = 10)
+dust.object.MD(model = "gauss", method = "det_DUSTqn", nbLoops = 10)
 }
 \arguments{
 \item{model}{A character string specifying the model for the data. The default is \code{gauss}. Available models are:
@@ -21,10 +21,10 @@ dust.object.MD(model = "gauss", method = "detIndex_Eval4", nbLoops = 10)
 
 \item{method}{A character string specifying the method used to handle indices and pruning tests in the algorithm. The default is \code{detIndex_Eval4}, which automatically selects the quickest method for the chosen model. Other available methods are:
 \itemize{
-  \item \code{"randIndex_Eval0"} to \code{"randIndex_Eval5"}: Random index-based methods with different dual maximization algorithm (0 through 5).
-  \item \code{"detIndex_Eval0"} to \code{"detIndex_Eval5"}: Deterministic index-based methods  with different dual maximization algorithm (0 through 5).
+  \item \code{"rand_PRUNING"}: Random index-based methods with different dual maximization algorithm
+  \item \code{"det_PRUNING"}: Deterministic index-based methods  with different dual maximization algorithm
 }
-Here are the current available algorithms (\code{Eval4} is often the most efficient one)
+Here are the current available algorithms (\code{DUST} is often the most efficient one)
 \itemize{
   \item \code{"Eval0"}: random evaluation of the dual (with uniform distribution)
   \item \code{"Eval1"}:

@@ -11,19 +11,17 @@ using namespace Rcpp;
 class DUST_1D
 {
   public:
-    DUST_1D(int dual_max_type,
-            int constraints_type,
+    DUST_1D(std::string dualmax_algo,
+            std::string constr_index,
             Nullable<int> nbLoops = Nullable<int>());
 
     virtual ~DUST_1D();
 
-    void append_data(std::vector<double>& inData,
-                  Nullable<double> inPenalty = Nullable<double>());
+    void append_data(std::vector<double>& inData, Nullable<double> inPenalty = Nullable<double>());
     void update_partition();
     List get_partition();
     List get_info();
-    List dust(std::vector<double>& inData,
-              Nullable<double> inPenalty = Nullable<double>());
+    List dust(std::vector<double>& inData, Nullable<double> inPenalty = Nullable<double>());
 
     ////////////////////////////////
     ////////////////////////////////
@@ -72,20 +70,28 @@ class DUST_1D
     // --- // Test and Indices init // --- //
     void pruning_method();
 
-    bool isSpecialCase(double objectiveMean, double constraintMean);
-    bool specialCasePruning(double objectiveMean,
-                            double constraintMean,
-                            double linearTerm,
-                            double constantTerm,
+    bool isOnePointOrLinear(double a, double b);
+    bool specialCasePruning(double a,
+                            double b,
+                            double c,
+                            double d,
                             double mu_max);
 
-    // --- // MAX DUAL METHODS // --- //
-    // --- //   // --- //   // --- //   // --- //
-    // 0: random eval
-    // 1: exact eval
-    // 2: golden-section search
-    // 3: binary search. At each step, we evaluate the tangent line to the current point at its max to stop the search at early step (when possible)
-    // 4: Quasi-Newton
+    // DUAL = -(c - mu * d)  - (1- mu) * Dstar((a - mu * b) / (1 - mu));
+
+    // a = (cumsum[t] - cumsum[s]) / (t - s)
+    // b = (cumsum[s] - cumsum[r]) / (s - r)
+    // c = (Qt - Qs) / (t - s) =  (minCost - costRecord[s]) / (t - s);
+    // d = (Qs - Qr) / (s - r)  = (costRecord[s] - costRecord[r]) / (s - r);
+
+    ////////// MAX DUAL METHODS //////////
+    ////////// MAX DUAL METHODS //////////
+    ////////// MAX DUAL METHODS //////////
+    // 0: DUSTr. random eval
+    // 1: DUST. exact eval
+    // 2: DUSTgs. golden-section search
+    // 3: DUSTbs. binary search. At each step, we evaluate the tangent line to the current point at its max to stop the search at early step (when possible)
+    // 4: DUSTqn.  Quasi-Newton
     // 5: PELT
     // 6: OP
     bool dualMaxAlgo0(double minCost, unsigned int t, unsigned int s, unsigned int r);
@@ -100,19 +106,16 @@ class DUST_1D
                                                   unsigned int s,
                                                   unsigned int r);
 
-    // --- // Result processing // --- //
-    std::forward_list<unsigned int> backtrack_changepoints();
-
-    // --- // Private fields // --- //
-    int dual_max_type;
-    int constraints_type;
-
-    Indices_1D* indices;
-    std::vector<int> nb_indices;
-
-    unsigned int n; // number of observations
     double penalty;
 
+    std::string dualmax_algo;
+    std::string constr_index;
+    Indices_1D* indices;
+    std::vector<int> nb_indices;
+    unsigned int n; // number of observations
+
+    ////////// Result processing //////////
+    std::forward_list<unsigned int> backtrack_changepoints();
     std::vector<int> chptRecord;
 };
 

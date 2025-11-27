@@ -5,8 +5,8 @@
 
 using namespace Rcpp;
 
-Geom_1D::Geom_1D(int dual_max_type, int constraints_type, Nullable<int> nbLoops)
-  : DUST_1D(dual_max_type, constraints_type, nbLoops) {}
+Geom_1D::Geom_1D(std::string dualmax_algo, std::string constr_index, Nullable<int> nbLoops)
+  : DUST_1D(dualmax_algo, constr_index, nbLoops) {}
 
 double Geom_1D::Cost(unsigned int t, unsigned int s) const
 {
@@ -28,15 +28,15 @@ double Geom_1D::statistic(double& data) const
 
 double Geom_1D::dualEval(double point, double minCost, unsigned int t, unsigned int s, unsigned int r) const
 {
-  double objectiveMean = (cumsum[t] - cumsum[s]) / (t - s); // m_it
-  double constraintMean = (cumsum[s] - cumsum[r]) / (s - r); // m_ji
+  double a = (cumsum[t] - cumsum[s]) / (t - s); // Sbar_st
+  double b = (cumsum[s] - cumsum[r]) / (s - r); // Sbar_rs
 
   ///
   /// point in the right interval:
-  if(constraintMean != 1){point = point * std::min(1.0, (objectiveMean - 1)/(constraintMean - 1));}
+  if(b != 1){point = point * std::min(1.0, (a - 1)/(b - 1));}
   ///
   ///
-  double R = (objectiveMean - point * constraintMean) / (1 - point);
+  double R = (a - point * b) / (1 - point);
 
   return (costRecord[s] - minCost) / (t - s)
   + point * (costRecord[s] - costRecord[r]) / (s - r)

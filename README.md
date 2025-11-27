@@ -267,7 +267,7 @@ We can create a `DUST_1D` object with the `new` operator as follows:
     ## $pruning_algo
     ## [1] 3
     ## 
-    ## $pruning_constraints_type
+    ## $pruning_constr_index
     ## [1] 0
     ## 
     ## $pruning_nb_loops

@@ -7,7 +7,7 @@ using namespace Rcpp;
 
 class Binom_MD : public DUST_MD {
 public:
-  Binom_MD(int dual_max_type, int constraints_type, Nullable<unsigned> nbLoops = Nullable<unsigned>());
+  Binom_MD(std::string dualmax_algo, std::string constr_index, Nullable<unsigned> nbLoops = Nullable<unsigned>());
 protected:
   double Cost(const unsigned int& t, const unsigned int& s) const override;
   double statistic(const double& value) const override;

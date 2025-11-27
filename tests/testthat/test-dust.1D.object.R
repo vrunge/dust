@@ -9,7 +9,7 @@ library(dust)
 
 test_that("object dust = dust GAUSS",
           {
-            obj_dust <- new(DUST_1D, "gauss", "randIndex_Eval3", 5)
+            obj_dust <- new(DUST_1D, "gauss", "det_DUST", 5)
             penalty <- 2*log(5000)
             data_all <- NULL
             for(i in 1:5)
@@ -32,7 +32,7 @@ test_that("object dust = dust GAUSS",
 
 test_that("object dust = dust VARIANCE many changes detected",
           {
-            obj_dust <- dust.object.1D("variance", "randIndex_Eval4", 5)
+            obj_dust <- dust.object.1D("variance", "rand_DUSTgs", 5)
             penalty <- 2*log(5)
             data_all <- NULL
             for(i in 1:5)
@@ -56,7 +56,7 @@ test_that("object dust = dust VARIANCE many changes detected",
 
 test_that("object dust = dust POISSON one by one",
           {
-            obj_dust <- dust.object.1D("poisson", "randIndex_Eval4", 9)
+            obj_dust <- dust.object.1D("poisson", "rand_DUSTqn", 9)
             penalty <- 2
             data_all <- NULL
             for(i in 1:500)

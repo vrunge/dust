@@ -8,11 +8,11 @@ using namespace Rcpp;
 ////////////////////////////////////////////////////////////////////////////////
 
 // --- // Constructor // --- //
-DUST_MD::DUST_MD(int dual_max_type, int constraints_type, Nullable<unsigned> nbLoops)
+DUST_MD::DUST_MD(std::string dualmax_algo, std::string constr_index, Nullable<unsigned> nbLoops)
   : n(0),
     dim(0),
-    dual_max_type(dual_max_type),
-    constraints_type(constraints_type),
+    dualmax_algo(dualmax_algo),
+    constr_index(constr_index),
     indices(nullptr)
 {
   /// SET default nb_Loops if no values
@@ -36,19 +36,20 @@ void DUST_MD::pruning_method()
   /// /// ///
   /// /// /// index METHOD
   /// /// ///
-  if(constraints_type == 0){indices = new RandomIndices_MD(nb_l, nb_r);}
+  if(constr_index == "rand"){indices = new RandomIndices_MD(nb_l, nb_r);}
   else{indices = new DeterministicIndices_MD(nb_l, nb_r);}
 
   /// /// ///
-  /// /// /// dual_max_type METHOD
+  /// /// /// dualmax_algo METHOD
   /// /// ///
-  if(dual_max_type == 0){current_test = &DUST_MD::dualMaxAlgo0;}
-  if(dual_max_type == 1){current_test = &DUST_MD::dualMaxAlgo1;}
-  if(dual_max_type == 2){current_test = &DUST_MD::dualMaxAlgo2;}
-  if(dual_max_type == 3){current_test = &DUST_MD::dualMaxAlgo3;}
-  if(dual_max_type == 4){current_test = nb_r > 0 ? &DUST_MD::dualMaxAlgo42 : &DUST_MD::dualMaxAlgo4;}
-  if(dual_max_type == 5){current_test = &DUST_MD::dualMaxAlgo5;}
-  if(dual_max_type == 6){current_test = &DUST_MD::dualMaxAlgo6;}
+  if(dualmax_algo == "DUSTr"){current_test = &DUST_MD::dualMaxAlgo0;}
+  if(dualmax_algo == "DUST"){current_test = &DUST_MD::dualMaxAlgo1;}
+  if(dualmax_algo == "DUSTgs"){current_test = &DUST_MD::dualMaxAlgo2;}
+  if(dualmax_algo == "DUSTbs"){current_test = &DUST_MD::dualMaxAlgo3;}
+  if(dualmax_algo == "DUSTqn"){current_test = nb_r > 0 ? &DUST_MD::dualMaxAlgo42 : &DUST_MD::dualMaxAlgo4;}
+  if(dualmax_algo == "PELT"){current_test = &DUST_MD::dualMaxAlgo5;}
+  if(dualmax_algo == "OP"){current_test = &DUST_MD::dualMaxAlgo6;}
+
   /// /// /// INIT RANDOM GENERATOR
   /// /// ///
   engine.seed(std::random_device{}());
@@ -142,7 +143,6 @@ void DUST_MD::append_data(const arma::dmat& inData,
 
     Identity       = arma::dmat(nb_max, nb_max, arma::fill::eye);
     inverseHessian = arma::dmat(nb_max, nb_max);
-
   }
   else{indices -> set_init_size(n);}
 
@@ -280,8 +280,8 @@ List DUST_MD::get_info()
     _["data_dimensions"] = std::vector<unsigned> { dim, n },
     _["current_penalty"] = penalty,
     _["model"] = get_model(),
-    _["pruning_algo"] = dual_max_type,
-    _["pruning_constraints_type"] = constraints_type,
+    _["pruning_algo"] = dualmax_algo,
+    _["pruning_constr_index"] = constr_index,
     _["pruning_nb_constraints"] = std::vector<unsigned> { nb_l, nb_r },
     _["pruning_nb_loops"] = nb_Loops
   );

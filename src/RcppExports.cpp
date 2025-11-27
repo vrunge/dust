@@ -71,65 +71,8 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// cs1
-double cs1(NumericVector& x);
-RcppExport SEXP _dust_cs1(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector& >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(cs1(x));
-    return rcpp_result_gen;
-END_RCPP
-}
-// cs2
-double cs2(NumericVector& x);
-RcppExport SEXP _dust_cs2(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector& >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(cs2(x));
-    return rcpp_result_gen;
-END_RCPP
-}
-// cs3
-double cs3(NumericVector& x);
-RcppExport SEXP _dust_cs3(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector& >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(cs3(x));
-    return rcpp_result_gen;
-END_RCPP
-}
-// cs4
-double cs4(NumericVector& x);
-RcppExport SEXP _dust_cs4(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector& >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(cs4(x));
-    return rcpp_result_gen;
-END_RCPP
-}
-// cs5
-double cs5(NumericVector& x);
-RcppExport SEXP _dust_cs5(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector& >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(cs5(x));
-    return rcpp_result_gen;
-END_RCPP
-}
 
 RcppExport SEXP _rcpp_module_boot_DUSTMODULE1D();
-RcppExport SEXP _rcpp_module_boot_DUSTMODULEMeanVar();
-RcppExport SEXP _rcpp_module_boot_DUSTMODULEreg();
 RcppExport SEXP _rcpp_module_boot_DUSTMODULEMD();
 RcppExport SEXP _rcpp_module_boot_FLATOP1D();
 RcppExport SEXP _rcpp_module_boot_FLATOPMD();
@@ -142,14 +85,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_dust_sdDiff", (DL_FUNC) &_dust_sdDiff, 2},
     {"_dust_data_normalization_1D", (DL_FUNC) &_dust_data_normalization_1D, 2},
     {"_dust_data_normalization_MD", (DL_FUNC) &_dust_data_normalization_MD, 2},
-    {"_dust_cs1", (DL_FUNC) &_dust_cs1, 1},
-    {"_dust_cs2", (DL_FUNC) &_dust_cs2, 1},
-    {"_dust_cs3", (DL_FUNC) &_dust_cs3, 1},
-    {"_dust_cs4", (DL_FUNC) &_dust_cs4, 1},
-    {"_dust_cs5", (DL_FUNC) &_dust_cs5, 1},
     {"_rcpp_module_boot_DUSTMODULE1D", (DL_FUNC) &_rcpp_module_boot_DUSTMODULE1D, 0},
-    {"_rcpp_module_boot_DUSTMODULEMeanVar", (DL_FUNC) &_rcpp_module_boot_DUSTMODULEMeanVar, 0},
-    {"_rcpp_module_boot_DUSTMODULEreg", (DL_FUNC) &_rcpp_module_boot_DUSTMODULEreg, 0},
     {"_rcpp_module_boot_DUSTMODULEMD", (DL_FUNC) &_rcpp_module_boot_DUSTMODULEMD, 0},
     {"_rcpp_module_boot_FLATOP1D", (DL_FUNC) &_rcpp_module_boot_FLATOP1D, 0},
     {"_rcpp_module_boot_FLATOPMD", (DL_FUNC) &_rcpp_module_boot_FLATOPMD, 0},

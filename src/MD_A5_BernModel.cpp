@@ -4,8 +4,8 @@
 
 using namespace Rcpp;
 
-Bern_MD::Bern_MD(int dual_max_type, int constraints_type, Nullable<unsigned> nbLoops)
-  : DUST_MD(dual_max_type, constraints_type, nbLoops) {}
+Bern_MD::Bern_MD(std::string dualmax_algo, std::string constr_index, Nullable<unsigned> nbLoops)
+  : DUST_MD(dualmax_algo, constr_index, nbLoops) {}
 
 double Bern_MD::Cost(const unsigned int& t, const unsigned int& s) const
 {

@@ -29,7 +29,7 @@ test_that("zero penalty => each index is a change",
           {
             data <- dataGenerator_1D(type = "variance")
             data <- data_normalization_1D(data, type = "variance")
-            res <- dust.1D(data, penalty = 0, model = "variance", method = "detIndex_Eval1")
+            res <- dust.1D(data, penalty = 0, model = "variance", method = "det_DUST")
             expect_equal(all(res$changepoints == 1:100), TRUE)
           })
 

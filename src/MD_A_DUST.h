@@ -16,8 +16,8 @@ using namespace Rcpp;
 class DUST_MD
 {
 public:
-  DUST_MD(int dual_max_type,
-          int constraints_type,
+  DUST_MD(std::string dualmax_algo,
+          std::string constr_index,
           Nullable<unsigned> nbLoops = Nullable<unsigned>());
 
   virtual ~DUST_MD();
@@ -138,8 +138,8 @@ private:
   std::forward_list<unsigned int> backtrack_changepoints();
 
   // --- // Private fields // --- //
-  int dual_max_type;
-  int constraints_type;
+  std::string dualmax_algo;
+  std::string constr_index;
 
   Indices_MD* indices;
   std::vector<int> nb_indices;

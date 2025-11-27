@@ -10,7 +10,7 @@ dust.MD(
   constraints_l = nrow(data),
   constraints_r = 0,
   model = "gauss",
-  method = "detIndex_Eval4",
+  method = "det_DUSTqn",
   nbLoops = 10
 )
 }
@@ -27,10 +27,10 @@ dust.MD(
 
 \item{method}{A character string specifying the method used to handle indices and pruning tests in the algorithm. The default is \code{"detIndex_Eval4"}, which is the fastest method for the chosen model. Other available methods are:
 \itemize{
-  \item \code{"randIndex_Eval0"} to \code{"randIndex_Eval6"}: Random index-based methods with different dual maximization algorithm (0 through 6).
-  \item \code{"detIndex_Eval0"} to \code{"detIndex_Eval6"}: Deterministic index-based methods  with different dual maximization algorithm (0 through 6).
+  \item \code{"rand_PRUNING"}: Random index-based methods with different dual maximization algorithm
+  \item \code{"det_PRUNING"}: Deterministic index-based methods  with different dual maximization algorithm
 }
-Here are the current available algorithms (\code{Eval4} is often the most efficient one)
+Here are the current available algorithms (\code{DUSTqn} is often the most efficient one)
 \itemize{
   \item \code{"Eval0"}: random evaluation of the dual (with uniform distribution)
   \item \code{"Eval1"}:
@@ -61,5 +61,5 @@ data <- matrix(rnorm(100 * 2, mu), nrow = 2, ncol = 100, byrow = FALSE)
 # dust.MD(data)
 # param <- data.frame(c(1,1,1), c(2,1,1),c(1,0.1,2))
 # data <- dataGenerator_MD(chpts = c(40,60,100), parameters = param, type = "exp")
-# dust.MD(data, penalty =  6*log(100), model = "exp", method = "detIndex_Eval4")
+# dust.MD(data, penalty =  6*log(100), model = "exp", method = "det_DUSTqn")
 }

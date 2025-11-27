@@ -9,19 +9,19 @@
 #' @param method A character string specifying the index-handling and pruning strategies. Default is \code{"detIndex_Eval4"}, which selects an efficient deterministic method for the chosen model. Other options include:
 #'
 #' \itemize{
-#'   \item \code{"randIndex_Eval0"} to \code{"randIndex_Eval6"}: Random index selection methods that randomly choose an index smaller than the tested index \code{s}, using different dual maximization algorithms (0 to 6).
-#'   \item \code{"detIndex_Eval0"} to \code{"detIndex_Eval6"}: Deterministic index selection methods that pick the largest index smaller than tested index \code{s}, also using different dual maximization algorithms (0 to 6).
+#'   \item \code{"rand_PRUNING"}: Random index selection methods that randomly choose an index smaller than the tested index \code{s}, using different dual maximization algorithms
+#'   \item \code{"det_PRUNING"}: Deterministic index selection methods that pick the largest index smaller than tested index \code{s}, also using different dual maximization algorithms
 #' }
 #'
-#' Dual maximization algorithms (\code{EvalX}) used in the method names are defined as follows. \code{Eval4} is generally the most efficient in practice. At each iteration, the smallest non-pruned index is tested using the PELT pruning rule:
+#' Dual maximization algorithms (\code{PRUNING}) used in the method names are defined as follows. \code{DUST} is generally the most efficient in practice. At each iteration, the smallest non-pruned index is tested using the PELT pruning rule:
 #' \itemize{
-#'   \item \code{"Eval0"}: Random evaluation using a uniform distribution.
-#'   \item \code{"Eval1"}: Closed-form maximum (for Gaussian model only). Otherwise, no pruning is applied, leading to the slower OP algorithm.
-#'   \item \code{"Eval2"}: Golden-section search.
-#'   \item \code{"Eval3"}: Binary search with early stopping based on tangent evaluation.
-#'   \item \code{"Eval4"}: Quasi-Newton method with Armijo condition.
-#'   \item \code{"Eval5"}: PELT pruning rule.
-#'   \item \code{"Eval6"}: Debug mode for testing and development.
+#'   \item \code{"DUSTr"}: Random evaluation using a uniform distribution.
+#'   \item \code{"DUST"}: Closed-form maximum (for Gaussian model only). Otherwise, no pruning is applied, leading to the slower OP algorithm.
+#'   \item \code{"DUSTgs"}: Golden-section search.
+#'   \item \code{"DUSTbs"}: Binary search with early stopping based on tangent evaluation.
+#'   \item \code{"DUSTqn"}: Quasi-Newton method with Armijo condition.
+#'   \item \code{"PELT"}: PELT pruning rule.
+#'   \item \code{"OP"}: no pruning
 #' }
 #' @param nbLoops An integer. The number of loops to run in the max dual optimization algorithm. Default is 10.
 #'
@@ -60,7 +60,7 @@ dust.1D <- function(
     data = data
     , penalty = 2*log(length(data))
     , model = "gauss"
-    , method = "detIndex_Eval4"
+    , method = "det_DUST"
     , nbLoops = 10
 )
 {
