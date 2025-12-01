@@ -8,7 +8,16 @@ using namespace Rcpp;
 Binom_1D::Binom_1D(std::string dualmax_algo, std::string constr_index, Nullable<int> nbLoops)
   : DUST_1D(dualmax_algo, constr_index, nbLoops) {}
 
-double Binom_1D::Cost(unsigned int t, unsigned int s) const
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+double Binom_1D::costEval(double point, unsigned int t, unsigned int s) const
+{
+  return (t-s)*std::log(std::exp(point) + 1) - point*(cumsum[t] - cumsum[s]);
+}
+
+double Binom_1D::costMin(unsigned int t, unsigned int s) const
 {
   double res = 0;
   double m = (cumsum[t] - cumsum[s]) / (t - s);
@@ -25,23 +34,18 @@ double Binom_1D::statistic(double& data) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double Binom_1D::dualEval(double point, double minCost, unsigned int t, unsigned int s, unsigned int r) const
+double Binom_1D::dualEval(double point, double minCost_t, unsigned int t, unsigned int s, unsigned int r) const
 {
   double a = (cumsum[t] - cumsum[s]) / (t - s); // Sbar_st
   double b = (cumsum[s] - cumsum[r]) / (s - r); // Sbar_rs
 
   ///
-  /// point in the right interval:
-  if(b != 0 && b != 1){point = point * std::min(a/b, (1 - a)/(1 - b));}
-  else{
-    if(b == 0){point = point * (1 - a);}else{point = point * a;}
-  }
+  point = point * muMax(a,b); /// Point rescaling
   ///
-  ///
+
   double R = (a - point * b) / (1 - point);
 
-  return (costRecord[s] - minCost) / (t - s)
-  + point * (costRecord[s] - costRecord[r]) / (s - r)
+  return (costRecord[s] - minCost_t) / (t - s) + point * (costRecord[s] - costRecord[r]) / (s - r)
   - (1 - point) * (R * std::log(R) + (1 - R) * std::log(1 - R));
 }
 
@@ -50,7 +54,7 @@ double Binom_1D::dualEval(double point, double minCost, unsigned int t, unsigned
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-double Binom_1D::dualMax(double minCost, unsigned int t, unsigned int s, unsigned int r) const
+double Binom_1D::dualMax(double minCost_t, unsigned int t, unsigned int s, unsigned int r) const
 {
   return (-std::numeric_limits<double>::infinity());
 }
@@ -71,12 +75,17 @@ double Binom_1D::muMax(double a, double b) const
   return res;
 }
 
-bool Binom_1D::isBoundary(double a) const
+double Binom_1D::xMax(double a, double b) const
 {
-  if(a == 0 || a == 1){return true;}
-  return false;
+//  if(std::abs(a-b) < 1e-10){return ;}
+  if (a < b) return -a/(a-b);
+  else  return (1-a)/(a-b);
 }
 
+
+bool Binom_1D::isLeftBoundary(double a) const {return a == 0;}
+double Binom_1D::Dstar_leftboundary() const {return 0;}
+double Binom_1D::Dstar_superLinearLimit() const {return 0;}
 
 double Binom_1D::Dstar(double x) const
 {

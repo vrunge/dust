@@ -43,7 +43,7 @@ List flat_OP_1D(const std::vector<double>& inData, Nullable<double> inPenalty = 
   double lastCost; // temporarily stores the cost for the model with last changepoint at some i
   // then keeps the cost of the model with last changepoint at the first possible index in the t-th OP step ...
   // ... storing it allows pruning of the first available index
-  double minCost;
+  double minCost_t;
   unsigned int argMin = 0; // stores the optimal last changepoint for the current OP step
 
   // First OP step (t = 1)
@@ -62,20 +62,20 @@ List flat_OP_1D(const std::vector<double>& inData, Nullable<double> inPenalty = 
     cumsum.push_back(cumsum.back() + inData[t - 1]);
 
     // OP step
-    minCost = std::numeric_limits<double>::infinity();
+    minCost_t = std::numeric_limits<double>::infinity();
     for (unsigned int s = 0; s < t; s++)
     {
       lastCost = costRecord[s] - .5 * pow(cumsum[t] - cumsum[s], 2) / (t - s);
-      if (lastCost < minCost)
+      if (lastCost < minCost_t)
       {
-        minCost = lastCost;
+        minCost_t = lastCost;
         argMin = s;
       }
     }
     // END (OP step)
 
     // OP update
-    costRecord.push_back(minCost + penalty);
+    costRecord.push_back(minCost_t + penalty);
     chptRecord.push_back(argMin);
   }
 

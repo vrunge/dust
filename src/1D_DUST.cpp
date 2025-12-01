@@ -55,6 +55,7 @@ void DUST_1D::pruning_method()
   if(dualmax_algo == "DUSTqn"){current_test = &DUST_1D::dualMaxAlgo4;}
   if(dualmax_algo == "PELT"){current_test = &DUST_1D::dualMaxAlgo5;}
   if(dualmax_algo == "OP"){current_test = &DUST_1D::dualMaxAlgo6;}
+  if(dualmax_algo == "DUSTib"){current_test = &DUST_1D::dualMaxAlgo7;}
 
   /// /// ///
   /// /// /// INIT RANDOM GENERATOR
@@ -114,15 +115,15 @@ void DUST_1D::update_partition()
     ///////////// OP step /////////////
     ///////////// OP step /////////////
     indices->reset();
-    double minCost = std::numeric_limits<double>::infinity();
+    double minCost_t = std::numeric_limits<double>::infinity();
     unsigned int argMin = 0;
     do
     {
       unsigned int s = indices->get_current();
-      lastCost = costRecord[s] + Cost(t, s); // without the penalty beta
-      if (lastCost < minCost)
+      lastCost = costRecord[s] + costMin(t, s); // without the penalty beta
+      if (lastCost < minCost_t)
       {
-        minCost = lastCost;
+        minCost_t = lastCost;
         argMin = s;
       }
       indices->next();
@@ -131,10 +132,10 @@ void DUST_1D::update_partition()
     //////// END (OP step) ////////
     //////// END (OP step) ////////
 
-    // OP update minCost and save values
-    // minCost = Q_t. Here + beta to get Q_t = Q_i + C(y_it) + beta
-    minCost += penalty;
-    costRecord.push_back(minCost);
+    // OP update minCost_t and save values
+    // minCost_t = Q_t. Here + beta to get Q_t = Q_i + C(y_it) + beta
+    minCost_t += penalty;
+    costRecord.push_back(minCost_t);
     chptRecord.push_back(argMin);
 
     ///////////// DUST step /////////////
@@ -153,7 +154,7 @@ void DUST_1D::update_partition()
     while (indices->is_not_the_last_pruning()) // is true, while we are not on the smallest index
     {
       // valid if we prune the index get_current using index in get_constraint
-      if ((this->*current_test)(minCost, t, indices->get_current(), indices->get_constraint()))
+      if ((this->*current_test)(minCost_t, t, indices->get_current(), indices->get_constraint()))
       {
         // remove the pruned index and its pointer
         // removing the elements increments the cursors i and pointersCurrent, while before stands still
@@ -171,7 +172,7 @@ void DUST_1D::update_partition()
 
     // Prune the last index (analogous with a "mu* = 0" duality simple test)
     // this is the smallest available index = PELT RULE
-    if (lastCost > minCost)
+    if (lastCost > minCost_t)
     {
       indices->prune_last();
       nbt--;
@@ -255,17 +256,17 @@ List DUST_1D::get_info()
 
 bool DUST_1D::isOnePointOrLinear(double a, double b)
 {
-  if(isBoundary(a) == true){return true;}
+  if(isLeftBoundary(a) == true){return true;}
   if(a == b){return true;}
   return false;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-/// if special_cases == true => return true;
+
+/// cases Bern/binom with right bound, not really considered here
 
 bool DUST_1D::specialCasePruning(double a,
                                  double b,
@@ -273,27 +274,21 @@ bool DUST_1D::specialCasePruning(double a,
                                  double d,
                                  double mu_max)
 {
+  /// Dual in one point
   ///
-  /// case "objectiveMean = a = left bound"
+  // DUAL = -(c)  - (1) * Dstar(a);
   ///
-  if(isBoundary(a) == true)
+  if(isLeftBoundary(a) == true)
   {
-    if (-c > 0) {return true;} /// test in mu = left bound
-    if(isBoundary(b) == false){return false;} /// case mu_max = 0
-    else /// case linear
-    {
-      if(-(c - mu_max * d)  > 0){return true;} /// right boun.  case bern / binom : mu_max != 1
-      return false;
-    }
+    if (-c  - Dstar_leftboundary() > 0) {return true;} /// test in mu = 0
   }
-
   ///
-  /// case "a = b", here not on the boundary
+  /// case "a = b", here "a" not on the left boundary
   ///
   if(a == b)
   {
-    if ( -c - Dstar(a) > 0){return true;} /// left bound
-    if (-(c - mu_max * d) - Dstar(a) > 0){return true;} /// right bound
+    if ( -c - Dstar(a) > 0){return true;} /// mu = 0
+    if (-(c - mu_max * d)  - Dstar(a) > 0){return true;} /// mu = mu_max
   }
   return false;
 }
@@ -309,18 +304,17 @@ bool DUST_1D::specialCasePruning(double a,
 // a = (cumsum[t] - cumsum[s]) / (t - s)
 // b = (cumsum[s] - cumsum[r]) / (s - r)
 
-// c = (Qt - Qs) / (t - s) =  (minCost - costRecord[s]) / (t - s);
+// c = (Qt - Qs) / (t - s) =  (minCost_t - costRecord[s]) / (t - s);
 // d = (Qs - Qr) / (s - r)  = (costRecord[s] - costRecord[r]) / (s - r);
 
 /// RANDOM EVAL
 
-
-bool DUST_1D::dualMaxAlgo0(double minCost,
+bool DUST_1D::dualMaxAlgo0(double minCost_t,
                            unsigned int t,
                            unsigned int s,
                            unsigned int r)
 {
-  return (dualEval(dist(engine), minCost, t, s, r) > 0);
+  return (dualEval(dist(engine), minCost_t, t, s, r) > 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -331,19 +325,19 @@ bool DUST_1D::dualMaxAlgo0(double minCost,
 
 /// EXACT EVAL
 
-bool DUST_1D::dualMaxAlgo1(double minCost, unsigned int t, unsigned int s, unsigned int r)
+bool DUST_1D::dualMaxAlgo1(double minCost_t, unsigned int t, unsigned int s, unsigned int r)
 {
   double a = (cumsum[t] - cumsum[s]) / (t - s);
   double b = (cumsum[s] - cumsum[r]) / (s - r);
-  double c = (minCost - costRecord[s]) / (t - s);
+  double c = (minCost_t - costRecord[s]) / (t - s);
   double d = (costRecord[s] - costRecord[r]) / (s - r);
   double mu_max = muMax(a, b);
 
   ///
   /// case dual domain = one point OR dual = linear function
-  ///
   if(isOnePointOrLinear(a,b) == true){return specialCasePruning(a,b,c,d,mu_max);}
-  return (dualMax(minCost, t, s, r) > 0);
+
+  return (dualMax(minCost_t, t, s, r) > 0);
 }
 
 
@@ -354,22 +348,28 @@ bool DUST_1D::dualMaxAlgo1(double minCost, unsigned int t, unsigned int s, unsig
 
 /// Golden-section search
 
-bool DUST_1D::dualMaxAlgo2(double minCost,
+bool DUST_1D::dualMaxAlgo2(double minCost_t,
                            unsigned int t,
                            unsigned int s,
                            unsigned int r)
 {
   double a = (cumsum[t] - cumsum[s]) / (t - s);
   double b = (cumsum[s] - cumsum[r]) / (s - r);
+  double c = (minCost_t - costRecord[s]) / (t - s);
+  double d = (costRecord[s] - costRecord[r]) / (s - r);
+  double mu_max = muMax(a, b);
+
+  ///
+  /// case dual domain = one point OR dual = linear function
+  if(isOnePointOrLinear(a,b) == true){return specialCasePruning(a,b,c,d,mu_max);}
+
+
 
   double lt = 0.0;
-  double rt = muMax(a, b);
+  double rt = mu_max;
 
   double cs1 = (1 - 1/phi) * rt;
   double cs2 = rt/phi;
-
-  double d = (costRecord[s] - costRecord[r]) / (s - r);
-  double c = (minCost - costRecord[s]) / (t - s);
 
   double fl =  - (c - cs1*d) - (1.0 - cs1) * Dstar((a - cs1*b)/(1 - cs1));
   double fr =  - (c - cs2*d) - (1.0 - cs2) * Dstar((a - cs2*b)/(1 - cs2));
@@ -409,17 +409,17 @@ bool DUST_1D::dualMaxAlgo2(double minCost,
 // binary search. At each step, we evaluate the tangent line to the current point
 // at its max to stop the search at early step (when possible)
 
-bool DUST_1D::dualMaxAlgo3(double minCost,
+bool DUST_1D::dualMaxAlgo3(double minCost_t,
                            unsigned int t,
                            unsigned int s,
                            unsigned int r)
 {
   double a = (cumsum[t] - cumsum[s]) / (t - s);
   double b = (cumsum[s] - cumsum[r]) / (s - r);
-  double c = (minCost - costRecord[s]) / (t - s);
+  double c = (minCost_t - costRecord[s]) / (t - s);
   double d = (costRecord[s] - costRecord[r]) / (s - r);
 
-  const double mu_max = muMax(a, b);
+  double mu_max = muMax(a, b);
 
   ///
   /// case dual domain = one point OR dual = linear function
@@ -430,14 +430,13 @@ bool DUST_1D::dualMaxAlgo3(double minCost,
   /// PELT test (dual at mu = 0)
   ///
   const double Dstar_a = Dstar(a);
-  double test_value = - Dstar_a - c;  // dual(0)
+  double test_value = - Dstar_a - c;  // dual(mu = 0)
   if (test_value > 0.0) {return true;}  // We already found a positive dual value at mu = 0
 
   // if non pruning at mu = 0
   // AND
-  // If the tangent at 0 is already ≤ 0 on [0, mu_max], we can prune everything
-  const double meanGap = a - b;
-  double grad = Dstar_a - meanGap * DstarPrime(a) + d;
+  // If the value on the tangent at 0 in mu_max is negative we can prune everything
+  double grad = Dstar_a - (a - b) * DstarPrime(a) + d;
   if (test_value + mu_max * grad <= 0) {return false;} //check value in mu = mu_max
 
   /// iterative algo
@@ -448,9 +447,7 @@ bool DUST_1D::dualMaxAlgo3(double minCost,
   ///
   double lt = 0.0;
   double rt = mu_max;
-  double mu = 0.5 * (lt + rt);
-
-  const double grad_eps = 1e-12;  // tolerance for "zero" gradient
+  double mu = 0.5 * rt;
 
   for (int i = 0; i < nb_Loops; ++i)
   {
@@ -466,11 +463,6 @@ bool DUST_1D::dualMaxAlgo3(double minCost,
     // derivative of f at mu
     grad = Dstar_R - (a - b) / one_minus_mu * DstarPrime_R + d;
 
-    // If gradient is ~0 and value ≤ 0, for a concave f this implies f ≤ 0 everywhere
-    if (std::abs(grad) < grad_eps) {
-      return false;
-    }
-
     if (grad > 0.0)
     {
       // Candidate max can only be on the right side for a concave f
@@ -480,7 +472,7 @@ bool DUST_1D::dualMaxAlgo3(double minCost,
       }
       lt = mu;
     }
-    else // grad < 0
+    else // grad <= 0
     {
       // Candidate max can only be on the left side for a concave f
       if (test_value + (lt - mu) * grad <= 0.0) {
@@ -502,209 +494,146 @@ bool DUST_1D::dualMaxAlgo3(double minCost,
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-bool DUST_1D::dualMaxAlgo4(double minCost,
+
+
+bool DUST_1D::dualMaxAlgo4(double minCost_t,
                            unsigned int t,
                            unsigned int s,
                            unsigned int r)
 {
-  // Basic sanity: if these don't hold, something is structurally wrong.
-  if (!(r < s && s < t)) {
-    return false; // or assert(false);
-  }
+  double a = (cumsum[t] - cumsum[s]) / (t - s);
+  double b = (cumsum[s] - cumsum[r]) / (s - r);
+  double c = (minCost_t - costRecord[s]) / (t - s);
+  double d = (costRecord[s] - costRecord[r]) / (s - r);
+  double mu_maxx = muMax(a, b);
 
-  // --- Small numerical constants (local to this function) ---
-  constexpr double kEps            = 1e-12;
-  constexpr double kMuMargin       = 1e-9;   // keep μ away from {0, μ_max}
-  constexpr double kGradTol        = 1e-10;  // early stop if |grad| is tiny
-  constexpr int    kMaxBacktracking = 10;
+  ///
+  /// case dual domain = one point OR dual = linear function
+  ///
+  if(isOnePointOrLinear(a,b) == true){return specialCasePruning(a,b,c,d,mu_maxx);}
 
-  const double inv_ts = 1.0 / static_cast<double>(t - s);
-  const double inv_sr = 1.0 / static_cast<double>(s - r);
 
-  // --- Notation ---
-  // a = mean on [s+1, ..., t]
-  // b = mean on [r+1, ..., s]
-  // c = (minCost - Q_s) / (t - s)
-  // d = (Q_s - Q_r) / (s - r)
-  const double a = (cumsum[t] - cumsum[s]) * inv_ts;
-  const double b = (cumsum[s] - cumsum[r]) * inv_sr;
-  const double c = (minCost - costRecord[s]) * inv_ts;
-  const double d = (costRecord[s] - costRecord[r]) * inv_sr;
-
-  // 1) PELT test at μ = 0
+  ///
+  /// TEST PELT in MU = 0
+  ///
   double nonLinear = Dstar(a);
-  double test_value = -nonLinear - c;   // = -D*(a) - c
+  double test_value = - c - nonLinear;
 
-  if (test_value > 0.0) {
-    // PELT already prunes at μ = 0
-    return true;
-  }
+  if (test_value > 0) {return true;} // PELT test
 
-  // 2) μ_max: if zero (or negative), DUST does nothing beyond PELT
-  const double raw_mu_max = muMax(a, b);
-  if (raw_mu_max <= 0.0) {
-    return false;
-  }
+  ///
+  /// mu_max (stop ALGO if mu_max == 0) !!!
+  ///
 
-  // Keep μ in [μ_min, μ_max_eff] with a small margin
-  const double mu_min     = kMuMargin;
-  const double mu_max_eff = std::max(raw_mu_max - kMuMargin, mu_min + kMuMargin);
-  if (mu_max_eff <= mu_min) {
-    // numerical degeneracy: effectively no room for μ
-    return false;
-  }
+  double mu_max = muMax(a, b);
+  if (mu_max == 0) {return false;}
 
-  // 3) Gradient at μ = 0
-  const double meanGap = a - b;
+  ///
+  /// INIT Quasi Newton algo in zero
+  ///
+  double meanGap = a - b;
   double grad = nonLinear - meanGap * DstarPrime(a) + d;
 
-  // If grad < 0, maximum is at μ = 0 → PELT was already tested
-  if (grad < 0.0) {
-    return false;
-  }
+  /// if grad < 0 the max is in zero, no pelt pruning at this step, return false
+  if (grad < 0) {return false;}
 
-  // Quick concavity check using tangent from μ=0 to μ_max
-  if (test_value + mu_max_eff * grad <= 0.0) {
-    return false;
-  }
+  // the duality function is concave, meaning we can check if the tangent at mu ever reaches the desired value.
+  if (test_value + mu_max * grad <= 0) {return false;}
+  double mu = 0;
+  double direction;
+  double mu_diff;
+  double m_value;
+  double grad_diff = -grad; // stores grad difference between two steps, initialized each step as g_k, then once g_{k+1} is computed, y += g_{k+1}
+  double inverseHessian = -1;
 
-  // --- Quasi-Newton state ---
-  double mu = 0.0;            // current μ
-  double direction = 0.0;     // search direction
-  double mu_diff = 0.0;       // step in μ
-  double m_value = a;         // m(μ)
-  double grad_diff = -grad;   // will store g_{k+1} - g_k
-  double inverseHessian = -1.0; // BFGS inverse Hessian in 1D
-
-  // --- Helpers ---
-
-  // m(μ) = (a - μ b) / (1 - μ)
-  auto getM = [&](double mu_val) -> double {
-    double denom = 1.0 - mu_val;
-    if (std::fabs(denom) < kEps) {
-      denom = (denom >= 0.0 ? kEps : -kEps);
-    }
-    return (a - mu_val * b) / denom;
+  //////////////////////////////
+  //////////////////////////////
+  //////////////////////////////
+  auto updateDirection = [&] () // update and clip direction
+  {
+    direction = - inverseHessian * grad;
+    if (mu + direction > mu_max) { direction = mu_max - 1e-9 - mu; } // clip ascent direction, as dual may increase beyond the bound
+    else if (mu + direction < 0) { direction = -mu + 1e-9; }
   };
 
-  // Ensure μ stays in [μ_min, μ_max_eff]
-  auto clampMu = [&](double & mu_val) {
-    if (mu_val < mu_min)       mu_val = mu_min;
-    else if (mu_val > mu_max_eff) mu_val = mu_max_eff;
+  //////////////////////////////
+  //////////////////////////////
+  //////////////////////////////
+  auto getM = [&] (double point) // for use in Dstar, DstarPrime
+  {
+    return (a - point * b) / (1 - point);
   };
 
-  // Update direction and immediately clamp where we land
-  auto updateDirection = [&]() {
-    direction = -inverseHessian * grad;
-    double proposed = mu + direction;
+  //////////////////////////////
+  //////////////////////////////
+  //////////////////////////////
+  auto updateTestValue = [&] ()
+  {
+    double gradCondition = m1 * grad;
 
-    clampMu(proposed);
-    direction = proposed - mu;
-  };
-
-  // Recompute test_value at new μ with backtracking (Armijo-like condition)
-  auto updateTestValue = [&]() {
-    const double gradCondition = m1 * grad;
+    // Initialize all values
     mu_diff = direction;
     mu += mu_diff;
-    clampMu(mu);
-
     m_value = getM(mu);
     nonLinear = Dstar(m_value);
+    double new_test = - (1 - mu) * nonLinear + mu * d -c;
 
-    double new_test = -(1.0 - mu) * nonLinear + mu * d - c;
-
-    int ls_it = 0;
-    while (new_test < test_value + mu_diff * gradCondition && ls_it < kMaxBacktracking) {
-      // Backtrack
-      mu -= 0.5 * mu_diff;
-      mu_diff *= 0.5;
-      clampMu(mu);
-
-      m_value = getM(mu);
-      nonLinear = Dstar(m_value);
-      new_test = -(1.0 - mu) * nonLinear + mu * d - c;
-
-      ++ls_it;
+    int i = 0;
+    while(new_test < test_value + mu_diff * gradCondition)
+    {
+      mu_diff *= .5; // shrink if unsuitable stepsize
+      mu -= mu_diff; // relay shrinking
+      m_value = getM(mu); // update values
+      nonLinear = Dstar(m_value); // update values
+      new_test = - (1 - mu) * nonLinear + mu * d -c; // update values
+      i++;
+      if (i == 10) { break; }
     }
-
     test_value = new_test;
   };
 
-  // Gradient at current μ
-  auto updateGrad = [&]() {
-    double denom = 1.0 - mu;
-    if (std::fabs(denom) < kEps) {
-      denom = (denom >= 0.0 ? kEps : -kEps);
-    }
-    grad = nonLinear - meanGap * DstarPrime(m_value) / denom + d;
+  //////////////////////////////
+  //////////////////////////////
+  //////////////////////////////
+  auto updateGrad = [&] ()
+  {
+    grad = nonLinear - meanGap * DstarPrime(m_value) / (1 - mu) + d;
   };
 
-  // 1D BFGS: H_{k+1} = s_k / y_k with a bit of regularization
-  auto updateHessian = [&]() {
-    grad_diff += grad; // now grad_diff = g_{k+1} - g_k
+  //////////////////////////////
+  //////////////////////////////
+  //////////////////////////////
+  auto updateHessian = [&] () // uses BFGS formula (in 1D, the formula simplifies to s / y)
+  {
+    grad_diff += grad;
+    if(grad_diff == 0) { grad_diff = 1e-9; }
 
-    if (std::fabs(grad_diff) < kEps) {
-      grad_diff = (grad >= 0.0 ? kEps : -kEps);
-    }
-
-    double newH = mu_diff / grad_diff;
-
-    // keep |H| within reasonable bounds to avoid exploding steps
-    if (newH > 0.0) {
-      // sign should be negative for concave maximization; reflect if needed
-      newH = -newH;
-    }
-    const double maxAbsH = 1e6;
-    if (std::fabs(newH) > maxAbsH) {
-      newH = (newH > 0.0 ? -maxAbsH : maxAbsH * -1.0);
-    }
-
-    inverseHessian = newH;
-    grad_diff = -grad; // prepare for next iteration
+    inverseHessian = mu_diff / grad_diff;
+    grad_diff = - grad; // setting up y for next step
   };
 
-  // 4) Quasi-Newton iterations
-  for (int iter = 0; iter < nb_Loops; ++iter) {
-    // If gradient almost zero, we are at (or near) a stationary point.
-    if (std::fabs(grad) < kGradTol) {
-      // If test_value is still ≤ 0, we can't prune
-      return test_value > 0.0;
-    }
-
-    // Concavity-based early exits
-    if (grad > 0.0) {
-      // Tangent from μ to μ_max cannot cross zero
-      if (test_value + (mu_max_eff - mu) * grad <= 0.0) {
-        return false;
-      }
-    } else {
-      // Tangent from 0 to μ cannot cross zero
-      if (test_value - mu * grad <= 0.0) {
-        return false;
-      }
-    }
-
-    // Quasi-Newton step
+  //////////////////////////////
+  //////////////////////////////
+  //////////////////////////////
+  int i = 0;
+  do
+  {
     updateDirection();
-    if (std::fabs(direction) < kEps) {
-      // Step too small: we are effectively stuck
-      return test_value > 0.0;
-    }
-
     updateTestValue();
-    if (test_value > 0.0) {
-      // Dual decision function is positive → prune s
-      return true;
-    }
-
+    if(test_value > 0) {return true;} // index s is pruned
     updateGrad();
-    updateHessian();
-  }
 
-  // No pruning found within nb_Loops iterations
+    if (grad > 0) // the duality function is concave, meaning we can check if the tangent at mu ever reaches the desired value.
+    {
+      if (test_value + (mu_max - mu) * grad <= 0) {return false;}
+    }
+    else if (test_value - mu * grad <= 0) {return false;}
+    updateHessian();
+    i++;
+  } while (i < nb_Loops);
   return false;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -718,16 +647,16 @@ bool DUST_1D::dualMaxAlgo4(double minCost,
 // a = (cumsum[t] - cumsum[s]) / (t - s)
 // b = (cumsum[s] - cumsum[r]) / (s - r)
 
-// c = (Qt - Qs) / (t - s) =  (minCost - costRecord[s]) / (t - s);
+// c = (Qt - Qs) / (t - s) =  (minCost_t - costRecord[s]) / (t - s);
 // d = (Qs - Qr) / (s - r)  = (costRecord[s] - costRecord[r]) / (s - r);
 
-bool DUST_1D::dualMaxAlgo5(double minCost,
+bool DUST_1D::dualMaxAlgo5(double minCost_t,
                            unsigned int t,
                            unsigned int s,
                            unsigned int r)
 {
   double a = (cumsum[t] - cumsum[s]) / (t - s);
-  double c = (minCost - costRecord[s]) / (t - s);
+  double c = (minCost_t - costRecord[s]) / (t - s);
   if (- Dstar(a) - c > 0) {return true;} // PELT test
   return false;
 }
@@ -739,13 +668,90 @@ bool DUST_1D::dualMaxAlgo5(double minCost,
 
 /// OP
 
-bool DUST_1D::dualMaxAlgo6(double minCost,
+bool DUST_1D::dualMaxAlgo6(double minCost_t,
                            unsigned int t,
                            unsigned int s,
                            unsigned int r)
 {
   return false;
 }
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+/// DUST exact with decision function inequality based test
+
+bool DUST_1D::dualMaxAlgo7(double minCost_t,
+                           unsigned int t,
+                           unsigned int s,
+                           unsigned int r)
+{
+  double a = (cumsum[t] - cumsum[s]) / (t - s);
+  double b = (cumsum[s] - cumsum[r]) / (s - r);
+  double c = (minCost_t - costRecord[s]) / (t - s);
+  double d = (costRecord[s] - costRecord[r]) / (s - r);
+  double mu_max = muMax(a, b);
+
+  //Rcout << " t: "  << t << " s: "  << s  << " t: "<< r << std::endl;
+  ///
+  /// case dual domain = one point OR dual = linear function
+  ///
+  if(isOnePointOrLinear(a,b) == true){return specialCasePruning(a,b,c,d,mu_max);}
+
+  double R = -(c-d)/(a-b);
+  double x_max = xMax(a, b);
+
+  double xstar = 1.0/(a - b) * (DstarPrimeInv(R) - a);
+
+  //Rcout << " xstar: "  << xstar << std::endl;
+
+  if(xstar >= 0 && xstar < x_max)
+  {
+    // Rcout << " 00 stdcase: " << std::endl;
+    return  (- Dstar(a + xstar*(a-b)) - (c + xstar*(c-d))) > 0;
+  }
+
+  if(xstar >= x_max) // case finite only
+  {
+    //Rcout << " a-b: " <<  a-b << " a: " <<  a <<" b: " <<  b << " xstar: " <<  xstar << " x_max " << x_max << " test " << ( (- Dstar_leftboundary() - (c + x_max*(c-d))) > 0) << " x_max*(c-d) " <<  x_max*(c-d) << std::endl;
+    return  (- Dstar_leftboundary() - (c + x_max*(c-d))) > 0;
+  }
+
+  if(xstar <= 0 && xstar > -1)
+  {
+    // Rcout << "00  small neg: " << std::endl;
+    //Rcout << " Cas1: " <<  - Dstar(a) -c << " - Dstar(a): " <<  - Dstar(a) << " -c: " << -c << std::endl;
+    return (- Dstar(a) -c > 0);
+  }
+  if(xstar <= -1)
+  {
+    //Rcout << "00  BIGBIGBIGBIGBIGBIGBIGBIG neg: " << x_max << std::endl;
+    //if(x_max == std::numeric_limits<double>::infinity())
+    //Rcout << " Cas2: " << Dstar_leftboundary() - (c + x_max*(c-d)) <<" Dbound: " << Dstar_leftboundary()<<" constC: " <<  c << " constD: " <<  d << " RES " << ((-Dstar_leftboundary() - (c + x_max*(c-d))) > 0) << std::endl;
+
+    if (x_max < std::numeric_limits<double>::infinity())
+    {
+      //Rcout << " TEST_TEST: " << (-Dstar_leftboundary() - (c + x_max*(c-d)));
+      //Rcout << "x_maxx_maxx_max: " << (-Dstar_leftboundary() - (c + x_max*(c-d))) << std::endl;
+      return (-Dstar_leftboundary() - (c + x_max*(c-d))) > 0;
+    }
+    else
+    {
+      return (-Dstar_superLinearLimit() - (c-d) > 0);
+    }
+  }
+
+  //double xstar = 1/(a - b) * (DstarPrimeInv(R) - a);
+  //if(xstar < 0){R = DstarPrime(a);}
+  //if(xstar >= x_max){return false;}
+
+  //return ((costEval(R, t, s) + costRecord[s]) > minCost_t);
+}
+
 
 
 

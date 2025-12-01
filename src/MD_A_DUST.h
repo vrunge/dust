@@ -97,8 +97,8 @@ protected:
   double dual_Eval();
   double dual_Eval(double &nonLinear);
   void grad_Eval(const double nonLinear);
-  void update_dual_parameters_l(const double& minCost, const unsigned int& t, const unsigned int& s, std::vector<unsigned int>& l);
-  void update_dual_parameters_l_r(const double& minCost, const unsigned int& t, const unsigned int& s, std::vector<unsigned int>& l, std::vector<unsigned int>& r);
+  void update_dual_parameters_l(const double& minCost_t, const unsigned int& t, const unsigned int& s, std::vector<unsigned int>& l);
+  void update_dual_parameters_l_r(const double& minCost_t, const unsigned int& t, const unsigned int& s, std::vector<unsigned int>& l, std::vector<unsigned int>& r);
 
   //////////// RANDOM NUMBER GENERATOR ////////////
 
@@ -122,17 +122,17 @@ private:
   // 4: Quasi-Newton
   // 5: PELT
   // 6: OP
-  bool dualMaxAlgo0(const double& minCost, const unsigned int& t, const unsigned int& s, std::vector<unsigned int> l, std::vector<unsigned int> r);
-  bool dualMaxAlgo1(const double& minCost, const unsigned int& t, const unsigned int& s, std::vector<unsigned int> l, std::vector<unsigned int> r);
-  bool dualMaxAlgo2(const double& minCost, const unsigned int& t, const unsigned int& s, std::vector<unsigned int> l, std::vector<unsigned int> r);
-  bool dualMaxAlgo3(const double& minCost, const unsigned int& t, const unsigned int& s, std::vector<unsigned int> l, std::vector<unsigned int> r);
-  bool dualMaxAlgo4(const double& minCost, const unsigned int& t, const unsigned int& s, std::vector<unsigned int> l, std::vector<unsigned int> r);
-  bool dualMaxAlgo42(const double& minCost, const unsigned int& t, const unsigned int& s, std::vector<unsigned int> l, std::vector<unsigned int> r);
-  bool dualMaxAlgo5(const double& minCost, const unsigned int& t, const unsigned int& s, std::vector<unsigned int> l, std::vector<unsigned int> r);
-  bool dualMaxAlgo6(const double& minCost, const unsigned int& t, const unsigned int& s, std::vector<unsigned int> l, std::vector<unsigned int> r);
-  bool dualMaxAlgo7(const double& minCost, const unsigned int& t, const unsigned int& s, std::vector<unsigned int> l, std::vector<unsigned int> r);
+  bool dualMaxAlgo0(const double& minCost_t, const unsigned int& t, const unsigned int& s, std::vector<unsigned int> l, std::vector<unsigned int> r);
+  bool dualMaxAlgo1(const double& minCost_t, const unsigned int& t, const unsigned int& s, std::vector<unsigned int> l, std::vector<unsigned int> r);
+  bool dualMaxAlgo2(const double& minCost_t, const unsigned int& t, const unsigned int& s, std::vector<unsigned int> l, std::vector<unsigned int> r);
+  bool dualMaxAlgo3(const double& minCost_t, const unsigned int& t, const unsigned int& s, std::vector<unsigned int> l, std::vector<unsigned int> r);
+  bool dualMaxAlgo4(const double& minCost_t, const unsigned int& t, const unsigned int& s, std::vector<unsigned int> l, std::vector<unsigned int> r);
+  bool dualMaxAlgo42(const double& minCost_t, const unsigned int& t, const unsigned int& s, std::vector<unsigned int> l, std::vector<unsigned int> r);
+  bool dualMaxAlgo5(const double& minCost_t, const unsigned int& t, const unsigned int& s, std::vector<unsigned int> l, std::vector<unsigned int> r);
+  bool dualMaxAlgo6(const double& minCost_t, const unsigned int& t, const unsigned int& s, std::vector<unsigned int> l, std::vector<unsigned int> r);
+  bool dualMaxAlgo7(const double& minCost_t, const unsigned int& t, const unsigned int& s, std::vector<unsigned int> l, std::vector<unsigned int> r);
 
-  bool (DUST_MD::*current_test)(const double& minCost, const unsigned int& t, const unsigned int& s, std::vector<unsigned int> l, std::vector<unsigned int> r);
+  bool (DUST_MD::*current_test)(const double& minCost_t, const unsigned int& t, const unsigned int& s, std::vector<unsigned int> l, std::vector<unsigned int> r);
 
   // --- // Result processing // --- //
   std::forward_list<unsigned int> backtrack_changepoints();

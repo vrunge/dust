@@ -8,7 +8,16 @@ using namespace Rcpp;
 Bern_1D::Bern_1D(std::string dualmax_algo, std::string constr_index, Nullable<int> nbLoops)
   : DUST_1D(dualmax_algo, constr_index, nbLoops) {}
 
-double Bern_1D::Cost(unsigned int t, unsigned int s) const
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+double Bern_1D::costEval(double point, unsigned int t, unsigned int s) const
+{
+  return (t-s)*std::log(std::exp(point) + 1) - point*(cumsum[t] - cumsum[s]);
+}
+
+double Bern_1D::costMin(unsigned int t, unsigned int s) const
 {
   double res = 0;
   double m = (cumsum[t] - cumsum[s]) / (t - s);
@@ -25,23 +34,18 @@ double Bern_1D::statistic(double& data) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double Bern_1D::dualEval(double point, double minCost, unsigned int t, unsigned int s, unsigned int r) const
+double Bern_1D::dualEval(double point, double minCost_t, unsigned int t, unsigned int s, unsigned int r) const
 {
   double a = (cumsum[t] - cumsum[s]) / (t - s); // Sbar_st
   double b = (cumsum[s] - cumsum[r]) / (s - r); // Sbar_rs
 
   ///
-  /// point in the right interval:
-  if(b != 0 && b != 1){point = point * std::min(a/b, (1 - a)/(1 - b));}
-  else{
-    if(b == 0){point = point * (1 - a);}else{point = point * a;}
-  }
+  point = point * muMax(a,b); /// Point rescaling
   ///
-  ///
+
   double R = (a - point * b) / (1 - point);
 
-  return (costRecord[s] - minCost) / (t - s)
-  + point * (costRecord[s] - costRecord[r]) / (s - r)
+  return (costRecord[s] - minCost_t) / (t - s) + point * (costRecord[s] - costRecord[r]) / (s - r)
   - (1 - point) * (R * std::log(R) + (1 - R) * std::log(1 - R));
 }
 
@@ -50,7 +54,7 @@ double Bern_1D::dualEval(double point, double minCost, unsigned int t, unsigned 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-double Bern_1D::dualMax(double minCost, unsigned int t, unsigned int s, unsigned int r) const
+double Bern_1D::dualMax(double minCost_t, unsigned int t, unsigned int s, unsigned int r) const
 {
   return (-std::numeric_limits<double>::infinity());
 }
@@ -69,12 +73,16 @@ double Bern_1D::muMax(double a, double b) const
   return res;
 }
 
-bool Bern_1D::isBoundary(double a) const
+double Bern_1D::xMax(double a, double b) const
 {
-  if(a == 0 || a == 1){return true;}
-  return false;
+  if (a < b) return -a/(a-b);
+  else  return (1-a)/(a-b);
 }
 
+
+bool Bern_1D::isLeftBoundary(double a) const {return a == 0;}
+double Bern_1D::Dstar_leftboundary() const {return 0;}
+double Bern_1D::Dstar_superLinearLimit() const {return 0;}
 
 double Bern_1D::Dstar(double x) const
 {

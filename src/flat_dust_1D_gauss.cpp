@@ -12,7 +12,7 @@ double Cost(const unsigned int& t, const unsigned int& s, const std::vector<doub
 }
 
 
-double DualMax(const double& minCost, const unsigned int& t, const unsigned int& s, const unsigned int& r, const std::vector<double>& cumsum, const std::vector<double>& costRecord)
+double DualMax(const double& minCost_t, const unsigned int& t, const unsigned int& s, const unsigned int& r, const std::vector<double>& cumsum, const std::vector<double>& costRecord)
 {
   // Compute the optimal point on which to evaluate the duality function
 
@@ -24,10 +24,10 @@ double DualMax(const double& minCost, const unsigned int& t, const unsigned int&
   // Case 1: mu* = 0
   // deduce the following condition from the formula for mu*
   if (absAmB >= sqrtB2p2C)
-    return (costRecord[s] - minCost) / (t - s)  - 0.5 * a*a;
+    return (costRecord[s] - minCost_t) / (t - s)  - 0.5 * a*a;
 
   // Case 2: mu* > 0
-  return (costRecord[s] - minCost) / (t - s) - 0.5*a*a + 0.5 * (absAmB - sqrtB2p2C)*(absAmB - sqrtB2p2C);
+  return (costRecord[s] - minCost_t) / (t - s) - 0.5*a*a + 0.5 * (absAmB - sqrtB2p2C)*(absAmB - sqrtB2p2C);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -62,7 +62,7 @@ List flat_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty 
   double lastCost; // temporarily stores the cost for the model with last changepoint at some i
   // then keeps the cost of the model with last changepoint at the first possible index in the t-th OP step ...
   // ... storing it allows pruning of the first available index
-  double minCost;
+  double minCost_t;
   unsigned int argMin = 0; // stores the optimal last changepoint for the current OP step
 
   // First OP step (t = 1)
@@ -80,14 +80,14 @@ List flat_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty 
 
     // OP step
     indices.reset();
-    minCost = std::numeric_limits<double>::infinity();
+    minCost_t = std::numeric_limits<double>::infinity();
     do
     {
       s = indices.get_current();
       lastCost = costRecord[s] + Cost(t, s, cumsum);
-      if (lastCost < minCost)
+      if (lastCost < minCost_t)
       {
-        minCost = lastCost;
+        minCost_t = lastCost;
         argMin = s;
       }
       indices.next();
@@ -96,8 +96,8 @@ List flat_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty 
     // END (OP step)
 
     // OP update
-    minCost += penalty;
-    costRecord.push_back(minCost);
+    minCost_t += penalty;
+    costRecord.push_back(minCost_t);
     chptRecord.push_back(argMin);
 
     // DUST step
@@ -106,7 +106,7 @@ List flat_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty 
     // DUST loop
     while (indices.is_not_the_last_pruning())
     {
-      if (DualMax(minCost, t, indices.get_current(), indices.get_constraint(), cumsum, costRecord) > 0) // prune as needs pruning
+      if (DualMax(minCost_t, t, indices.get_current(), indices.get_constraint(), cumsum, costRecord) > 0) // prune as needs pruning
       {
         // remove the pruned index and its pointer
         // removing the elements increments the cursors i and pointersCurrent, while before stands still
@@ -121,7 +121,7 @@ List flat_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty 
     // END (DUST loop)
 
     // Prune the last index (analoguous with a null (mu* = 0) duality simple test)
-    if (lastCost > minCost)
+    if (lastCost > minCost_t)
     {
       indices.prune_last();
     }
@@ -174,7 +174,7 @@ List flat2_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty
   double lastCost; // temporarily stores the cost for the model with last changepoint at some i
   // then keeps the cost of the model with last changepoint at the first possible index in the t-th OP step ...
   // ... storing it allows pruning of the first available index
-  double minCost;
+  double minCost_t;
   unsigned int argMin = 0; // stores the optimal last changepoint for the current OP step
 
   // First OP step (t = 1)
@@ -192,14 +192,14 @@ List flat2_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty
 
     // OP step
     indices.reset();
-    minCost = std::numeric_limits<double>::infinity();
+    minCost_t = std::numeric_limits<double>::infinity();
     do
     {
       s = indices.get_current();
       lastCost = costRecord[s] + Cost(t, s, cumsum);
-      if (lastCost < minCost)
+      if (lastCost < minCost_t)
       {
-        minCost = lastCost;
+        minCost_t = lastCost;
         argMin = s;
       }
       indices.next();
@@ -208,8 +208,8 @@ List flat2_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty
     // END (OP step)
 
     // OP update
-    minCost += penalty;
-    costRecord[t] = minCost;
+    minCost_t += penalty;
+    costRecord[t] = minCost_t;
     chptRecord[t] = argMin;
 
     // DUST step
@@ -218,7 +218,7 @@ List flat2_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty
     // DUST loop
     while (indices.is_not_the_last_pruning())
     {
-      if (DualMax(minCost, t, indices.get_current(), indices.get_constraint(), cumsum, costRecord) > 0) // prune as needs pruning
+      if (DualMax(minCost_t, t, indices.get_current(), indices.get_constraint(), cumsum, costRecord) > 0) // prune as needs pruning
       {
         // remove the pruned index and its pointer
         // removing the elements increments the cursors i and pointersCurrent, while before stands still
@@ -233,7 +233,7 @@ List flat2_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty
     // END (DUST loop)
 
     // Prune the last index (analoguous with a null (mu* = 0) duality simple test)
-    if (lastCost > minCost)
+    if (lastCost > minCost_t)
     {
       indices.prune_last();
     }

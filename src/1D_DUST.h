@@ -34,21 +34,32 @@ class DUST_1D
     std::vector<double> costRecord;
     int nb_Loops; // number of loops in optimization step (For dual max)
 
-    virtual double Cost(unsigned int t, unsigned int s) const = 0;
     virtual double statistic(double& data) const = 0;
 
+    virtual double costEval(double point,
+                            unsigned int t,
+                            unsigned int s) const = 0;
+
+    virtual double costMin(unsigned int t,
+                           unsigned int s) const = 0;
+
     virtual double dualEval(double point,
-                            double minCost,
+                            double minCost_t,
                             unsigned int t,
                             unsigned int s,
                             unsigned int r) const = 0;
-    virtual double dualMax(double minCost,
+    virtual double dualMax(double minCost_t,
                            unsigned int t,
                            unsigned int s,
                            unsigned int r) const = 0;
 
+
     virtual double muMax(double a, double b) const = 0;
-    virtual bool isBoundary(double a) const = 0;
+    virtual double xMax(double a, double b) const = 0;
+
+    virtual bool isLeftBoundary(double a) const = 0;
+    virtual double Dstar_leftboundary() const = 0;
+    virtual double Dstar_superLinearLimit() const = 0;
 
     virtual double Dstar(double x) const = 0;
     virtual double DstarPrime(double x) const = 0;
@@ -81,7 +92,7 @@ class DUST_1D
 
     // a = (cumsum[t] - cumsum[s]) / (t - s)
     // b = (cumsum[s] - cumsum[r]) / (s - r)
-    // c = (Qt - Qs) / (t - s) =  (minCost - costRecord[s]) / (t - s);
+    // c = (Qt - Qs) / (t - s) =  (minCost_t - costRecord[s]) / (t - s);
     // d = (Qs - Qr) / (s - r)  = (costRecord[s] - costRecord[r]) / (s - r);
 
     ////////// MAX DUAL METHODS //////////
@@ -94,15 +105,16 @@ class DUST_1D
     // 4: DUSTqn.  Quasi-Newton
     // 5: PELT
     // 6: OP
-    bool dualMaxAlgo0(double minCost, unsigned int t, unsigned int s, unsigned int r);
-    bool dualMaxAlgo1(double minCost, unsigned int t, unsigned int s, unsigned int r);
-    bool dualMaxAlgo2(double minCost, unsigned int t, unsigned int s, unsigned int r);
-    bool dualMaxAlgo3(double minCost, unsigned int t, unsigned int s, unsigned int r);
-    bool dualMaxAlgo4(double minCost, unsigned int t, unsigned int s, unsigned int r);
-    bool dualMaxAlgo5(double minCost, unsigned int t, unsigned int s, unsigned int r);
-    bool dualMaxAlgo6(double minCost, unsigned int t, unsigned int s, unsigned int r);
+    bool dualMaxAlgo0(double minCost_t, unsigned int t, unsigned int s, unsigned int r);
+    bool dualMaxAlgo1(double minCost_t, unsigned int t, unsigned int s, unsigned int r);
+    bool dualMaxAlgo2(double minCost_t, unsigned int t, unsigned int s, unsigned int r);
+    bool dualMaxAlgo3(double minCost_t, unsigned int t, unsigned int s, unsigned int r);
+    bool dualMaxAlgo4(double minCost_t, unsigned int t, unsigned int s, unsigned int r);
+    bool dualMaxAlgo5(double minCost_t, unsigned int t, unsigned int s, unsigned int r);
+    bool dualMaxAlgo6(double minCost_t, unsigned int t, unsigned int s, unsigned int r);
+    bool dualMaxAlgo7(double minCost_t, unsigned int t, unsigned int s, unsigned int r);
 
-    bool (DUST_1D::*current_test)(double minCost, unsigned int t,
+    bool (DUST_1D::*current_test)(double minCost_t, unsigned int t,
                                                   unsigned int s,
                                                   unsigned int r);
 

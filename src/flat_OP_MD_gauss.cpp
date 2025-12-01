@@ -47,7 +47,7 @@ List flat_OP_MD(const arma::dmat& inData, Nullable<double> inPenalty = R_NilValu
   double lastCost;
   // then keeps the cost of the model with last changepoint at the first possible index in the t-th OP step ...
   // ... storing it allows pruning of the first available index
-  double minCost;
+  double minCost_t;
   unsigned int argMin = 0; // stores the optimal last changepoint for the current OP step
 
   // First OP step (t = 1)
@@ -69,20 +69,20 @@ List flat_OP_MD(const arma::dmat& inData, Nullable<double> inPenalty = R_NilValu
       cumsum(row, t) = col_prev(row) + inData(row, t - 1);
 
     // OP step
-    minCost = std::numeric_limits<double>::infinity();
+    minCost_t = std::numeric_limits<double>::infinity();
     for (unsigned int s = 0; s < t; s++)
     {
       lastCost = costRecord[s] + CostGauss_MD(t, s, cumsum);
-      if (lastCost < minCost)
+      if (lastCost < minCost_t)
       {
-        minCost = lastCost;
+        minCost_t = lastCost;
         argMin = s;
       }
     }
     // END (OP step)
 
     // OP update
-    costRecord.push_back(minCost + penalty);
+    costRecord.push_back(minCost_t + penalty);
     chptRecord.push_back(argMin);
   }
 

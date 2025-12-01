@@ -8,13 +8,6 @@ using namespace Rcpp;
 Variance_1D::Variance_1D(std::string dualmax_algo, std::string constr_index, Nullable<int> nbLoops)
   : DUST_1D(dualmax_algo, constr_index, nbLoops) {}
 
-double Variance_1D::Cost(unsigned int t, unsigned int s) const
-{
-  double delta_t = 1.0*(t - s);
-  double diff_cumsum = cumsum[t] - cumsum[s];
-  if(diff_cumsum <= 0){diff_cumsum = 1e-100;} /// choice  1e-100 to avoid -Inf
-  return 0.5 * delta_t * (1.0 + std::log(std::abs(diff_cumsum / delta_t)));
-}
 
 double Variance_1D::statistic(double& data) const
 {return(data * data);}
@@ -23,19 +16,33 @@ double Variance_1D::statistic(double& data) const
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-double Variance_1D::dualEval(double point, double minCost, unsigned int t, unsigned int s, unsigned int r) const
+double Variance_1D::costEval(double point, unsigned int t, unsigned int s) const
+{
+  return -0.5*(t-s)*std::log(-2*point) - point*(cumsum[t] - cumsum[s]);
+}
+
+double Variance_1D::costMin(unsigned int t, unsigned int s) const
+{
+  double delta_t = 1.0*(t - s);
+  double diff_cumsum = cumsum[t] - cumsum[s];
+  //if(diff_cumsum <= 0){diff_cumsum = 1e-100;} /// choice  1e-100 to avoid -Inf
+  return 0.5 * delta_t * (1.0 + std::log(diff_cumsum / delta_t));
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+double Variance_1D::dualEval(double point, double minCost_t, unsigned int t, unsigned int s, unsigned int r) const
 {
   double a = (cumsum[t] - cumsum[s]) / (t - s); // Sbar_st
   double b = (cumsum[s] - cumsum[r]) / (s - r); // Sbar_rs
 
   ///
-  /// point in the right interval:
-  if(b != 0){point = point * std::min(1.0, a/b);}
-  ///
+  point = point * muMax(a,b); /// Point rescaling
   ///
 
-  return (costRecord[s] - minCost) / (t - s)
-  + point * (costRecord[s] - costRecord[r]) / (s - r)
+  return (costRecord[s] - minCost_t) / (t - s) + point * (costRecord[s] - costRecord[r]) / (s - r)
   + (1 - point) * 0.5 * (std::log((a - point * b) / (1 - point)) + 1);
 }
 
@@ -43,7 +50,7 @@ double Variance_1D::dualEval(double point, double minCost, unsigned int t, unsig
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-double Variance_1D::dualMax(double minCost, unsigned int t, unsigned int s, unsigned int r) const
+double Variance_1D::dualMax(double minCost_t, unsigned int t, unsigned int s, unsigned int r) const
 {
   return (-std::numeric_limits<double>::infinity());
 }
@@ -54,16 +61,19 @@ double Variance_1D::dualMax(double minCost, unsigned int t, unsigned int s, unsi
 
 double Variance_1D::muMax(double a, double b) const
 {
-  double res = 1;
-  if(b != 0){res = std::min(1.0, a/b);}
-  return res;
+  if (b != 0) return std::min(1., a/b);
+  return 1.;
 }
 
-
-bool Variance_1D::isBoundary(double a) const
+double Variance_1D::xMax(double a, double b) const
 {
-  return false;
+  if (a < b) return -a/(a-b);
+  return std::numeric_limits<double>::infinity();
 }
+
+bool Variance_1D::isLeftBoundary(double a) const {return a == 0;}
+double Variance_1D::Dstar_leftboundary() const {return std::numeric_limits<double>::infinity();}
+double Variance_1D::Dstar_superLinearLimit() const {return 0;}
 
 double Variance_1D::Dstar(double x) const
 {

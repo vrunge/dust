@@ -8,7 +8,16 @@ using namespace Rcpp;
 Geom_1D::Geom_1D(std::string dualmax_algo, std::string constr_index, Nullable<int> nbLoops)
   : DUST_1D(dualmax_algo, constr_index, nbLoops) {}
 
-double Geom_1D::Cost(unsigned int t, unsigned int s) const
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+double Geom_1D::costEval(double point, unsigned int t, unsigned int s) const
+{
+  return -(t-s)*std::log(std::exp(-point) - 1) - point*(cumsum[t] - cumsum[s]);
+}
+
+double Geom_1D::costMin(unsigned int t, unsigned int s) const
 {
   double res = 0;
   double m = (cumsum[t] - cumsum[s])/(t - s);
@@ -26,20 +35,18 @@ double Geom_1D::statistic(double& data) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double Geom_1D::dualEval(double point, double minCost, unsigned int t, unsigned int s, unsigned int r) const
+double Geom_1D::dualEval(double point, double minCost_t, unsigned int t, unsigned int s, unsigned int r) const
 {
   double a = (cumsum[t] - cumsum[s]) / (t - s); // Sbar_st
   double b = (cumsum[s] - cumsum[r]) / (s - r); // Sbar_rs
 
   ///
-  /// point in the right interval:
-  if(b != 1){point = point * std::min(1.0, (a - 1)/(b - 1));}
+  point = point * muMax(a,b); /// Point rescaling
   ///
-  ///
+
   double R = (a - point * b) / (1 - point);
 
-  return (costRecord[s] - minCost) / (t - s)
-  + point * (costRecord[s] - costRecord[r]) / (s - r)
+  return (costRecord[s] - minCost_t) / (t - s)  + point * (costRecord[s] - costRecord[r]) / (s - r)
   + (1 - point) * (R * std::log(R) - (R - 1) * std::log(R - 1));
 }
 
@@ -47,7 +54,7 @@ double Geom_1D::dualEval(double point, double minCost, unsigned int t, unsigned 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-double Geom_1D::dualMax(double minCost, unsigned int t, unsigned int s, unsigned int r) const
+double Geom_1D::dualMax(double minCost_t, unsigned int t, unsigned int s, unsigned int r) const
 {
   return (-std::numeric_limits<double>::infinity());
 }
@@ -58,17 +65,21 @@ double Geom_1D::dualMax(double minCost, unsigned int t, unsigned int s, unsigned
 
 double Geom_1D::muMax(double a, double b) const
 {
-  double res = 1;
-  if(b != 1){res = std::min(1.0, (a-1)/(b-1));}
-  return res;
+  if (b != 1) return std::min(1.0, (a-1)/(b-1));
+  return 1.;
 }
 
-bool Geom_1D::isBoundary(double a) const
+
+double Geom_1D::xMax(double a, double b) const
 {
-  if(a == 1){return true;}
-  return false;
+  if (a < b) return -(a-1)/(a-b);
+  else  return std::numeric_limits<double>::infinity();
 }
 
+
+bool Geom_1D::isLeftBoundary(double a) const {return a == 1;}
+double Geom_1D::Dstar_leftboundary() const {return 0;}
+double Geom_1D::Dstar_superLinearLimit() const {return 0;}
 
 double Geom_1D::Dstar(double x) const
 {

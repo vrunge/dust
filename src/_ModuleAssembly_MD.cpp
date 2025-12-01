@@ -52,6 +52,7 @@ DUST_MD *newModuleMD(const std::string& model,
   else if (method_INFO[1] == "DUSTqn"){dualmax_algo = "DUSTqn";} //algo4
   else if (method_INFO[1] == "PELT"){dualmax_algo = "PELT";} //algo5
   else if (method_INFO[1] == "OP"){dualmax_algo = "OP";} //algo6
+  else if (method_INFO[1] == "DUSTib"){dualmax_algo = "DUSTib";} //algo6
 
   if (model == "gauss") return new Gauss_MD(dualmax_algo, constr_index, nbLoops);
   else if (model == "poisson") return new Poisson_MD(dualmax_algo, constr_index, nbLoops);

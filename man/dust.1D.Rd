@@ -29,6 +29,7 @@ dust.1D(
 Dual maximization algorithms (\code{PRUNING}) used in the method names are defined as follows. \code{DUST} is generally the most efficient in practice. At each iteration, the smallest non-pruned index is tested using the PELT pruning rule:
 \itemize{
   \item \code{"DUSTr"}: Random evaluation using a uniform distribution.
+  \item \code{"DUSTib"}: Closed-form maximizer of the decision function. An inequality-based rule
   \item \code{"DUST"}: Closed-form maximum (for Gaussian model only). Otherwise, no pruning is applied, leading to the slower OP algorithm.
   \item \code{"DUSTgs"}: Golden-section search.
   \item \code{"DUSTbs"}: Binary search with early stopping based on tangent evaluation.
