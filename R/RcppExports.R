@@ -12,13 +12,13 @@
 #' @export
 NULL
 
-#' @title MyModule: Exposing DUST_MD to R
+#' @title MyModule: Exposing DUST_2D to R
 #'
-#' @name DUST_MD
+#' @name DUST_2D
 #'
 #' @description
-#' This module exposes the \code{DUST_MD} C++ class to R, allowing you to create
-#' instances of \code{DUST_MD} and call its methods directly from R.
+#' This module exposes the \code{DUST_2D} C++ class to R, allowing you to create
+#' instances of \code{DUST_2D} and call its methods directly from R.
 #'
 #' @export
 NULL

@@ -12,6 +12,11 @@ using namespace Rcpp;
 Exp_1D::Exp_1D(std::string dualmax_algo, std::string constr_index, Nullable<int> nbLoops)
   : DUST_1D(dualmax_algo, constr_index, nbLoops) {}
 
+
+
+double Exp_1D::statistic(double& data) const
+{return(data);}
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -25,12 +30,9 @@ double Exp_1D::costMin(unsigned int t, unsigned int s) const
 {
   double delta_t = t - s;
   double diff_cumsum = cumsum[t] - cumsum[s];
-  //if(diff_cumsum <= 0){diff_cumsum = 1e-100;} /// choice  1e-100 to avoid -Inf
+  if(diff_cumsum <= 0){diff_cumsum = 1e-100;} /// choice  1e-100 to avoid -Inf /// THIS IS IMPORTANT
   return delta_t * (1.0 + std::log(diff_cumsum / delta_t));
 }
-
-double Exp_1D::statistic(double& data) const
-{return(data);}
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

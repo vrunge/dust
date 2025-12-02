@@ -1,4 +1,68 @@
 
+
+obj1 <- new(DUST_1D, mod, "zgfsg", 10)
+obj1$get_info()
+
+obj2 <- new(DUST_meanVar, "det1_DUST")
+obj2$get_info()
+
+
+### MEAN AND VAR
+
+mod = "gauss"
+n <- 10
+pen <- 2*log(n)/5
+cpts <- n
+data <- dataGenerator_meanVar(chpts = c(n/4,n/2,n),
+                              means = c(0,0,4),
+                              sds = c(1,2,2))
+
+
+res1d <- dust.meanVar(data, penalty = pen, method = "det_DUSTr")
+res2d <- dust.meanVar(data, penalty = pen, method = "OP")
+res3d <- dust.meanVar(data, penalty = pen, method = "PELT")
+res4d <- dust_R_2param_meanVar(data, penalty = pen, pruningOpt = 0)
+
+(res1d$changepoints)
+(res2d$changepoints)
+(res3d$changepoints)
+all(res1d$changepoints == res2d$changepoints)
+all(res2d$changepoints == res3d$changepoints)
+
+
+#res4d$changepoints
+
+plot(res1d$nb, type = 'l', ylim = c(0, max(res1d$nb, res3d$nb)))
+par(new = TRUE)
+plot(res3d$nb, col = 2, type = 'l', ylim = c(0,max(res1d$nb, res3d$nb)))
+plot(res3d$costQ - res2d$costQ)
+res3d$costQ - res2d$costQ
+res3d$costQ - res2d$costQ; res3d$costQ ; res2d$costQ
+
+
+#####################################################################################
+#####################################################################################
+#####################################################################################
+#####################################################################################
+#####################################################################################
+
+
+
+res4d
+
+
+plot(data, type = 'l')
+
+plot(res0d$nb, type = 'l', ylim = c(0,max(res0d$nb)), main = mod)
+plot(res1d$nb, type = 'l', ylim = c(0,max(res1d$nb)), main = mod)
+
+
+
+
+
+
+
+
 for(mod in c("gauss","poisson","exp","geom","bern","binom","negbin","variance"))
 {
   print(c())
@@ -54,11 +118,12 @@ res6d$changepoints
 all_times <- list()  # optional: to store timings per model
 
 for (mod in c("gauss","poisson","exp","geom","bern","binom","negbin","variance"))
+#for (mod in c("variance"))
 {
   cat("\n============================\n")
   cat("Model:", mod, "\n")
 
-  n   <- 5*10^4
+  n   <- 1*10^6
   pen <- 2 * log(n)
   cpts <- floor(seq(from = 0.1, to = 1, by = 0.1) * n)
 
@@ -74,7 +139,7 @@ for (mod in c("gauss","poisson","exp","geom","bern","binom","negbin","variance")
   ##------------------##
   #t0d <- system.time(res0d <- dust.1D(data, penalty = pen, model = mod, method = "det_DUSTr"))
   #t1d <- system.time(res1d <- dust.1D(data, penalty = pen, model = mod, method = "det_DUST"))
-  t2d <- system.time(res2d <- dust.1D(data, penalty = pen, model = mod, method = "det_DUSTgs"))
+  #t2d <- system.time(res2d <- dust.1D(data, penalty = pen, model = mod, method = "det_DUSTgs"))
   t3d <- system.time(res3d <- dust.1D(data, penalty = pen, model = mod, method = "det_DUSTqn"))
   t5d <- system.time(res5d <- dust.1D(data, penalty = pen, model = mod, method = "det_DUSTbs"))
   t6d <- system.time(res6d <- dust.1D(data, penalty = pen, model = mod, method = "det_DUSTib"))
@@ -82,7 +147,7 @@ for (mod in c("gauss","poisson","exp","geom","bern","binom","negbin","variance")
   times_det <- rbind(
     #det_DUSTr  = t0d,
     #det_DUST   = t1d,
-    det_DUSTgs = t2d,
+    #det_DUSTgs = t2d,
     det_DUSTqn = t3d,
     det_DUSTbs = t5d,
     det_DUSTib = t6d
@@ -93,18 +158,18 @@ for (mod in c("gauss","poisson","exp","geom","bern","binom","negbin","variance")
   ##------------------##
   #t0r <- system.time(res0r <- dust.1D(data, penalty = pen, model = mod, method = "rand_DUSTr"))
   #t1r <- system.time(res1r <- dust.1D(data, penalty = pen, model = mod, method = "rand_DUST"))
-  t2r <- system.time(res2r <- dust.1D(data, penalty = pen, model = mod, method = "rand_DUSTgs"))
-  t3r <- system.time(res3r <- dust.1D(data, penalty = pen, model = mod, method = "rand_DUSTqn"))
-  t5r <- system.time(res5r <- dust.1D(data, penalty = pen, model = mod, method = "rand_DUSTbs"))
-  t6r <- system.time(res6r <- dust.1D(data, penalty = pen, model = mod, method = "rand_DUSTib"))
+  #t2r <- system.time(res2r <- dust.1D(data, penalty = pen, model = mod, method = "rand_DUSTgs"))
+  #t3r <- system.time(res3r <- dust.1D(data, penalty = pen, model = mod, method = "rand_DUSTqn"))
+  #t5r <- system.time(res5r <- dust.1D(data, penalty = pen, model = mod, method = "rand_DUSTbs"))
+  #t6r <- system.time(res6r <- dust.1D(data, penalty = pen, model = mod, method = "rand_DUSTib"))
 
   times_rand <- rbind(
     #rand_DUSTr  = t0r,
    # rand_DUST   = t1r,
-    rand_DUSTgs = t2r,
-    rand_DUSTqn = t3r,
-    rand_DUSTbs = t5r,
-    rand_DUSTib = t6r
+    #rand_DUSTgs = t2r,
+   # rand_DUSTqn = t3r,
+    #rand_DUSTbs = t5r,
+    #rand_DUSTib = t6r
   )
 
   ##------------------##
@@ -113,8 +178,8 @@ for (mod in c("gauss","poisson","exp","geom","bern","binom","negbin","variance")
   cat("\nDeterministic timings (user/sys/elapsed):\n")
   print(times_det)
 
-  cat("\nRandomized timings (user/sys/elapsed):\n")
-  print(times_rand)
+  #cat("\nRandomized timings (user/sys/elapsed):\n")
+  #print(times_rand)
 
   cat("\nDeterministic changepoint agreement (vs det_DUSTr):\n")
   print(c(
@@ -125,20 +190,21 @@ for (mod in c("gauss","poisson","exp","geom","bern","binom","negbin","variance")
     #all(res0d$changepoints == res6d$changepoints)
   ))
 
-  cat("\nRandomized changepoint agreement (vs rand_DUSTr):\n")
-  print(c(
+  #cat("\nRandomized changepoint agreement (vs rand_DUSTr):\n")
+  #print(c(
     #all(res0r$changepoints == res1r$changepoints),
     #all(res0r$changepoints == res2r$changepoints),
     #all(res0r$changepoints == res3r$changepoints),
     #all(res0r$changepoints == res5r$changepoints)
     #all(res0r$changepoints == res6r$changepoints)
-  ))
+  #))
 
-  cat("\nRandomized changepoints (rand_DUSTr):\n")
-  print(res3r$changepoints)
+  #cat("\nRandomized changepoints (rand_DUSTr):\n")
+  print(res3d$changepoints)
 
   ## optional: store timings in a list for later analysis
-  all_times[[mod]] <- list(det = times_det, rand = times_rand)
+  #all_times[[mod]] <- list(det = times_det, rand = times_rand)
+  all_times[[mod]] <- list(det = times_det)
 }
 
 

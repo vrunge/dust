@@ -18,14 +18,14 @@ double Variance_1D::statistic(double& data) const
 
 double Variance_1D::costEval(double point, unsigned int t, unsigned int s) const
 {
-  return -0.5*(t-s)*std::log(-2*point) - point*(cumsum[t] - cumsum[s]);
+  return -0.5*(t-s)*std::log(-2.0*point) - point*(cumsum[t] - cumsum[s]);
 }
 
 double Variance_1D::costMin(unsigned int t, unsigned int s) const
 {
-  double delta_t = 1.0*(t - s);
+  double delta_t = t - s;
   double diff_cumsum = cumsum[t] - cumsum[s];
-  //if(diff_cumsum <= 0){diff_cumsum = 1e-100;} /// choice  1e-100 to avoid -Inf
+  if(diff_cumsum <= 0){diff_cumsum = 1e-100;} /// choice  1e-100 to avoid -Inf /// THIS IS IMPORTANT
   return 0.5 * delta_t * (1.0 + std::log(diff_cumsum / delta_t));
 }
 
