@@ -1,43 +1,67 @@
-
-
-obj1 <- new(DUST_1D, mod, "zgfsg", 10)
+obj1 <- new(DUST_meanVar, "det_DUST1")
 obj1$get_info()
 
-obj2 <- new(DUST_meanVar, "det1_DUST")
+obj2 <- new(DUST_meanVar, "det2_DUST2")
 obj2$get_info()
 
-
 ### MEAN AND VAR
-
 mod = "gauss"
-n <- 10
-pen <- 2*log(n)/5
+n <- 10^6
+pen <- 2*log(n)
 cpts <- n
-data <- dataGenerator_meanVar(chpts = c(n/4,n/2,n),
-                              means = c(0,0,4),
-                              sds = c(1,2,2))
+data <- dataGenerator_meanVar(chpts = 1:50*(n/50),
+                              means = sample(c(0,1), 50, replace = TRUE),
+                              sds = sample(c(1,1.5), 50, replace = TRUE))
 
+#res1d <- dust.meanVar(data, penalty = pen, method = "PELT")
+#res2d <- dust.meanVar(data, penalty = pen, method = "det_DUSTr") #red
+#res3d <- dust.meanVar(data, penalty = pen, method = "det_DUST") #green
+system.time(res4d <- dust.meanVar(data, penalty = pen, method = "det_DUST1")) #blue
+system.time(res5d <- dust.meanVar(data, penalty = pen, method = "det2_DUST2")) #blue
 
-res1d <- dust.meanVar(data, penalty = pen, method = "det_DUSTr")
-res2d <- dust.meanVar(data, penalty = pen, method = "OP")
-res3d <- dust.meanVar(data, penalty = pen, method = "PELT")
-res4d <- dust_R_2param_meanVar(data, penalty = pen, pruningOpt = 0)
+res4d$changepoints
 
-(res1d$changepoints)
-(res2d$changepoints)
-(res3d$changepoints)
-all(res1d$changepoints == res2d$changepoints)
-all(res2d$changepoints == res3d$changepoints)
+#plot(res1d$nb, col = 1, type = 'l', ylim = c(0, max(res2d$nb, res3d$nb)))
+#par(new = TRUE)
+MAX <- max(res4d$nb, res5d$nb)
 
+#plot(res2d$nb, col = 2, type = 'l', ylim = c(0, MAX))
+#par(new = TRUE)
 
-#res4d$changepoints
-
-plot(res1d$nb, type = 'l', ylim = c(0, max(res1d$nb, res3d$nb)))
+plot(res4d$nb, col = 3, type = 'l', ylim = c(0, MAX), main = "number of non-pruned indices over time")
 par(new = TRUE)
-plot(res3d$nb, col = 2, type = 'l', ylim = c(0,max(res1d$nb, res3d$nb)))
-plot(res3d$costQ - res2d$costQ)
-res3d$costQ - res2d$costQ
-res3d$costQ - res2d$costQ; res3d$costQ ; res2d$costQ
+plot(res5d$nb, col = 4, type = 'l', ylim = c(0, MAX))
+legend("topleft",
+       legend = c("1D dual (0.05% indices left. 10s) ", "2D dual  (0.02% indices left. 10s)"),  # change labels as you like
+       col    = c(3, 4),
+       lty    = 1,
+       lwd = 2,
+       bty    = "n")
+
+res4d$nb[n]/n
+res5d$nb[n]/n
+
+length(res4d$changepoints)
+
+#sum(abs(res3d$costQ - res2d$costQ)[-1])
+#sum(abs(res1d$costQ - res2d$costQ)[-1])
+
+res4d$changepoints
+res5d$changepoints
+all(res4d$changepoints == res5d$changepoints)
+res4d$nb[n]/n
+res5d$nb[n]/n
+
+
+res5d$costQ
+
+
+all(res2d$changepoints == res3d$changepoints)
+all(res3d$changepoints == res4d$changepoints)
+
+
+
+res4d$nb - res2d$nb
 
 
 #####################################################################################
@@ -62,14 +86,13 @@ plot(res1d$nb, type = 'l', ylim = c(0,max(res1d$nb)), main = mod)
 
 
 
-
 for(mod in c("gauss","poisson","exp","geom","bern","binom","negbin","variance"))
 {
   print(c())
   print(c())
   print(rep(mod,15))
   n <-10^4
-  pen <- 2*log(n)/3
+  pen <- 2*log(n)
   cpts <- n
   #cpts <- floor(seq(from = 0.1, to = 1, by = 0.1)*n)
   data <- dataGenerator_1D(chpts = cpts,

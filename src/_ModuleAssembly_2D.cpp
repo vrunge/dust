@@ -30,15 +30,16 @@ DUST_meanVar *newModule2D(const std::string& method)
   }
 
   ///////////////////  DEFAULT CHOICE  = best choice ///////////////////
-  std::string dualmax_algo = "DUST"; /// exact DUST
-  std::string constr_index = "det"; /// deterministic choice for constraint
+  std::string dualmax_algo = "DUST1"; /// exact DUST
+  std::string constr_index = "det1"; /// deterministic choice for constraint
 
   if (method_INFO[0] == "det1"){constr_index = "det1";}
   else if (method_INFO[0] == "det2"){constr_index = "det2";}
   else if ((method_INFO[0] == "OP") || (method_INFO[0] == "PELT")){constr_index = "-";}
 
   if (method_INFO[1] == "DUSTr") {dualmax_algo = "DUSTr";} //algo0
-  else if (method_INFO[1] == "DUST"){dualmax_algo = "DUST";} //algo1
+  else if (method_INFO[1] == "DUST1"){dualmax_algo = "DUST1";} //decision test 1D
+  else if (method_INFO[1] == "DUST2"){dualmax_algo = "DUST2";} //decision test 1D
   else if (method_INFO[1] == "PELT"){dualmax_algo = "PELT";} //algo1
   else if (method_INFO[1] == "OP"){dualmax_algo = "OP";} //algo1
 

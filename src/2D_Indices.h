@@ -8,10 +8,10 @@
 
 using namespace Rcpp;
 
-class Indices_1D
+class Indices_2D
 {
   public:
-    virtual ~Indices_1D();
+    virtual ~Indices_2D();
 
     ////////// Generic //////////
     ////////// Generic //////////
@@ -39,7 +39,9 @@ class Indices_1D
     virtual bool is_not_the_last_pruning() = 0;
 
     virtual void new_constraint() = 0;
-    virtual unsigned int get_constraint() = 0;
+    virtual unsigned int get_constraint_r1() = 0;
+    virtual unsigned int get_constraint_r2() = 0;
+
 
   protected:
     // --- // Fields // --- //
@@ -51,10 +53,10 @@ class Indices_1D
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////
-//////////////// derived class:  Indices_1D_Det
+//////////////// derived class:  Indices_2D_Det
 ////////////////
 
-class Indices_1D_Det : public Indices_1D
+class Indices_2D_Det1 : public Indices_2D
 {
   public:
     void add_first(unsigned int value) override;
@@ -67,46 +69,48 @@ class Indices_1D_Det : public Indices_1D
     void prune_last() override;
 
     void new_constraint() override;
-    unsigned int get_constraint() override;
+    unsigned int get_constraint_r1() override;
+    unsigned int get_constraint_r2() override;
 
   private:
     // iterator for list
     // a kind of "after" or "next" pointer
     std::forward_list<unsigned int>::iterator constraint;
+    //////////// RANDOM NUMBER GENERATOR ////////////
+    std::minstd_rand0 engine;  // Random number engine
+    std::uniform_real_distribution<double> dist;  // Uniform distribution [0, 1)
+
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////
-//////////////// derived class:  Indices_1D_Rand
+//////////////// derived class:  Indices_2D_Rand
 ////////////////
 
-class Indices_1D_Rand : public Indices_1D
+class Indices_2D_Det2 : public Indices_2D
 {
-  public:
-    Indices_1D_Rand();
+public:
+  void add_first(unsigned int value) override;
 
-    void add_first(unsigned int value) override;
+  void reset_pruning() override;
+  void next_pruning() override;
+  void prune_current() override;
+  bool is_not_the_last_pruning() override;
 
-    void reset_pruning() override;
-    void next_pruning() override;
-    void prune_current() override;
-    void prune_last() override;
+  void prune_last() override;
 
-    bool is_not_the_last_pruning() override;
+  void new_constraint() override;
+  unsigned int get_constraint_r1() override;
+  unsigned int get_constraint_r2() override;
 
-    void new_constraint() override;
-    unsigned int get_constraint() override;
+private:
+  // iterator for list
+  // a kind of "after" or "next" pointer
+  std::forward_list<unsigned int>::iterator constraint;
+  //////////// RANDOM NUMBER GENERATOR ////////////
+  std::minstd_rand0 engine;  // Random number engine
+  std::uniform_real_distribution<double> dist;  // Uniform distribution [0, 1)
 
-  private:
-    unsigned int nb = 0; // number of elements in the list = length
-    unsigned int nbC = 0; // number of available constraint (smaller indices) for a given s index
-
-    std::vector<unsigned int*> pointers; // all pointers for the list of indices
-    std::vector<unsigned int*>::reverse_iterator pointersCurrent; // to move on pointers
-
-    //////////// RANDOM NUMBER GENERATOR ////////////
-    std::minstd_rand0 engine;  // Random number engine
-    std::uniform_real_distribution<double> dist;  // Uniform distribution [0, 1)
 };
 
 

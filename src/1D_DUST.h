@@ -105,6 +105,7 @@ class DUST_1D
     // 4: DUSTqn.  Quasi-Newton
     // 5: PELT
     // 6: OP
+    // 7: DUST. exact eval
     bool dualMaxAlgo0(double minCost_t, unsigned int t, unsigned int s, unsigned int r);
     bool dualMaxAlgo1(double minCost_t, unsigned int t, unsigned int s, unsigned int r);
     bool dualMaxAlgo2(double minCost_t, unsigned int t, unsigned int s, unsigned int r);

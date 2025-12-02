@@ -322,7 +322,6 @@ bool DUST_1D::dualMaxAlgo0(double minCost_t,
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-
 /// EXACT EVAL
 
 bool DUST_1D::dualMaxAlgo1(double minCost_t, unsigned int t, unsigned int s, unsigned int r)
@@ -332,12 +331,38 @@ bool DUST_1D::dualMaxAlgo1(double minCost_t, unsigned int t, unsigned int s, uns
   double c = (minCost_t - costRecord[s]) / (t - s);
   double d = (costRecord[s] - costRecord[r]) / (s - r);
   double mu_max = muMax(a, b);
-
   ///
   /// case dual domain = one point OR dual = linear function
+  ///
   if(isOnePointOrLinear(a,b) == true){return specialCasePruning(a,b,c,d,mu_max);}
 
-  return (dualMax(minCost_t, t, s, r) > 0);
+  double R = -(c-d)/(a-b);
+  double x_max = xMax(a, b);
+
+  double xstar = 1.0/(a - b) * (DstarPrimeInv(R) - a);
+
+  /// case PELT
+  if(xstar <= 0 && xstar > -1)
+  {
+    return (- Dstar(a) -c > 0);
+  }
+
+  /// INTERIOR POINT
+  if(xstar >= 0 && xstar < x_max)
+  {
+    return  (- Dstar(a + xstar*(a-b)) - (c + xstar*(c-d))) > 0;
+  }
+
+  if((xstar <= -1) && (x_max < std::numeric_limits<double>::infinity()))
+  {
+    return (-Dstar_leftboundary() - (c + x_max*(c-d))) > 0;
+  }
+
+  if(xstar >= x_max) // case finite only
+  {
+    return  (- Dstar_leftboundary() - (c + x_max*(c-d))) > 0;
+  }
+  return (-Dstar_superLinearLimit() - (c-d) > 0);
 }
 
 
@@ -695,8 +720,6 @@ bool DUST_1D::dualMaxAlgo7(double minCost_t,
   double c = (minCost_t - costRecord[s]) / (t - s);
   double d = (costRecord[s] - costRecord[r]) / (s - r);
   double mu_max = muMax(a, b);
-
-  //Rcout << " t: "  << t << " s: "  << s  << " t: "<< r << std::endl;
   ///
   /// case dual domain = one point OR dual = linear function
   ///
@@ -707,49 +730,29 @@ bool DUST_1D::dualMaxAlgo7(double minCost_t,
 
   double xstar = 1.0/(a - b) * (DstarPrimeInv(R) - a);
 
-  //Rcout << " xstar: "  << xstar << std::endl;
+  /// case PELT
+  if(xstar <= 0 && xstar > -1)
+  {
+    return (- Dstar(a) -c > 0);
+  }
 
+  /// INTERIOR POINT
   if(xstar >= 0 && xstar < x_max)
   {
-    // Rcout << " 00 stdcase: " << std::endl;
     return  (- Dstar(a + xstar*(a-b)) - (c + xstar*(c-d))) > 0;
+  }
+
+  if((xstar <= -1) && (x_max < std::numeric_limits<double>::infinity()))
+  {
+    return (-Dstar_leftboundary() - (c + x_max*(c-d))) > 0;
   }
 
   if(xstar >= x_max) // case finite only
   {
-    //Rcout << " a-b: " <<  a-b << " a: " <<  a <<" b: " <<  b << " xstar: " <<  xstar << " x_max " << x_max << " test " << ( (- Dstar_leftboundary() - (c + x_max*(c-d))) > 0) << " x_max*(c-d) " <<  x_max*(c-d) << std::endl;
     return  (- Dstar_leftboundary() - (c + x_max*(c-d))) > 0;
   }
 
-  if(xstar <= 0 && xstar > -1)
-  {
-    // Rcout << "00  small neg: " << std::endl;
-    //Rcout << " Cas1: " <<  - Dstar(a) -c << " - Dstar(a): " <<  - Dstar(a) << " -c: " << -c << std::endl;
-    return (- Dstar(a) -c > 0);
-  }
-  if(xstar <= -1)
-  {
-    //Rcout << "00  BIGBIGBIGBIGBIGBIGBIGBIG neg: " << x_max << std::endl;
-    //if(x_max == std::numeric_limits<double>::infinity())
-    //Rcout << " Cas2: " << Dstar_leftboundary() - (c + x_max*(c-d)) <<" Dbound: " << Dstar_leftboundary()<<" constC: " <<  c << " constD: " <<  d << " RES " << ((-Dstar_leftboundary() - (c + x_max*(c-d))) > 0) << std::endl;
-
-    if (x_max < std::numeric_limits<double>::infinity())
-    {
-      //Rcout << " TEST_TEST: " << (-Dstar_leftboundary() - (c + x_max*(c-d)));
-      //Rcout << "x_maxx_maxx_max: " << (-Dstar_leftboundary() - (c + x_max*(c-d))) << std::endl;
-      return (-Dstar_leftboundary() - (c + x_max*(c-d))) > 0;
-    }
-    else
-    {
-      return (-Dstar_superLinearLimit() - (c-d) > 0);
-    }
-  }
-
-  //double xstar = 1/(a - b) * (DstarPrimeInv(R) - a);
-  //if(xstar < 0){R = DstarPrime(a);}
-  //if(xstar >= x_max){return false;}
-
-  //return ((costEval(R, t, s) + costRecord[s]) > minCost_t);
+  return (-Dstar_superLinearLimit() - (c-d) > 0);
 }
 
 
