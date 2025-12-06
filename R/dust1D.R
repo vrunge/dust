@@ -69,5 +69,3 @@ dust.1D <- function(
   object$dust(data, penalty)
   return(object$get_partition())
 }
-
-

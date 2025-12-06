@@ -262,12 +262,30 @@ List flat2_DUST_1D(const std::vector<double>& inData, Nullable<double> inPenalty
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-
+//' @title MyModule: Exposing dust.gauss.1D to R
+//'
+//' @name dust.gauss.1D
+//'
+//' @description
+//' This module exposes the \code{dust.gauss.1D} C++ class to R, allowing you to create
+//' instances of \code{dust.gauss.1D} and call its methods directly from R.
+//'
+//' @export
 RCPP_MODULE(FLATDUST1D)
 {
   function("dust.gauss.1D", flat_DUST_1D);
 }
 
+
+//' @title MyModule: Exposing dust2.gauss.1D to R
+//'
+//' @name dust2.gauss.1D
+//'
+//' @description
+//' This module exposes the \code{dust2.gauss.1D} C++ class to R, allowing you to create
+//' instances of \code{dust2.gauss.1D} and call its methods directly from R.
+//'
+//' @export
 RCPP_MODULE(FLAT2DUST1D)
 {
   function("dust2.gauss.1D", flat2_DUST_1D);

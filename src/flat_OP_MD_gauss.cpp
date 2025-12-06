@@ -108,6 +108,16 @@ List flat_OP_MD(const arma::dmat& inData, Nullable<double> inPenalty = R_NilValu
 //// new 3 functions : ini, comute and get_partition
 ////
 
+
+//' @title MyModule: Exposing OP.gauss.MD to R
+//'
+//' @name OP.gauss.MD
+//'
+//' @description
+//' This module exposes the \code{OP.gauss.MD} C++ class to R, allowing you to create
+//' instances of \code{OP.gauss.MD} and call its methods directly from R.
+//'
+//' @export
 RCPP_MODULE(FLATOPMD)
 {
   function("OP.gauss.MD", flat_OP_MD);

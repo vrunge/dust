@@ -7,7 +7,7 @@
 #'
 #' @param data A numeric vector representing the univariate time series.
 #'   No copy of the data is made, and it is not possible to append new data for
-#'   incremental analysis. For such functionality, see \code{\link{dust.object.meanVar}}.
+#'   incremental analysis. For such functionality, see \code{\link{dust.object.Reg}}.
 #'
 #' @param penalty A positive numeric value specifying the penalty for introducing
 #'   a new change point. By default, it is set to \code{4 * log(length(data))},
@@ -52,13 +52,13 @@
 #' @note The smallest non-pruned index is always tested for pruning (PELT-type
 #'   rule), and additional pruning is performed according to the chosen
 #'   \code{method}. For incremental analysis (streaming data), use
-#'   \code{\link{dust.object.meanVar}} instead.
+#'   \code{\link{dust.object.Reg}} instead.
 #'
 #' @seealso
-#' \code{\link{dataGenerator_meanVar}} — To generate synthetic data with
+#' \code{\link{dataGenerator_Reg}} — To generate synthetic data with
 #' simultaneous mean and variance changes.
 #'
-#' \code{\link{dust.object.meanVar}} — Object-oriented interface for the
+#' \code{\link{dust.object.Reg}} — Object-oriented interface for the
 #'   mean/variance model that supports incremental updates via
 #'   \code{append_data} and \code{update_partition}.
 #'
@@ -69,18 +69,16 @@
 #'       rnorm(400, 0, 1.5),
 #'       rnorm(300, 1, 1.5))
 #'
-#' res <- dust.meanVar(y)
+#' res <- dust.Reg(y)
 #' res$changepoints
 #' @export
-dust.meanVar <- function(
+dust.Reg <- function(
     data = data
     , penalty = 4*log(length(data))
     , method = "det_DUST"
 )
 {
-  object <- new(DUST_meanVar, method)
+  object <- new(DUST_Reg, method)
   object$dust(data, penalty)
   return(object$get_partition())
 }
-
-

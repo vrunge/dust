@@ -12,13 +12,35 @@
 #' @export
 NULL
 
-#' @title MyModule: Exposing DUST_2D to R
+#' @title MyModule: Exposing DUST_meanVar to R
 #'
-#' @name DUST_2D
+#' @name DUST_meanVar
 #'
 #' @description
-#' This module exposes the \code{DUST_2D} C++ class to R, allowing you to create
-#' instances of \code{DUST_2D} and call its methods directly from R.
+#' This module exposes the \code{DUST_meanVar} C++ class to R, allowing you to create
+#' instances of \code{DUST_meanVar} and call its methods directly from R.
+#'
+#' @export
+NULL
+
+#' @title MyModule: Exposing DUST_Reg to R
+#'
+#' @name DUST_Reg
+#'
+#' @description
+#' This module exposes the \code{DUST_Reg} C++ class to R, allowing you to create
+#' instances of \code{DUST_Reg} and call its methods directly from R.
+#'
+#' @export
+NULL
+
+#' @title MyModule: Exposing OP.gauss.1D to R
+#'
+#' @name OP.gauss.1D
+#'
+#' @description
+#' This module exposes the \code{OP.gauss.1D} C++ class to R, allowing you to create
+#' instances of \code{OP.gauss.1D} and call its methods directly from R.
 #'
 #' @export
 NULL
@@ -37,6 +59,17 @@ flat_OP_1D <- function(inData, inPenalty = NULL) {
     .Call(`_dust_flat_OP_1D`, inData, inPenalty)
 }
 
+#' @title MyModule: Exposing OP.gauss.MD to R
+#'
+#' @name OP.gauss.MD
+#'
+#' @description
+#' This module exposes the \code{OP.gauss.MD} C++ class to R, allowing you to create
+#' instances of \code{OP.gauss.MD} and call its methods directly from R.
+#'
+#' @export
+NULL
+
 #' Optimal Partitioning in MD with Flat Model
 #'
 #' Computes the optimal partitioning of multi-dimensional data using a flat model with an optional penalty parameter.
@@ -47,6 +80,28 @@ flat_OP_1D <- function(inData, inPenalty = NULL) {
 flat_OP_MD <- function(inData, inPenalty = NULL) {
     .Call(`_dust_flat_OP_MD`, inData, inPenalty)
 }
+
+#' @title MyModule: Exposing dust.gauss.1D to R
+#'
+#' @name dust.gauss.1D
+#'
+#' @description
+#' This module exposes the \code{dust.gauss.1D} C++ class to R, allowing you to create
+#' instances of \code{dust.gauss.1D} and call its methods directly from R.
+#'
+#' @export
+NULL
+
+#' @title MyModule: Exposing dust2.gauss.1D to R
+#'
+#' @name dust2.gauss.1D
+#'
+#' @description
+#' This module exposes the \code{dust2.gauss.1D} C++ class to R, allowing you to create
+#' instances of \code{dust2.gauss.1D} and call its methods directly from R.
+#'
+#' @export
+NULL
 
 #' Calculate Standard Deviation or MAD of Differences in a Numeric Vector
 #'

@@ -4,7 +4,6 @@
 ## --- // Importing C++ Modules // --- ##
 ## --- /////////////////////////// --- ##
 ## ----------------------------------- ##
-Rcpp::loadModule("DUSTMODULE2D", TRUE)
 
 
 Rcpp::loadModule("DUSTMODULE1D", TRUE)

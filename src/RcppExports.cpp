@@ -73,7 +73,8 @@ END_RCPP
 }
 
 RcppExport SEXP _rcpp_module_boot_DUSTMODULE1D();
-RcppExport SEXP _rcpp_module_boot_DUSTMODULE2D();
+RcppExport SEXP _rcpp_module_boot_DUSTMODULEmeanVar();
+RcppExport SEXP _rcpp_module_boot_DUSTMODULEReg();
 RcppExport SEXP _rcpp_module_boot_FLATOP1D();
 RcppExport SEXP _rcpp_module_boot_FLATOPMD();
 RcppExport SEXP _rcpp_module_boot_FLATDUST1D();
@@ -86,7 +87,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_dust_data_normalization_1D", (DL_FUNC) &_dust_data_normalization_1D, 2},
     {"_dust_data_normalization_MD", (DL_FUNC) &_dust_data_normalization_MD, 2},
     {"_rcpp_module_boot_DUSTMODULE1D", (DL_FUNC) &_rcpp_module_boot_DUSTMODULE1D, 0},
-    {"_rcpp_module_boot_DUSTMODULE2D", (DL_FUNC) &_rcpp_module_boot_DUSTMODULE2D, 0},
+    {"_rcpp_module_boot_DUSTMODULEmeanVar", (DL_FUNC) &_rcpp_module_boot_DUSTMODULEmeanVar, 0},
+    {"_rcpp_module_boot_DUSTMODULEReg", (DL_FUNC) &_rcpp_module_boot_DUSTMODULEReg, 0},
     {"_rcpp_module_boot_FLATOP1D", (DL_FUNC) &_rcpp_module_boot_FLATOP1D, 0},
     {"_rcpp_module_boot_FLATOPMD", (DL_FUNC) &_rcpp_module_boot_FLATOPMD, 0},
     {"_rcpp_module_boot_FLATDUST1D", (DL_FUNC) &_rcpp_module_boot_FLATDUST1D, 0},

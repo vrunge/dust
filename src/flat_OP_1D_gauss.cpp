@@ -96,6 +96,15 @@ List flat_OP_1D(const std::vector<double>& inData, Nullable<double> inPenalty = 
 }
 
 
+//' @title MyModule: Exposing OP.gauss.1D to R
+//'
+//' @name OP.gauss.1D
+//'
+//' @description
+//' This module exposes the \code{OP.gauss.1D} C++ class to R, allowing you to create
+//' instances of \code{OP.gauss.1D} and call its methods directly from R.
+//'
+//' @export
 RCPP_MODULE(FLATOP1D)
 {
   function("OP.gauss.1D", flat_OP_1D);
