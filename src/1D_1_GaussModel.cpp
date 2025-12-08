@@ -14,7 +14,14 @@ Gauss_1D::Gauss_1D(std::string dualmax_algo, std::string constr_index, Nullable<
 
 double Gauss_1D::costEval(double point, unsigned int t, unsigned int s) const
 {
-  return 0.5*(t-s)*point*point - point*(cumsum[t] - cumsum[s]);
+  //return 0.5*(t-s)*point*point - point*(cumsum[t] - cumsum[s]);
+  const double dt  = static_cast<double>(t) - static_cast<double>(s);
+  const double sum = cumsum[t] - cumsum[s];
+
+  // Algebraic rewrite:
+  // 0.5 * dt * point^2 - point * sum
+  // = point * (0.5 * dt * point - sum)
+  return point * (0.5 * point - sum/dt);
 }
 
 double Gauss_1D::costMin(unsigned int t, unsigned int s) const

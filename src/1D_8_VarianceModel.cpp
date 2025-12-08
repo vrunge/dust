@@ -16,9 +16,10 @@ double Variance_1D::statistic(double& data) const
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+
 double Variance_1D::costEval(double point, unsigned int t, unsigned int s) const
 {
-  return -0.5*(t-s)*std::log(-2.0*point) - point*(cumsum[t] - cumsum[s]);
+  return -0.5*std::log(-2.0*point) - point*(cumsum[t] - cumsum[s])/(1.0*(t-s));
 }
 
 double Variance_1D::costMin(unsigned int t, unsigned int s) const

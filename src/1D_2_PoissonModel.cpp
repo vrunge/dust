@@ -17,7 +17,7 @@ Poisson_1D::Poisson_1D(std::string dualmax_algo, std::string constr_index, Nulla
 
 double Poisson_1D::costEval(double point, unsigned int t, unsigned int s) const
 {
-  return (t-s)*std::exp(point) - point*(cumsum[t] - cumsum[s]);
+  return (std::exp(point) - point*(cumsum[t] - cumsum[s])/(1.0*(t-s)));
 }
 
 double Poisson_1D::costMin(unsigned int t, unsigned int s) const

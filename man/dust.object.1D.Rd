@@ -36,8 +36,8 @@ is \code{"gauss"}. Available models are:
   function. Currently implemented options are:
   \itemize{
     \item \code{"DUSTr"}: Random evaluation of the dual (uniform sampling)
-    \item \code{"DUSTib"}: Closed-form maximizer of the decision function. An inequality-based rule
-    \item \code{"DUST"}: Closed-form maximizer of the dual function if exists
+    \item \code{"DUSTib"}: Closed-form maximizer of the decision function. Improved DUST PRUNING, not yet working
+    \item \code{"DUST"}: Closed-form maximizer of the decision function
     \item \code{"DUSTgs"}: Golden-section search
     \item \code{"DUSTbs"}: Binary search, with an early stopping rule based on the tangent line at the current point
     \item \code{"DUSTqn"}: Quasi-Newton method with an Armijo line-search condition (the most efficient iterative method).

@@ -1,4 +1,114 @@
 
+set.seed(5)
+all_times <- list()  # optional: to store timings per model
+
+for(mod in c("gauss","poisson","exp","geom","bern","binom","negbin","variance"))
+{
+  cat("\n============================\n")
+  cat("Model:", mod, "\n")
+
+  n   <- 10^7
+  pen <- 2 * log(n)
+  cpts <- floor(seq(from = 0.1, to = 1, by = 0.1) * n)
+
+  data <- dataGenerator_1D(
+    chpts      = cpts,
+    parameters = 0.5 * c(1,1,1,1,1,1,1,1,1,1),
+    type       = mod
+  )
+  data <- data_normalization_1D(data, type = mod)
+
+  t3d <- system.time(res3d <- dust.1D(data, penalty = pen, model = mod, method = "det_DUST"))
+  t6d <- system.time(res6d <- dust.1D(data, penalty = pen, model = mod, method = "det_DUSTib"))
+
+  print(all(res3d$costQ == res6d$costQ))
+
+  print(length(res3d$changepoints))
+
+  print(sum((res3d$nb - res6d$nb)))
+
+  times_det <- rbind(
+    det_DUST = t3d,
+    det_DUSTib = t6d
+  )
+
+
+  ##------------------##
+  cat("\nDeterministic timings (user/sys/elapsed):\n")
+  print(times_det)
+
+
+  cat("\nDeterministic changepoint agreement (vs det_DUSTr):\n")
+  print(res3d$changepoints)
+
+
+  all_times[[mod]] <- list(det = times_det)
+}
+all_times
+
+##
+## binom et negbin error in nb functions, due to data_normalization_1D
+##
+
+###################################################
+
+sum((res3d$nb - res6d$nb) > 0)
+sum((res3d$nb - res6d$nb) < 0)
+
+plot((res3d$nb - res6d$nb)[res3d$nb - res6d$nb])
+
+plot(res5d$costQ)
+a <- res5d$lastIndexSet[1]
+b <- res5d$lastIndexSet[length(res5d$lastIndexSet)-1]
+
+(res5d$costQ[a] - res5d$costQ[b])
+
+
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+
+for(mod in c("gauss","poisson","exp","geom","bern","binom","negbin","variance"))
+{
+  print(c())
+  print(rep(mod,15))
+  n <-10^5
+  pen <- 2*log(n)
+  cpts <- n
+  data <- dataGenerator_1D(chpts = cpts,
+                           parameters = 0.5,
+                           type = mod, nbTrials = 5)
+  data <- data_normalization_1D(data, type = mod)
+  res2d <- dust.1D(data, penalty = pen, model = mod, method = "det_DUST")
+  res6d <- dust.1D(data, penalty = pen, model = mod, method = "det_DUSTib")
+  #all(res2d$changepoints == res6d$changepoints)
+  #print(res2d$changepoints)
+  res2d$costQ[n]
+  res6d$costQ[n]
+  plot(res2d$nb, type = 'l', ylim = c(0,max(res2d$nb,res6d$nb)), main = mod)
+  par(new = TRUE)
+  plot(res6d$nb, col = 2, type = 'l', pch = '-', ylim = c(0,max(res2d$nb,res6d$nb)))
+}
+
+
+res2d$nb
+res6d$nb
+res2d$changepoints
+all(res2d$changepoints == res6d$changepoints)
+res2d$costQ[n]
+res6d$costQ[n]
+
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+
+
+
+
 
 for(mod in c("gauss","poisson","exp","geom","bern","binom","negbin","variance"))
 {
@@ -204,19 +314,4 @@ for(mod in c("gauss","poisson","exp","geom","bern","binom","negbin","variance"))
           all(res0r$changepoints == res6r$changepoints)))
   print(res0r$changepoints)
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

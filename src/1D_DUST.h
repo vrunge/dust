@@ -121,6 +121,15 @@ class DUST_1D
 
     double penalty;
 
+    //int nb00 = 0;
+    //int nb0 = 0;
+    //int nb1 = 0;
+    //int nb2 = 0;
+    //int nb00T = 0;
+    //int nb0T = 0;
+    //int nb1T = 0;
+    //int nb2T = 0;
+
     std::string dualmax_algo;
     std::string constr_index;
     Indices_1D* indices;

@@ -14,7 +14,18 @@ Geom_1D::Geom_1D(std::string dualmax_algo, std::string constr_index, Nullable<in
 
 double Geom_1D::costEval(double point, unsigned int t, unsigned int s) const
 {
-  return -(t-s)*std::log(std::exp(-point) - 1) - point*(cumsum[t] - cumsum[s]);
+  const double dt  = static_cast<double>(t) - static_cast<double>(s);
+  const double sum  = cumsum[t] - cumsum[s];
+
+  // Numerically stable computation of log(exp(-point) - 1)
+  //
+  // For point < 0, set y = -point > 0:
+  //   log(exp(-point) - 1) = log(exp(y) - 1)
+  //                        = y + log(1 - exp(-y))
+  //                        = -point + log1p(-exp(point))
+  //
+  const double logTerm = -point + std::log1p(-std::exp(point));
+  return -logTerm - point * sum/dt;
 }
 
 double Geom_1D::costMin(unsigned int t, unsigned int s) const
@@ -83,13 +94,16 @@ double Geom_1D::Dstar_superLinearLimit() const {return 0;}
 
 double Geom_1D::Dstar(double x) const
 {
-  return (x - 1.0)*std::log(x - 1.0) - x*std::log(x);
+  //return (x - 1.0)*std::log(x - 1.0) - x*std::log(x);
+  const double invx = 1.0 / x;
+  return (x - 1.0) * std::log1p(-invx) - std::log(x);
 }
 
 
 double Geom_1D::DstarPrime(double x) const
 {
-  return std::log(x - 1.0) - std::log(x);
+  //  return std::log(x - 1.0) - std::log(x);
+  return std::log1p(-1.0 / x);
 }
 
 double Geom_1D::DstarPrimeInv(double x) const

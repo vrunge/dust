@@ -184,6 +184,9 @@ void DUST_1D::update_partition()
     nb_indices.push_back(nbt);
     nbt++;
   }
+
+  //Rcout << "NB : " << nb00 << " " << nb0 << " " << nb1 << " " << " " << nb2 << std::endl;
+  //Rcout << "NBT: " << nb00T << " "<< nb0T << " " << nb1T << " " << " " << nb2T << " S: " << nb00T + nb0T + nb1T + nb2T << std::endl;
 }
 
 
@@ -326,6 +329,7 @@ bool DUST_1D::dualMaxAlgo0(double minCost_t,
 
 bool DUST_1D::dualMaxAlgo1(double minCost_t, unsigned int t, unsigned int s, unsigned int r)
 {
+
   double a = (cumsum[t] - cumsum[s]) / (t - s);
   double b = (cumsum[s] - cumsum[r]) / (s - r);
   double c = (minCost_t - costRecord[s]) / (t - s);
@@ -334,35 +338,57 @@ bool DUST_1D::dualMaxAlgo1(double minCost_t, unsigned int t, unsigned int s, uns
   ///
   /// case dual domain = one point OR dual = linear function
   ///
+  //if(isOnePointOrLinear(a,b) == true)
+  //{
+  //nb00 = nb00 + 1;
+  //  if (specialCasePruning(a,b,c,d,mu_max)) nb00T = nb00T + 1;
+  //}
   if(isOnePointOrLinear(a,b) == true){return specialCasePruning(a,b,c,d,mu_max);}
 
-  double R = -(c-d)/(a-b);
-  double x_max = xMax(a, b);
 
-  double xstar = 1.0/(a - b) * (DstarPrimeInv(R) - a);
-
-  /// case PELT
-  if(xstar <= 0 && xstar > -1)
+  // value a visible, not hidden by the r function
+  // PELT pruning
+  //Rcout << DstarPrime(a) << " "<<  -(a-b)*DstarPrime(a) << " " << -(a-b)*DstarPrime(a) - (c-d) << std::endl;
+  //
+  // if derivative in 0 is negative
+  //
+  if(-(a-b)*DstarPrime(a) - (c-d) < 0)
   {
+    //nb0 = nb0 + 1;
+    //if(- Dstar(a) -c > 0) nb0T = nb0T + 1;
     return (- Dstar(a) -c > 0);
   }
 
-  /// INTERIOR POINT
-  if(xstar >= 0 && xstar < x_max)
+  //
+  // if derivative in +inf is positive
+  //
+  if( a > b)
   {
-    return  (- Dstar(a + xstar*(a-b)) - (c + xstar*(c-d))) > 0;
+    if(-DstarPrime(std::numeric_limits<double>::infinity()) - (c-d) > 0)
+    {
+      return true;
+    }
   }
 
-  if((xstar <= -1) && (x_max < std::numeric_limits<double>::infinity()))
-  {
-    return (-Dstar_leftboundary() - (c + x_max*(c-d))) > 0;
-  }
+  return(costEval(-(c-d)/(a-b), t, s) > c);
 
-  if(xstar >= x_max) // case finite only
-  {
-    return  (- Dstar_leftboundary() - (c + x_max*(c-d))) > 0;
-  }
-  return (-Dstar_superLinearLimit() - (c-d) > 0);
+  //double x_max = xMax(a, b);
+  //if(x_max == std::numeric_limits<double>::infinity())
+  //  {
+    //Rcout << "MAX "<< -(a-b) << " "<< a+ x_max*(a-b) << " " << DstarPrime(a+ x_max*(a-b)) << " " << -(a-b)*DstarPrime(a+ x_max*(a-b)) << std::endl;
+    //  if(-(a-b)*DstarPrime(a+ x_max*(a-b)) - (c-d) > 0)
+    //{
+    //  return true;
+      //nb2 = nb2 + 1;
+      //if(-Dstar_superLinearLimit() - (c-d) > 0) nb2T = nb2T + 1;
+      //return(-Dstar_superLinearLimit() - (c-d) > 0);
+      //}
+      //  }
+  // Rcout << "COST1 "<<   -(c-d)/(a-b) << " "<<  costEval(-(c-d)/(a-b), t, s) << " "<< cumsum[t] - cumsum[s] << " "<< t << " "<<  s << std::endl;
+  //nb1 = nb1 + 1;
+  //if(costEval(-(c-d)/(a-b), t, s) + costRecord[s] > costRecord[t]) nb1T = nb1T + 1;
+
+  // (t-s) costEval(-(c-d)/(a-b), t, s) + Qs + beta > Qt + beta
 }
 
 
@@ -751,8 +777,8 @@ bool DUST_1D::dualMaxAlgo7(double minCost_t,
   {
     return  (- Dstar_leftboundary() - (c + x_max*(c-d))) > 0;
   }
-
   return (-Dstar_superLinearLimit() - (c-d) > 0);
+
 }
 
 

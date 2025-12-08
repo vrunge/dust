@@ -15,7 +15,10 @@ Negbin_1D::Negbin_1D(std::string dualmax_algo, std::string constr_index, Nullabl
 
 double Negbin_1D::costEval(double point, unsigned int t, unsigned int s) const
 {
-  return -(t-s)*std::log(1 - std::exp(point)) - point*(cumsum[t] - cumsum[s]);
+  const double dt   = static_cast<double>(t) - static_cast<double>(s);
+  const double mean = (cumsum[t] - cumsum[s]) / dt;
+  const double logTerm = -std::log1p(-std::exp(point));
+  return logTerm - point * mean;
 }
 
 double Negbin_1D::costMin(unsigned int t, unsigned int s) const
@@ -102,13 +105,18 @@ double Negbin_1D::Dstar_superLinearLimit() const {return 0;}
 
 double Negbin_1D::Dstar(double x) const
 {
-  return x*std::log(x) - (1.0 + x)*std::log(1.0 + x);
+  //return x*std::log(x) - (1.0 + x)*std::log(1.0 + x);
+  const double inv1px = 1.0 / (1.0 + x);
+  // x * log(1 - 1/(1+x)) - log(1+x)
+  return x * std::log1p(-inv1px) - std::log1p(x);
 }
 
 
 double Negbin_1D::DstarPrime(double x) const
 {
-  return std::log(x) - std::log(1.0 + x);
+  //return std::log(x) - std::log(1.0 + x);
+  const double inv1px = 1.0 / (1.0 + x);   // 1 / (1 + x)
+  return std::log1p(-inv1px);             // log(1 - 1/(1+x))
 }
 
 double Negbin_1D::DstarPrimeInv(double x) const

@@ -12,10 +12,18 @@ Bern_1D::Bern_1D(std::string dualmax_algo, std::string constr_index, Nullable<in
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+
 double Bern_1D::costEval(double point, unsigned int t, unsigned int s) const
 {
-  return (t-s)*std::log(std::exp(point) + 1) - point*(cumsum[t] - cumsum[s]);
+  const double dt   = static_cast<double>(t) - static_cast<double>(s);
+  const double mean = (cumsum[t] - cumsum[s]) / dt;
+  double val = 0;
+  if (point <= 0.0) { val = std::log1p(std::exp(point));}
+  else { val =  point + std::log1p(std::exp(-point));}
+  // Original: log(exp(point) + 1) - point * (cumsum[t] - cumsum[s]) / (1.0*(t-s))
+  return val - point * mean;
 }
+
 
 double Bern_1D::costMin(unsigned int t, unsigned int s) const
 {

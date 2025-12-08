@@ -23,7 +23,7 @@ double Exp_1D::statistic(double& data) const
 
 double Exp_1D::costEval(double point, unsigned int t, unsigned int s) const
 {
-  return -(t-s)*std::log(-point) - point*(cumsum[t] - cumsum[s]);
+  return -1.0*std::log(-1.0*point) - point*(cumsum[t] - cumsum[s])/(1.0*(t-s));
 }
 
 double Exp_1D::costMin(unsigned int t, unsigned int s) const
@@ -74,7 +74,7 @@ double Exp_1D::muMax(double a, double b) const
 double Exp_1D::xMax(double a, double b) const
 {
   if (a < b) return -a/(a-b);
-  else  return std::numeric_limits<double>::infinity();
+  return std::numeric_limits<double>::infinity();
 }
 
 bool Exp_1D::isLeftBoundary(double a) const {return a == 0;}
@@ -83,7 +83,7 @@ double Exp_1D::Dstar_superLinearLimit() const {return 0;}
 
 double Exp_1D::Dstar(double x) const
 {
-  return (-std::log(x) - 1.0);
+  return -(std::log(x) + 1.0);
 }
 
 
