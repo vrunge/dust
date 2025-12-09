@@ -87,13 +87,14 @@ double Negbin_1D::dualMax(double minCost_t, unsigned int t, unsigned int s, unsi
 double Negbin_1D::muMax(double a, double b) const
 {
   double res = 1;
- //if (std::abs(a - b) < 1e-10) return 1;
+  //if (std::abs(a - b) < 1e-14) return 1;
   if(b != 0){res = std::min(1.0, a/b);}
   return res;
 }
 
 double Negbin_1D::xMax(double a, double b) const
 {
+  //if (a - b <0) return -a/(a-b);
   //if (std::abs(a - b) < 1e-10) return std::numeric_limits<double>::infinity();
   if (a < b) return -a/(a-b);
   else return std::numeric_limits<double>::infinity();

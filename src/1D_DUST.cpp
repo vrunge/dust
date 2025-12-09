@@ -260,7 +260,8 @@ List DUST_1D::get_info()
 bool DUST_1D::isOnePointOrLinear(double a, double b)
 {
   if(isLeftBoundary(a) == true){return true;}
-  if(a == b){return true;}
+  /// the smallest visible gap is of size 1e-14
+  if(std::abs(a - b) < 1e-14){return true;}
   return false;
 }
 
@@ -288,10 +289,10 @@ bool DUST_1D::specialCasePruning(double a,
   ///
   /// case "a = b", here "a" not on the left boundary
   ///
-  if(a == b)
+  if(std::abs(a - b) < 1e-14)
   {
     if ( -c - Dstar(a) > 0){return true;} /// mu = 0
-    if (-(c - mu_max * d)  - Dstar(a) > 0){return true;} /// mu = mu_max
+    if (-(c - mu_max * d)  - (1 - mu_max)*Dstar(a) > 0){return true;} /// mu = mu_max
   }
   return false;
 }
@@ -358,18 +359,18 @@ bool DUST_1D::dualMaxAlgo1(double minCost_t, unsigned int t, unsigned int s, uns
     //if(- Dstar(a) -c > 0) nb0T = nb0T + 1;
     return (- Dstar(a) -c > 0);
   }
-
   //
   // if derivative in +inf is positive
   //
-  if( a > b)
+  //Rcout << a << " - "<< b << " \\ " << a - b << " ratio " << -(c-d)/(a-b) << std::endl;
+  if(xMax(a,b) == std::numeric_limits<double>::infinity())
   {
+    //if(-(a-b)*DstarPrime(a + (a-b)*std::numeric_limits<double>::infinity()) - (c-d) > 0)
     if(-DstarPrime(std::numeric_limits<double>::infinity()) - (c-d) > 0)
     {
       return true;
     }
   }
-
   return(costEval(-(c-d)/(a-b), t, s) > c);
 
   //double x_max = xMax(a, b);

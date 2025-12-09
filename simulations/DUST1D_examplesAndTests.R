@@ -1,8 +1,32 @@
 
+n   <- 10^7
+pen <- 2 * log(n)
+
+dataGenerator_1D(chpts = c(50,100), parameters = c(0.7, 0.3), nbTrials = 5, type = "binom")
+
+cpts <- floor(seq(from = 0.1, to = 1, by = 0.1) * n)
+mod <- c("binom")
+data <- dataGenerator_1D(
+    chpts      = cpts,
+    parameters = 0.5 * c(1,1,1,1,1,1,1,1,1,1),
+    type       = mod
+  )
+hist(data)
+data <- data_normalization_1D(data, type = mod)
+hist(data)
+length(table(data))
+table(diff(data))
+
+
+
+
+
+
+
 set.seed(5)
 all_times <- list()  # optional: to store timings per model
 
-for(mod in c("gauss","poisson","exp","geom","bern","binom","negbin","variance"))
+for(mod in c("gauss","poisson","exp","geom","bern", "variance", "binom","negbin"))
 {
   cat("\n============================\n")
   cat("Model:", mod, "\n")
@@ -265,7 +289,6 @@ all_times
 ################################################################################
 ################################################################################
 ################################################################################
-
 
 
 
