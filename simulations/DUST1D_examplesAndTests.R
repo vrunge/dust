@@ -1,4 +1,27 @@
 
+
+n   <- 10^5
+pen <- 2 * log(n)
+cpts <- floor(seq(from = 0.2, to = 1, by = 0.2) * n)
+
+data <- dataGenerator_1D(
+  chpts      = cpts,
+  parameters = c(5,6,5,6,5),
+  type       = "poisson"
+)
+mod <- "poisson"
+plot(data)
+
+system.time(res1 <- dust.1D(data, penalty = pen, model = "poisson", method = "PELT"))
+system.time(res2 <- dust.1D(data, penalty = pen, model = "poisson", method = "DUST"))
+
+res1$changepoints
+res2$changepoints
+
+
+
+
+
 n   <- 10^7
 pen <- 2 * log(n)
 
@@ -27,11 +50,12 @@ set.seed(5)
 all_times <- list()  # optional: to store timings per model
 
 for(mod in c("gauss","poisson","exp","geom","bern", "variance", "binom","negbin"))
+for(mod in c("gauss"))
 {
   cat("\n============================\n")
   cat("Model:", mod, "\n")
 
-  n   <- 10^7
+  n   <- 10^6
   pen <- 2 * log(n)
   cpts <- floor(seq(from = 0.1, to = 1, by = 0.1) * n)
 
