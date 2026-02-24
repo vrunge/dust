@@ -1,24 +1,11 @@
 
 
-devtools::install_github("vrunge/dust")
+#devtools::install_github("vrunge/dust")
+
 library(dust)
-n <- 10^4
-pen <- 2*log(n)
-data <- dataGenerator_1D(chpts = n,
-                         parameters = 1,
-                         type = "gauss")
-system.time(dust.1D(data, penalty = pen, method = "OP"))
-# 0.5 s
 
 
 ######################################################################
-
-
-obj1 <- new(DUST_meanVar, "det_DUST1")
-obj1$get_info()
-
-obj2 <- new(DUST_meanVar, "det2_DUST2")
-obj2$get_info()
 
 ### MEAN AND VAR
 mod = "gauss"

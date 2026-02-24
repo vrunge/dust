@@ -24,7 +24,7 @@ library(dust)
 #####
 
 
-for(i in seq(from = 7, to = 8, by = 0.1))
+for(i in seq(from = 11.3, to = 11.9, by = 0.1))
 {
   n <- i*10^7
   print(n)
@@ -37,7 +37,7 @@ for(i in seq(from = 7, to = 8, by = 0.1))
 }
 
 ###
-### response 75.10^6
+### response 119.10^6
 ###
 
 ################################################################################
@@ -58,7 +58,7 @@ for(i in seq(from = 1, to = 1.5, by = 0.1))
 }
 
 ###
-### response 120 10^3
+### response 120 10^3 for 10s max (OK)
 ###
 
 ################################################################################
@@ -78,7 +78,7 @@ for(i in seq(from = 2.6, to = 3.2, by = 0.1))
 }
 
 ###
-### response 280 10^3
+### response 280 10^3 for 10s max (OK)
 ###
 
 ################################################################################
@@ -87,7 +87,7 @@ for(i in seq(from = 2.6, to = 3.2, by = 0.1))
 #####
 
 
-for(i in seq(from = 2.8, to = 3.5, by = 0.1))
+for(i in seq(from = 3.6, to = 4, by = 0.1))
 {
   n <- i*10^7
   print(n)
@@ -100,7 +100,7 @@ for(i in seq(from = 2.8, to = 3.5, by = 0.1))
 }
 
 ###
-### response 29 10^6
+### response 39 10^6
 ###
 
 ################################################################################
@@ -108,7 +108,7 @@ for(i in seq(from = 2.8, to = 3.5, by = 0.1))
 ##### DUST system time 10s. How many data points analyzed?
 #####
 
-for(i in seq(from = 4, to = 5, by = 0.1))
+for(i in seq(from = 4.2, to = 4.6, by = 0.1))
 {
   n <- i*10^7
   print(n)
