@@ -2,139 +2,71 @@
 #define DUST_1D_H
 
 #include <Rcpp.h>
-#include <random> /// FOR RANDOM NUMBER IN DUAL EVAL
-
-#include "1D_Indices.h"
+#include <forward_list>
 
 using namespace Rcpp;
+
+// --------------------------------------------------------------------- //
+// DUST_1D: R-facing abstract base class.
+//
+// Holds everything that does not depend on the cost model or the pruning
+// algorithm (bookkeeping, the methods exposed by the Rcpp module), and
+// declares as pure virtual the few entry points that do: append_data,
+// update_partition, get_partition, get_model. Those are implemented
+// once, in the class template DUST_1D_T<Model, DualMaxPolicy> (see
+// 1D_DUST_Impl.h): each cost model is a header-only policy struct of
+// static functions, each pruning algorithm likewise (1D_DualMaxPolicies.h),
+// both held or called by concrete type -- no vtable indirection, and (as
+// of DualMaxPolicy becoming a template parameter rather than a runtime
+// member-function-pointer choice) no indirect-call boundary either,
+// anywhere in the OP-step scan or the pruning loop, which is where
+// virtually all the running time goes. The active-index set (Indices_1D,
+// see 1D_Indices.h) is likewise a plain, non-virtual, concretely-typed
+// member of DUST_1D_T: there used to be a choice of index-selection
+// strategy templated alongside Model, but the alternative (random
+// constraint choice) measured strictly worse -- slower per pruning test
+// and no stronger a pruning rule -- and was removed, so there is nothing
+// left to select between.
+//
+// append_data/dust take a NumericVector by const reference rather than a
+// std::vector<double>: Rcpp binds a NumericVector parameter directly to
+// the R-owned SEXP, with no copy, whereas binding a std::vector<double>
+// forces Rcpp to allocate and copy the whole input first.
+// --------------------------------------------------------------------- //
 
 class DUST_1D
 {
   public:
-    DUST_1D(std::string dualmax_algo,
-            std::string constr_index,
-            Nullable<int> nbLoops = Nullable<int>());
+    DUST_1D(std::string dualmax_algo);
 
     virtual ~DUST_1D();
 
-    void append_data(std::vector<double>& inData, Nullable<double> inPenalty = Nullable<double>());
-    void update_partition();
-    List get_partition();
+    virtual void append_data(const Rcpp::NumericVector& inData, Nullable<double> inPenalty = Nullable<double>()) = 0;
+    virtual void update_partition() = 0;
+    virtual List get_partition() = 0;
     List get_info();
-    List dust(std::vector<double>& inData, Nullable<double> inPenalty = Nullable<double>());
+    List dust(const Rcpp::NumericVector& inData, Nullable<double> inPenalty = Nullable<double>());
 
     ////////////////////////////////
     ////////////////////////////////
     ////////////////////////////////
 
   protected:
-    const double phi = (1 + sqrt(5)) / 2;  // Golden ratio
-    const double m1 = 0.01;  // Armijo
     std::vector<double> cumsum;
     std::vector<double> costRecord;
-    int nb_Loops; // number of loops in optimization step (For dual max)
 
-    virtual double statistic(double& data) const = 0;
-
-    virtual double costEval(double point,
-                            unsigned int t,
-                            unsigned int s) const = 0;
-
-    virtual double costMin(unsigned int t,
-                           unsigned int s) const = 0;
-
-    virtual double dualEval(double point,
-                            double minCost_t,
-                            unsigned int t,
-                            unsigned int s,
-                            unsigned int r) const = 0;
-    virtual double dualMax(double minCost_t,
-                           unsigned int t,
-                           unsigned int s,
-                           unsigned int r) const = 0;
-
-
-    virtual double muMax(double a, double b) const = 0;
-    virtual double xMax(double a, double b) const = 0;
-
-    virtual bool isLeftBoundary(double a) const = 0;
-    virtual double Dstar_leftboundary() const = 0;
-    virtual double Dstar_superLinearLimit() const = 0;
-
-    virtual double Dstar(double x) const = 0;
-    virtual double DstarPrime(double x) const = 0;
-    virtual double DstarPrimeInv(double x) const = 0;
-    virtual double DstarSecond(double x) const = 0;
-
+    // Called once per get_info() call (negligible frequency): no need to
+    // template this one.
     virtual std::string get_model() const = 0;
 
-    //////////// RANDOM NUMBER GENERATOR ////////////
-
-    std::minstd_rand0 engine;  // Random number engine
-    std::uniform_real_distribution<double> dist;  // Uniform distribution [0, 1)
-
-    ////////////////////////////////
-    ////////////////////////////////
-    ////////////////////////////////
-
-  private:
-    // --- // Test and Indices init // --- //
-    void pruning_method();
-
-    bool isOnePointOrLinear(double a, double b);
-    bool specialCasePruning(double a,
-                            double b,
-                            double c,
-                            double d,
-                            double mu_max);
-
-    // DUAL = -(c - mu * d)  - (1- mu) * Dstar((a - mu * b) / (1 - mu));
-
-    // a = (cumsum[t] - cumsum[s]) / (t - s)
-    // b = (cumsum[s] - cumsum[r]) / (s - r)
-    // c = (Qt - Qs) / (t - s) =  (minCost_t - costRecord[s]) / (t - s);
-    // d = (Qs - Qr) / (s - r)  = (costRecord[s] - costRecord[r]) / (s - r);
-
-    ////////// MAX DUAL METHODS //////////
-    ////////// MAX DUAL METHODS //////////
-    ////////// MAX DUAL METHODS //////////
-    // 0: DUSTr. random eval
-    // 1: DUST. exact eval
-    // 2: DUSTgs. golden-section search
-    // 3: DUSTbs. binary search. At each step, we evaluate the tangent line to the current point at its max to stop the search at early step (when possible)
-    // 4: DUSTqn.  Quasi-Newton
-    // 5: PELT
-    // 6: OP
-    // 7: DUST. exact eval
-    bool dualMaxAlgo0(double minCost_t, unsigned int t, unsigned int s, unsigned int r);
-    bool dualMaxAlgo1(double minCost_t, unsigned int t, unsigned int s, unsigned int r);
-    bool dualMaxAlgo2(double minCost_t, unsigned int t, unsigned int s, unsigned int r);
-    bool dualMaxAlgo3(double minCost_t, unsigned int t, unsigned int s, unsigned int r);
-    bool dualMaxAlgo4(double minCost_t, unsigned int t, unsigned int s, unsigned int r);
-    bool dualMaxAlgo5(double minCost_t, unsigned int t, unsigned int s, unsigned int r);
-    bool dualMaxAlgo6(double minCost_t, unsigned int t, unsigned int s, unsigned int r);
-    bool dualMaxAlgo7(double minCost_t, unsigned int t, unsigned int s, unsigned int r);
-
-    bool (DUST_1D::*current_test)(double minCost_t, unsigned int t,
-                                                  unsigned int s,
-                                                  unsigned int r);
-
-    double penalty;
-
-    //int nb00 = 0;
-    //int nb0 = 0;
-    //int nb1 = 0;
-    //int nb2 = 0;
-    //int nb00T = 0;
-    //int nb0T = 0;
-    //int nb1T = 0;
-    //int nb2T = 0;
-
     std::string dualmax_algo;
-    std::string constr_index;
-    Indices_1D* indices;
     std::vector<int> nb_indices;
     unsigned int n; // number of observations
+    double penalty;
+
+    ////////////////////////////////
+    ////////////////////////////////
+    ////////////////////////////////
 
     ////////// Result processing //////////
     std::forward_list<unsigned int> backtrack_changepoints();

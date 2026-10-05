@@ -4,7 +4,7 @@
 \alias{dust.object.1D}
 \title{dust.object.1D}
 \usage{
-dust.object.1D(model = "gauss", method = "det_DUST", nbLoops = 10)
+dust.object.1D(model = "gauss", method = "DUST", backend = "highway")
 }
 \arguments{
 \item{model}{A character string specifying the model for the data. The default
@@ -23,30 +23,24 @@ is \code{"gauss"}. Available models are:
     zero mean.
 }}
 
-\item{method}{A character string specifying the method used to handle indices
-  and pruning tests in the algorithm. The default is \code{"det_DUST"},
-  which generally selects an efficient method for the chosen model. Other
-  available methods are:
-  \itemize{
-    \item \code{"rand_PRUNING"}: Random index-based methods with different dual maximization algorithms
-    \item \code{"det_PRUNING"}: Deterministic index-based methods with different dual maximization algorithms
-  }
+\item{method}{A character string specifying the pruning algorithm used by
+the dual maximization test. The default is \code{"DUST"}, which generally
+selects an efficient method for the chosen model. The constraint index
+used by the pruning test is always the nearest smaller active index (the
+"det" rule): an earlier randomised-index variant was removed after
+measuring it both slower and no better at pruning. Currently implemented
+options are:
+\itemize{
+  \item \code{"DUST"}: Closed-form maximizer of the decision function
+  \item \code{"DUSTib"}: Audited one-constraint inequality test with explicit domain and boundary handling
+  \item \code{"PELT"}: PELT pruning rule.
+  \item \code{"OP"}: OP pruning rule.
+}}
 
-  The \code{"PRUNING"} suffix controls the algorithm used to maximize the dual
-  function. Currently implemented options are:
-  \itemize{
-    \item \code{"DUSTr"}: Random evaluation of the dual (uniform sampling)
-    \item \code{"DUSTib"}: Closed-form maximizer of the decision function. Improved DUST PRUNING, not yet working
-    \item \code{"DUST"}: Closed-form maximizer of the decision function
-    \item \code{"DUSTgs"}: Golden-section search
-    \item \code{"DUSTbs"}: Binary search, with an early stopping rule based on the tangent line at the current point
-    \item \code{"DUSTqn"}: Quasi-Newton method with an Armijo line-search condition (the most efficient iterative method).
-    \item \code{"PELT"}: PELT pruning rule.
-    \item \code{"OP"}: OP pruning rule.
-  }}
-
-\item{nbLoops}{Integer; number of iterations used in the algorithm for
-maximizing the dual function.}
+\item{backend}{Either \code{"highway"} (default) or \code{"scalar"}.
+\code{"highway"} uses Highway when available and the scalar engine
+otherwise. \code{"scalar"} always selects the scalar engine. The former
+spelling \code{"Highway"} remains an accepted alias.}
 }
 \value{
 A DUST 1D object providing the following methods:
@@ -58,7 +52,7 @@ A DUST 1D object providing the following methods:
   \item \code{get_partition}: retrieve the optimal partition once it has been
     computed;
   \item \code{get_info}: obtain information about the current object
-    (parameters, internal state, etc.);
+    (parameters, internal state, and actual backend);
   \item \code{dust}: wrapper that runs \code{append_data},
     \code{update_partition} and \code{get_partition} sequentially.
 }
@@ -67,15 +61,35 @@ A DUST 1D object providing the following methods:
 Constructs a DUST 1D object for multiple change-point detection in univariate
 time series.
 }
+\details{
+The first nonempty append fixes the penalty. With \code{NULL},
+  the default is \code{2 * log(first batch size)}, which can differ from
+  the one-shot default for the full data length. Later non-\code{NULL}
+  penalties must equal the first penalty. Empty appends do nothing.
+  Call \code{update_partition()} after appending and before
+  \code{get_partition()}; requesting a partition earlier is an error.
+}
 \examples{
-ob <- dust.object.1D()
-ob$append_data(rnorm(100),2*log(100))
+### Streaming scenario: a 1200-point Gaussian series with 2 true mean
+### shifts (at 400 and 800) arrives in 3 uneven batches; each batch is
+### appended and the partition is updated without reprocessing earlier data.
+set.seed(10)
+true_chpts <- c(400, 800, 1200)
+y <- dataGenerator_1D(chpts = true_chpts, parameters = c(0, 1.5, -1),
+                       sdNoise = 1, type = "gauss")
+y <- data_normalization_1D(y, type = "gauss")
+penalty <- 2 * log(length(y))
+
+ob <- dust.object.1D(model = "gauss", method = "DUST")
+ob$append_data(y[1:500], penalty)
 ob$update_partition()
-ob$get_partition()
-ob$append_data(rnorm(100, mean = 1),2*log(100))
+ob$get_partition()$changepoints  # based on the first 500 points only
+
+ob$append_data(y[501:900], penalty)
 ob$update_partition()
-ob$get_partition()
-ob$append_data(rnorm(100, mean = 0),2*log(100))
+ob$get_partition()$changepoints  # resumed, now sees 900 points
+
+ob$append_data(y[901:1200], penalty)
 ob$update_partition()
-ob$get_partition()
+ob$get_partition()$changepoints  # all 1200 points, close to true_chpts
 }

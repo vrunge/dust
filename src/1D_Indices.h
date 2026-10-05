@@ -1,113 +1,82 @@
 #ifndef INDICES1C_H
 #define INDICES1C_H
 
-#include <Rcpp.h>
-
 #include <forward_list>
-#include <random> /// FOR RANDOM NUMBER IN DUAL EVAL
+#include <vector>
+#include <limits>
 
-using namespace Rcpp;
+// Active candidates are stored in decreasing order. link_[i] gives the
+// next smaller candidate; each insertion and removal takes constant time.
+// The constraint for candidate s is its next smaller active index.
 
 class Indices_1D
 {
   public:
-    virtual ~Indices_1D();
+    void add_first(unsigned int value)
+    {
+      // `value` is always link_.size() at the point of the call (indices
+      // are appended in strictly increasing order starting at 0): plain
+      // push_back, no heap allocation beyond the vector's own amortised
+      // growth (reserved up-front by append_data).
+      link_.push_back(front_);
+      front_ = value;
+    }
 
-    ////////// Generic //////////
-    ////////// Generic //////////
+    void reset() { current_ = front_; }
+    void next() { current_ = link_[current_]; }
+    bool is_not_the_last() { return current_ != END; }
+    unsigned int get_first() { return front_; }
+    unsigned int get_current() { return current_; }
 
-    void reset(); //iterator current = start
-    void next(); //current++
-    void remove_first(); //remove the first element
+    std::forward_list<unsigned int> get_list()
+    {
+      // Only called once, to build the R-facing `lastIndexSet` output:
+      // O(k) in the (small) surviving-set size, materialising the same
+      // front-to-back (largest-to-smallest) order as the original
+      // forward_list did.
+      std::forward_list<unsigned int> out;
+      auto it = out.before_begin();
+      for (unsigned int i = front_; i != END; i = link_[i])
+      {
+        it = out.insert_after(it, i);
+      }
+      return out;
+    }
 
-    bool is_not_the_last();
+    void reset_pruning() { before_ = END; current_ = front_; constraint_ = link_[front_]; }
+    void next_pruning() { before_ = current_; current_ = link_[current_]; new_constraint(); }
 
-    unsigned int get_first();
-    unsigned int get_current();
-    std::forward_list<unsigned int> get_list();
+    // Relinks around current_, advances current_ to the element that takes
+    // its place (mirrors forward_list::erase_after's returned iterator).
+    void prune_current()
+    {
+      unsigned int next_elem = link_[current_];
+      if (before_ == END) { front_ = next_elem; } else { link_[before_] = next_elem; }
+      current_ = next_elem;
+      new_constraint();
+    }
 
-    ////////// Virtual //////////
-    ////////// Virtual //////////
+    void prune_last()
+    {
+      unsigned int next_elem = link_[current_];
+      if (before_ == END) { front_ = next_elem; } else { link_[before_] = next_elem; }
+    }
 
-    virtual void add_first(unsigned int value) = 0;
+    bool is_not_the_last_pruning() { return constraint_ != END; }
 
-    virtual void reset_pruning() = 0;
-    virtual void next_pruning() = 0;
-    virtual void prune_current() = 0;
-    virtual void prune_last() = 0;
-
-    virtual bool is_not_the_last_pruning() = 0;
-
-    virtual void new_constraint() = 0;
-    virtual unsigned int get_constraint() = 0;
-
-  protected:
-    // --- // Fields // --- //
-    std::forward_list<unsigned int> list;
-    std::forward_list<unsigned int>::iterator current;
-    std::forward_list<unsigned int>::iterator before;
-};
-
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////
-//////////////// derived class:  Indices_1D_Det
-////////////////
-
-class Indices_1D_Det : public Indices_1D
-{
-  public:
-    void add_first(unsigned int value) override;
-
-    void reset_pruning() override;
-    void next_pruning() override;
-    void prune_current() override;
-    bool is_not_the_last_pruning() override;
-
-    void prune_last() override;
-
-    void new_constraint() override;
-    unsigned int get_constraint() override;
+    void new_constraint() { constraint_ = link_[current_]; }
+    unsigned int get_constraint() { return constraint_; }
 
   private:
-    // iterator for list
-    // a kind of "after" or "next" pointer
-    std::forward_list<unsigned int>::iterator constraint;
+    static constexpr unsigned int END = std::numeric_limits<unsigned int>::max();
+
+    std::vector<unsigned int> link_;
+    unsigned int front_ = END;    // largest active index
+    unsigned int current_ = END;  // cursor: OP-step scan, then (same variable,
+                                   // reused sequentially, never concurrently)
+                                   // the index `s` currently tested for pruning
+    unsigned int before_;         // predecessor of current_ in the link chain, or END
+    unsigned int constraint_;     // index `r` = next-smaller active index
 };
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////
-//////////////// derived class:  Indices_1D_Rand
-////////////////
-
-class Indices_1D_Rand : public Indices_1D
-{
-  public:
-    Indices_1D_Rand();
-
-    void add_first(unsigned int value) override;
-
-    void reset_pruning() override;
-    void next_pruning() override;
-    void prune_current() override;
-    void prune_last() override;
-
-    bool is_not_the_last_pruning() override;
-
-    void new_constraint() override;
-    unsigned int get_constraint() override;
-
-  private:
-    unsigned int nb = 0; // number of elements in the list = length
-    unsigned int nbC = 0; // number of available constraint (smaller indices) for a given s index
-
-    std::vector<unsigned int*> pointers; // all pointers for the list of indices
-    std::vector<unsigned int*>::reverse_iterator pointersCurrent; // to move on pointers
-
-    //////////// RANDOM NUMBER GENERATOR ////////////
-    std::minstd_rand0 engine;  // Random number engine
-    std::uniform_real_distribution<double> dist;  // Uniform distribution [0, 1)
-};
-
 
 #endif

@@ -4,12 +4,14 @@
 \name{dust}
 \alias{dust}
 \alias{dust-package}
-\title{dust: Multiple Change-Point Detection in Multivariate Time Series}
+\title{dust: Fast Multiple Change-Point Detection in Univariate Time Series}
 \description{
-The \pkg{dust} package implements algorithms for detecting multiple change
-points in multivariate time series by minimizing a penalized likelihood.
-It relies on optimal partitioning dynamic programming combined with the
-DUality Simple Test (DUST) pruning method.
+The \pkg{dust} package implements DUST pruning for multiple change-point
+detection. Its \code{dust.1D} interface supports eight one-parameter cost
+models. The \code{dust.meanVar} interface detects changes in both the mean
+and variance of a Gaussian series, using either one or two constraints.
+Both interfaces offer scalar and optional Highway backends and online
+objects for incremental analysis.
 }
 \seealso{
 Useful links:
@@ -24,6 +26,7 @@ Useful links:
 
 Authors:
 \itemize{
+  \item Vincent Runge \email{vincent.runge@univ-evry.fr}
   \item Simon Querné \email{simon.querne@gmail.com}
 }
 

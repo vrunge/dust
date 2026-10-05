@@ -1,6 +1,6 @@
 Package: dust
 Type: Package
-Title: Multiple Change-Point Detection in Multivariate Time Series Using the DUST Pruning Method
+Title: Fast Multiple Change-Point Detection Using the DUST Pruning Method
 Version: 0.2.0
 Authors@R: c(
     person("Simon", "Querné", email = "simon.querne@gmail.com", role = c("aut")),
@@ -8,17 +8,23 @@ Authors@R: c(
     person("Charles", "Truong", email = "ctruong@ens-paris-saclay.fr", role = c("ctb"))
             )
 Maintainer: Vincent Runge <vincent.runge@univ-evry.fr>
-Description: Implements algorithms for detecting multiple change points in multivariate time series. Detection is based on the minimization of a penalized likelihood. The package uses a dynamic programming approach called optimal partitioning with a new efficient pruning method: DUality Simple Test (DUST).
-License: GPL-3
-Encoding: UTF-8
-Imports: Rcpp (>= 1.0.10), methods, RcppArmadillo
-Suggests:
-    devtools,
-    ggplot2,
-    rmarkdown,
-    testthat (>= 3.0.0)
-LinkingTo: Rcpp, RcppArmadillo
-RoxygenNote: 7.3.3
-Config/testthat/edition: 3
+Description: Implements DUST pruning for multiple change-point detection
+    in univariate time series. Includes eight one-parameter cost models and
+    a Gaussian model with changes in both mean and variance. The latter has
+    one- and two-constraint decision tests. Scalar and optional Google
+    Highway backends support one-shot and incremental analysis. The pruning
+    method is described by Runge, Truong and Querné (2025)
+    <doi:10.48550/arXiv.2507.02467>.
 URL: https://github.com/vrunge/dust
 BugReports: https://github.com/vrunge/dust/issues
+License: MIT + file LICENSE
+Encoding: UTF-8
+Imports: Rcpp (>= 1.0.10), methods
+Suggests:
+    testthat (>= 3.0.0)
+LinkingTo: Rcpp
+SystemRequirements: Optionally, 'Google Highway' (libhwy,
+    <https://github.com/google/highway>) for SIMD acceleration. The package
+    also builds with a scalar backend when Highway is unavailable.
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.0

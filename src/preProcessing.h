@@ -12,9 +12,6 @@ using namespace Rcpp;
 // Parameters:
 //  - data (vector): a vector of numeric values
 
-double sdDiff
-(
-    std::vector<double>& y, std::string method = "HALL"
-);
+double sdDiff(std::vector<double>& y, std::string method);
 
 #endif

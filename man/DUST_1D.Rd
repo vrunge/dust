@@ -2,8 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{DUST_1D}
 \alias{DUST_1D}
-\title{MyModule: Exposing DUST_1D to R}
+\title{Scalar segmentation module}
 \description{
-This module exposes the \code{DUST_1D} C++ class to R, allowing you to create
-instances of \code{DUST_1D} and call its methods directly from R.
+Rcpp module for the scalar DUST segmentation object.
 }

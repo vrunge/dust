@@ -1,10 +1,9 @@
-exportPattern("^[[:alpha:]]+")
+export(dust.1D, dust.object.1D)
+export(dust.meanVar, dust.object.meanVar)
+export(dataGenerator_1D, data_normalization_1D)
+export(segmentation_Cost_1D, Cost_1D, sdDiff)
 importFrom(Rcpp, evalCpp)
 useDynLib(dust, .registration = TRUE)
 importFrom(Rcpp, loadModule)
-
 importFrom(methods, new)
-
 import("stats")
-importFrom("graphics", "abline", "barplot")
-

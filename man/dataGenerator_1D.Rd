@@ -17,7 +17,8 @@ dataGenerator_1D(
 \arguments{
 \item{chpts}{a vector of increasing change-point indices (the last value is data length)}
 
-\item{parameters}{vector of successive segment parameters (as many parameters as values in \code{chpts} vector)}
+\item{parameters}{Vector of segment parameters. For \code{"variance"} these
+are standard deviations; for \code{"exp"} they are rates.}
 
 \item{sdNoise}{(type \code{"gauss"}) standard deviation for the noise parameter}
 
@@ -44,6 +45,6 @@ dataGenerator_1D(chpts = c(50,100), parameters = c(0.6,0.3), type = "geom")
 dataGenerator_1D(chpts = c(50,100), parameters = c(0.7,0.2), type = "bern")
 dataGenerator_1D(chpts = c(50,100), parameters = c(0.7, 0.3), nbTrials = 5, type = "binom")
 dataGenerator_1D(chpts = c(50,100), parameters = c(0.4,0.7), nbSuccess = 10, type = "negbin")
-dataGenerator_1D(chpts = c(50,70,120,200), parameter = c(0,3,-1,1), type = "gauss")
-dataGenerator_1D(chpts = c(50,100,180), parameter = c(3,1,6), type = "variance")
+dataGenerator_1D(chpts = c(50,70,120,200), parameters = c(0,3,-1,1), type = "gauss")
+dataGenerator_1D(chpts = c(50,100,180), parameters = c(3,1,6), type = "variance")
 }

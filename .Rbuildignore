@@ -1,5 +1,12 @@
-^.*\.Rproj$
+^\.github$
+^paper_simulations$
+^README\.Rmd$
+^README\.html$
+^dust\.Rproj$
 ^\.Rproj\.user$
-simulations
-README.Rmd
-
+^\.Rhistory$
+^\.RData$
+^\.Ruserdata$
+^\.DS_Store$
+^src/Makevars$
+^src/.*\.(o|so|dll|dylib)$

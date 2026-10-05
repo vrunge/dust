@@ -4,7 +4,7 @@
 \alias{sdDiff}
 \title{Calculate Standard Deviation or MAD of Differences in a Numeric Vector}
 \usage{
-sdDiff(y, method)
+sdDiff(y, method = "HALL")
 }
 \arguments{
 \item{y}{A numeric vector.}
@@ -31,7 +31,11 @@ of a numeric vector.
 It supports three methods: "HALL", "MAD", and "SD".
 }
 \examples{
-y <- c(rnorm(500, mean = 1), rnorm(500,mean = 2))
+### 3 segments of 300 points, mean shifts but constant noise sd = 2:
+### all three estimators should recover a value close to 2.
+set.seed(30)
+y <- dataGenerator_1D(chpts = c(300, 600, 900), parameters = c(0, 1, 0),
+                       sdNoise = 2, type = "gauss")
 sdDiff(y, "HALL")
 sdDiff(y, "MAD")
 sdDiff(y, "SD")

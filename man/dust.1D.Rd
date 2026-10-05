@@ -5,48 +5,44 @@
 \title{Multiple Change-Point Detection for 1D Data Using the DUST Algorithm}
 \usage{
 dust.1D(
-  data = data,
+  data,
   penalty = 2 * log(length(data)),
   model = "gauss",
-  method = "det_DUST",
-  nbLoops = 10
+  method = "DUST",
+  backend = "highway"
 )
 }
 \arguments{
 \item{data}{A numeric vector representing the univariate time series. No copy of the data is made, and it is not possible to append new data for incremental analysis. For such functionality, see \code{\link{dust.object.1D}}.}
 
-\item{penalty}{A positive numeric value specifying the penalty for introducing a new change point. By default, it is set to \code{2 log(length(data))}.}
+\item{penalty}{A finite nonnegative penalty per change point. By default,
+\code{2 log(length(data))}.}
 
 \item{model}{A character string indicating the statistical model used for change-point detection. Default is \code{"gauss"}. Supported values include \code{"gauss"}, \code{"poisson"}, \code{"exp"}, \code{"geom"}, \code{"bern"}, \code{"binom"}, \code{"negbin"}, and \code{"variance"}.}
 
-\item{method}{A character string specifying the index-handling and pruning strategies. Default is \code{"detIndex_Eval4"}, which selects an efficient deterministic method for the chosen model. Other options include:
-
+\item{method}{A character string specifying the pruning algorithm. Default is \code{"DUST"}, which is generally the most efficient in practice. The constraint index used by the pruning test is always the nearest smaller active index (the "det" rule): an earlier randomised-index variant was removed after measuring it both slower and no better at pruning. Other options include:
 \itemize{
-  \item \code{"rand_PRUNING"}: Random index selection methods that randomly choose an index smaller than the tested index \code{s}, using different dual maximization algorithms
-  \item \code{"det_PRUNING"}: Deterministic index selection methods that pick the largest index smaller than tested index \code{s}, also using different dual maximization algorithms
-}
-
-Dual maximization algorithms (\code{PRUNING}) used in the method names are defined as follows. \code{DUST} is generally the most efficient in practice. At each iteration, the smallest non-pruned index is tested using the PELT pruning rule:
-\itemize{
-  \item \code{"DUSTr"}: Random evaluation using a uniform distribution.
-  \item \code{"DUSTib"}: Closed-form maximum of the decision function. For future improvement of DUST option (using less special cases)
   \item \code{"DUST"}: Closed-form maximum of the decision function
-  \item \code{"DUSTgs"}: Golden-section search.
-  \item \code{"DUSTbs"}: Binary search with early stopping based on tangent evaluation.
-  \item \code{"DUSTqn"}: Quasi-Newton method with Armijo condition.
+  \item \code{"DUSTib"}: Audited one-constraint inequality test with explicit domain and boundary handling
   \item \code{"PELT"}: PELT pruning rule.
   \item \code{"OP"}: no pruning
 }}
 
-\item{nbLoops}{An integer. The number of loops to run in the max dual optimization algorithm. Default is 10.
-
-' @return A list containing the information computed by the DUST algorithm.
+\item{backend}{Either \code{"highway"} (default) or \code{"scalar"}.
+\code{"highway"} uses the Highway implementation when it is available
+in this installation and otherwise falls back to the scalar engine.
+\code{"scalar"} always uses the scalar engine. The former spelling
+\code{"Highway"} is accepted as an alias.}
+}
+\value{
+A list containing the information computed by the DUST algorithm.
 \itemize{
   \item \code{changepoints}: the sequence of optimal change points solving our penalized optimization problem
   \item \code{lastIndexSet}: the last non-pruned indices at time step n (= data length)
+  \item \code{backend}: the backend that actually ran ("highway" or "scalar") -- may differ from the requested \code{backend} if Highway was requested but is not available in this installation
   \item \code{nb}: vector or size n (= data length) recording the number of non-pruned indices over time
   \item \code{costQ}: vector or size n (= data length) recording the optimal (penalized) segmentation cost over time
-}}
+}
 }
 \description{
 Detects multiple change points in univariate time series data using the DUST algorithm.
@@ -54,19 +50,38 @@ Detects multiple change points in univariate time series data using the DUST alg
 \note{
 The input data should be first normalized by function \code{data_normalization_1D} to use the default penalty in Gaussian model, instead of value \code{2 sdDiff(data)^2 log(length(data))}.
 The smallest index, non-pruned, is always tested for pruning with the PELT rule.
+For every method, Binomial counts must be divided by their known number
+of trials and Negative Binomial counts by their known size; divide the
+penalty by the same factor to preserve the raw likelihood objective.
+Exact-zero Exponential observations and Variance residuals are rejected
+because their unrestricted segment likelihood is singular. Data must be
+finite and within the chosen model's domain.
 }
 \examples{
-y <- rnorm(100)
-y <- data_normalization_1D(y)
-dust.1D(y)
+### Gaussian: 5 segments of 300 points, alternating mean shifts
+set.seed(1)
+true_chpts <- c(300, 600, 900, 1200, 1500)
+y <- dataGenerator_1D(chpts = true_chpts, parameters = c(0, 2, -1, 1.5, 0.5),
+                       sdNoise = 1, type = "gauss")
+y <- data_normalization_1D(y, type = "gauss")
+res <- dust.1D(data = y, model = "gauss")
+res$changepoints  # detected change points, close to true_chpts
 
-y <- dataGenerator_1D(chpts = c(50,100), parameters = c(0.5,0.2), type = "geom")
-y <- data_normalization_1D(y, type = "geom")
-dust.1D(data = y, model = "geom")
-
-y <- dataGenerator_1D(chpts = c(20,70), parameters = c(20,5), type = "poisson")
+### Poisson: 4 segments of 250 points, alternating low/high rates
+set.seed(2)
+true_chpts <- c(250, 500, 750, 1000)
+y <- dataGenerator_1D(chpts = true_chpts, parameters = c(2, 8, 3, 6), type = "poisson")
 y <- data_normalization_1D(y, type = "poisson")
-dust.1D(data = y, model = "poisson")
+res <- dust.1D(data = y, model = "poisson")
+res$changepoints
+
+### Geometric: 3 segments of 300 points, varying success probability
+set.seed(3)
+true_chpts <- c(300, 600, 900)
+y <- dataGenerator_1D(chpts = true_chpts, parameters = c(0.6, 0.2, 0.5), type = "geom")
+y <- data_normalization_1D(y, type = "geom")
+res <- dust.1D(data = y, model = "geom")
+res$changepoints
 }
 \seealso{
 \code{\link{dataGenerator_1D}} — To generate synthetic 1D data with change points and various statistical models.

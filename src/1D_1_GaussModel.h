@@ -1,39 +1,47 @@
 #ifndef Gauss_1D_H
 #define Gauss_1D_H
 
-#include <Rcpp.h>
+#include <cmath>
+#include <vector>
+#include <string>
+#include <limits>
 
-#include "1D_DUST.h"
+// --------------------------------------------------------------------- //
+// GaussPolicy: header-only, state-free cost-model policy for DUST_1D_T.
+// Every member is `static inline`: no virtual dispatch, fully inlinable
+// at every call site in the pruning loop (see 1D_DUST_Impl.h).
+// Gaussian distribution with known (unit) variance.
+// --------------------------------------------------------------------- //
+struct GaussPolicy
+{
+  static inline double statistic(double data) { return data; }
 
-using namespace Rcpp;
+  // a is the segment mean supplied by the pruning rule.
+  static inline double costEval(double point, double a)
+  {
+    return point * (0.5 * point - a);
+  }
 
-class Gauss_1D : public DUST_1D {
-public:
-  Gauss_1D(std::string dualmax_algo, std::string constr_index, Nullable<int> nbLoops = Nullable<int>());
-protected:
+  static inline double costMin(const std::vector<double>& cumsum, unsigned int t, unsigned int s)
+  {
+    return - 0.5 * (cumsum[t] - cumsum[s]) * (cumsum[t] - cumsum[s]) / (t - s);
+  }
 
-  double statistic(double& data) const override;
+  static inline double muMax(double a, double b) { return 1; }
+  static inline double xMax(double a, double b) { return std::numeric_limits<double>::infinity(); }
 
-  double costEval(double point, unsigned int t, unsigned int s) const override;
-  double costMin(unsigned int t, unsigned int s) const override;
+  static inline bool isLeftBoundary(double a) { return false; }
+  static inline bool isRightBoundary(double a) { return false; } // unbounded domain: no right boundary
+  static inline double Dstar_leftboundary() { return std::numeric_limits<double>::infinity(); }
+  static inline double Dstar_rightboundary() { return std::numeric_limits<double>::infinity(); } // unused: isRightBoundary always false
+  static inline double Dstar_superLinearLimit() { return std::numeric_limits<double>::infinity(); }
 
-  double dualEval(double point, double minCost_t, unsigned int t, unsigned int s, unsigned int r) const override;
-  double dualMax(double minCost_t, unsigned int t, unsigned int s, unsigned int r) const override;
+  static inline double Dstar(double x) { return 0.5 * x * x; }
+  static inline double DstarPrime(double x) { return x; }
+  static inline double DstarPrimeInv(double x) { return x; }
+  static inline double DstarSecond(double x) { return 1.0; }
 
-  double muMax(double a, double b) const override;
-  double xMax(double a, double b) const override;
-
-  bool isLeftBoundary(double a) const override;
-  double Dstar_leftboundary() const override;
-  double Dstar_superLinearLimit() const override;
-
-
-  double Dstar(double x) const override;
-  double DstarPrime(double x) const override;
-  double DstarPrimeInv(double x) const override;
-  double DstarSecond(double x) const override;
-
-  std::string get_model() const override;
+  static inline const char* get_model() { return "gauss"; }
 };
 
 #endif

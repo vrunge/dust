@@ -5,6 +5,7 @@ using namespace Rcpp;
 #include <Rcpp.h>
 #include <cmath>
 #include <algorithm> // for std::max_element, for std::all_of and std::isfinite
+#include <numeric>
 
 #include "preProcessing.h"
 
@@ -32,14 +33,18 @@ using namespace Rcpp;
 //'   }
 //'
 //' @examples
-//' y <- c(rnorm(500, mean = 1), rnorm(500,mean = 2))
+//' ### 3 segments of 300 points, mean shifts but constant noise sd = 2:
+//' ### all three estimators should recover a value close to 2.
+//' set.seed(30)
+//' y <- dataGenerator_1D(chpts = c(300, 600, 900), parameters = c(0, 1, 0),
+//'                        sdNoise = 2, type = "gauss")
 //' sdDiff(y, "HALL")
 //' sdDiff(y, "MAD")
 //' sdDiff(y, "SD")
 //'
 //' @export
 // [[Rcpp::export]]
-double sdDiff(std::vector<double>& y, std::string method)
+double sdDiff(std::vector<double>& y, std::string method = "HALL")
 {
   ///////////////////////  HALL
   ///////////////////////  HALL
@@ -146,7 +151,7 @@ double sdDiff(std::vector<double>& y, std::string method)
     double variance = sum_sq_diff / (n - 1);
     return std::sqrt(variance);
   }
-  return(0);
+  Rcpp::stop("method must be one of HALL, MAD, or SD");
 }
 
 
@@ -170,28 +175,50 @@ double sdDiff(std::vector<double>& y, std::string method)
 //' "poisson" (Poisson distribution), "geom" (geometric distribution),
 //' "bern" (Bernoulli distribution), "binom" (binomial distribution),
 //' "negbin" (negative binomial distribution), or "variance"
+//' Poisson scaling changes the likelihood scale; supply a penalty appropriate
+//' for the scaled data. Binomial and Negative Binomial normalization use a
+//' known size rather than estimating it from the observations.
 //'
 //' @param y A numeric vector representing the time series to be normalized and then segmented.
 //' @param type A string specifying the model type for normalization.
 //' The available options are "gauss", "exp", "poisson", "geom", "bern", "binom", "negbin", "variance".
 //' The default is "gauss".
+//' @param size Known number of Binomial trials or Negative Binomial size.
+//'   Required for those two models; the observed maximum and an estimated
+//'   dispersion are not substitutes for the known model parameter.
 //' @return A numeric vector that is the normalized version of the input time series `y`.
 //' @examples
-//' # Normalize a random time series using the Gaussian model
-//' normalized_y <- data_normalization_1D(rnorm(100), type = "gauss")
+//' ### Gaussian: 3 segments of 300 points, noise sd = 2 -- normalization
+//' ### rescales by an sdDiff() estimate of the noise, so the result has
+//' ### noise sd close to 1.
+//' set.seed(40)
+//' y <- dataGenerator_1D(chpts = c(300, 600, 900), parameters = c(0, 1, 0),
+//'                        sdNoise = 2, type = "gauss")
+//' y_norm <- data_normalization_1D(y, type = "gauss")
+//' sd(diff(y_norm)) / sqrt(2)  # close to 1
 //'
-//' # Normalize using the Poisson model
-//' normalized_y <- data_normalization_1D(rpois(100, lambda = 3), type = "poisson")
+//' ### Poisson: 3 segments of 300 points, rates 2/8/4 -- normalization
+//' ### rescales by the overall mean, so the result has mean close to 1.
+//' set.seed(41)
+//' y <- dataGenerator_1D(chpts = c(300, 600, 900), parameters = c(2, 8, 4), type = "poisson")
+//' y_norm <- data_normalization_1D(y, type = "poisson")
+//' mean(y_norm)  # close to 1
 //'
-//' # Normalize using the Exponential model
-//' normalized_y <- data_normalization_1D(rexp(100), type = "exp")
+//' ### Exponential: 3 segments of 300 points, rates 2/0.5/3
+//' set.seed(42)
+//' y <- dataGenerator_1D(chpts = c(300, 600, 900), parameters = c(2, 0.5, 3), type = "exp")
+//' y_norm <- data_normalization_1D(y, type = "exp")
+//' mean(y_norm)  # close to 1
 //'
 //' @export
 // [[Rcpp::export]]
 std::vector<double> data_normalization_1D(std::vector<double>& y,
-                                          std::string type = "gauss")
+                                          std::string type = "gauss",
+                                          double size = NA_REAL)
 {
   int n = y.size();
+  if (n == 0 || !std::all_of(y.begin(), y.end(), [](double z) { return std::isfinite(z); }))
+    Rcpp::stop("y must be a nonempty finite numeric vector");
 
   //////////  //////////  //////////  //////////
   //////////  //////////  //////////  //////////
@@ -200,6 +227,8 @@ std::vector<double> data_normalization_1D(std::vector<double>& y,
   {
     double mean_y = std::accumulate(y.begin(), y.end(), 0.0) / n;
     for (int i = 0; i < n; ++i){y[i] = y[i] - mean_y;}
+    if (std::any_of(y.begin(), y.end(), [](double z) { return z == 0.0; }))
+      Rcpp::stop("variance normalization produced a zero residual");
     return y;
   }
 
@@ -209,6 +238,8 @@ std::vector<double> data_normalization_1D(std::vector<double>& y,
   if (type == "gauss")
   {
     double sdNoise = sdDiff(y);
+    if (!(sdNoise > 0.0) || !std::isfinite(sdNoise))
+      Rcpp::stop("Gaussian normalization requires positive finite noise scale");
     for (int i = 0; i < n; ++i){y[i] = y[i] / sdNoise;}
     return y;
   }
@@ -220,6 +251,7 @@ std::vector<double> data_normalization_1D(std::vector<double>& y,
   {
     for(int i = 0; i < n; i++){if(y[i] < 0){throw std::range_error("negative data not compatible with poisson model");}}
     double mean_y = std::accumulate(y.begin(), y.end(), 0.0) / n;
+    if (mean_y == 0.0) return y;
     for(int i = 0; i < n; ++i){y[i] = y[i] / mean_y;}
     return y;
   }
@@ -229,7 +261,7 @@ std::vector<double> data_normalization_1D(std::vector<double>& y,
   //////////  //////////  //////////  //////////
   if(type == "exp")
   {
-    for(int i = 0; i < n; i++){if(y[i] < 0){throw std::range_error("negative data not compatible with exp model");}}
+    for(int i = 0; i < n; i++){if(y[i] <= 0){throw std::range_error("Exponential data must be strictly positive");}}
     double mean_y = std::accumulate(y.begin(), y.end(), 0.0) / n;
     for(int i = 0; i < n; ++i) {y[i] = y[i] / mean_y;}
     return y;
@@ -240,11 +272,12 @@ std::vector<double> data_normalization_1D(std::vector<double>& y,
   //////////  //////////  //////////  //////////
   if(type == "binom")
   {
-    for(int i = 0; i < n; i++){if(y[i] < 0){throw std::range_error("negative data not compatible with exp model");}}
-    double max_y = *(std::max_element(y.begin(), y.end()));
-
-    // Return the maximum value
-    for(int i = 0; i < n; ++i) {y[i] = y[i] / max_y;}
+    if (!std::isfinite(size) || size <= 0 || std::floor(size) != size)
+      Rcpp::stop("Binomial normalization requires a positive integer size (number of trials)");
+    for (double value : y)
+      if (value < 0 || value > size || std::floor(value) != value)
+        Rcpp::stop("Binomial observations must be integer counts between 0 and size");
+    for(int i = 0; i < n; ++i) {y[i] = y[i] / size;}
     return y;
   }
 
@@ -253,80 +286,28 @@ std::vector<double> data_normalization_1D(std::vector<double>& y,
   //////////  //////////  //////////  //////////
   if(type == "negbin")
   {
-    unsigned int windowSize = 100;
-    unsigned int k = y.size() / windowSize;
-    double mean = 0;
-    double variance = 0;
-    double disp = 0;
-
-    for(unsigned int j = 0; j < k; j++)
-    {
-      mean = 0;
-      variance = 0;
-      for(unsigned int i = j * windowSize; i < (j + 1)*windowSize; i++){mean = mean + y[i];}
-      mean = mean/windowSize;
-      for(unsigned int i =  j * windowSize; i < (j + 1)*windowSize; i++){variance = variance + (y[i] - mean) * (y[i] - mean);}
-      variance = variance/(windowSize - 1);
-      disp = disp  + (mean * mean / (variance - mean));
-    }
-    disp = disp/k;
-    for(size_t i = 0; i < y.size(); i++){y[i] = y[i]/disp;}
+    if (!std::isfinite(size) || size <= 0)
+      Rcpp::stop("Negative Binomial normalization requires a positive known size");
+    for (double value : y)
+      if (value < 0 || std::floor(value) != value)
+        Rcpp::stop("Negative Binomial observations must be nonnegative integer counts");
+    for(size_t i = 0; i < y.size(); i++){y[i] = y[i]/size;}
     return y;
   }
 
-  if(type == "geom" || type == "bern")
+  if(type == "geom")
   {
+    if (std::any_of(y.begin(), y.end(), [](double z) { return z < 1.0; }))
+      Rcpp::stop("Geometric observations must be at least one");
+    return y;
+  }
+
+  if(type == "bern")
+  {
+    if (std::any_of(y.begin(), y.end(), [](double z) { return z < 0.0 || z > 1.0; }))
+      Rcpp::stop("Bernoulli observations must be in [0,1]");
     return y;
   }
 
   Rcpp::stop("Unsupported type specified.");
 }
-
-
-//' Data Normalization Function
-//'
-//' @name data_normalization_MD
-//'
-//' @description
-//' Normalizes the input time series data `y` according to the specified `type`.
-//' The normalization process depends on the statistical model type, which can be one of the following:
-//' "gauss" (Gaussian/normal distribution), "exp" (exponential distribution),
-//' "poisson" (Poisson distribution), "geom" (geometric distribution),
-//' "bern" (Bernoulli distribution), "binom" (binomial distribution),
-//' "negbin" (negative binomial distribution), or "variance"
-//'
-//' @param y A numeric matrix representing the time series to be normalized and then segmented.
-//' @param type A string specifying the model type for normalization.
-//' The available options are "gauss", "exp", "poisson", "geom", "bern", "binom", "negbin", "variance".
-//' The default is "gauss".
-//' @return A numeric matrix that is the normalized version of the input time series `y`, normalized row by row.
-//' @examples
-//' # Normalize a random time series using the Gaussian model
-//' normalized_y <- data_normalization_MD(matrix(rnorm(100), nrow = 2), type = "gauss")
-//' @export
-// [[Rcpp::export]]
-NumericMatrix data_normalization_MD(NumericMatrix& y,
-                                std::string type = "gauss")
-{
-  int nCols = y.ncol();
-  int nRows = y.nrow();
-  NumericMatrix y_normalized = clone(y);
-  std::vector<double> currentRow(nCols);
-  std::vector<double> currentRowNEW(nCols);
-
-  // Fill the vector with the first row of the matrix
-  for (int i = 0; i < nRows; i++)
-  {
-    for (int j = 0; j < nCols; j++)
-    {
-      currentRow[j] = y(i, j);
-    }
-    currentRowNEW = data_normalization_1D(currentRow, type);
-    for (int j = 0; j < nCols; j++)
-    {
-      y_normalized(i, j) = currentRowNEW[j];
-    }
-  }
-  return y_normalized;
-}
-

@@ -1,1 +1,3 @@
 CXX_STD = CXX17
+PKG_CPPFLAGS = -DHAVE_HIGHWAY=1 -DHWY_SHARED_DEFINE -I/opt/homebrew/Cellar/highway/1.4.0/include
+PKG_LIBS = -L/opt/homebrew/Cellar/highway/1.4.0/lib -lhwy

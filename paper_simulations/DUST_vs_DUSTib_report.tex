@@ -1,0 +1,656 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Dstar}{\mathcal{D}^*}
+
+\title{DUST and DUSTib Pruning in the \texttt{dust} Package}
+\author{Code and mathematical implementation report}
+\date{October 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This report compares the two one-constraint pruning policies called
+\texttt{DUST} and \texttt{DUSTib} in the current \texttt{dust} package.
+The comparison is made against the derivation in the DUST paper, especially
+the one-dimensional decision function and its closed-form maximizer.  The
+main conclusion is that the two policies are intended to implement the same
+mathematical pruning test.  They are not different statistical methods.
+\texttt{DUST} is a more optimized implementation of the same maximum, whereas
+\texttt{DUSTib} evaluates the decision-function maximizer more literally.
+The current \texttt{DUSTib} code has boundary and stationary-point branches
+that can cause under-pruning, and it is not used by the Highway SIMD path.
+The report gives a minimal correction, a more robust design, and a testing
+plan for making both approaches exact, effective, and fast.
+\end{abstract}
+
+\tableofcontents
+
+\section{Scope and sources}
+
+The mathematical reference used here is the local DUST manuscript
+\texttt{PAPER\_DUST/DUST.tex}.  The relevant material is the section
+``DUST method with one constraint'', the proof of the closed-form maximum in
+the appendix, and the appendix tables describing the convex conjugates and
+their domains.  In particular, the paper defines the decision function in
+Equation~\texttt{eq:decisionDual1D} and derives its maximizer in the proof of
+Theorem~\texttt{prop:dual1D\_max\_exact}.
+
+The implementation examined in this report is:
+
+\begin{itemize}
+  \item \texttt{dust/src/1D\_DualMaxPolicies.h}, which contains
+        \texttt{DualMax\_DUST} and \texttt{DualMax\_DUSTib};
+  \item \texttt{dust/src/1D\_DUST\_Impl.h}, which computes the dynamic
+        program and calls the selected pruning policy;
+  \item \texttt{dust/src/DUST\_1D\_HW.cpp}, which provides the Highway SIMD
+        implementation and explicitly delegates \texttt{DUSTib} to the
+        scalar engine;
+  \item the model policies
+         \texttt{1D\_[1--8]\_*.h}, which provide $\Dstar$, its derivatives,
+        domains, boundary limits, and segment costs.
+\end{itemize}
+
+The paper does not use the name \texttt{DUSTib}.  That name belongs to an
+implementation variant inherited from the older \texttt{dust} code.  It is
+therefore important not to interpret \texttt{DUSTib} as a second theoretical
+pruning method introduced by the paper.
+
+\section{Common dynamic-programming problem}
+
+Let $y_{st}$ denote the observations $y_{s+1},\ldots,y_t$, with
+$0\leq s<t\leq n$.  For a one-parameter natural exponential family, the
+segment cost has the canonical form
+\begin{equation}
+  c(y_{st};\theta)=(t-s)A(\theta)-\theta S_{st},
+  \qquad S_{st}=\sum_{i=s+1}^t T(y_i),
+  \label{eq:canonical-cost}
+\end{equation}
+where $A$ is the log-partition function and $T$ is the sufficient statistic.
+The dynamic-programming cost is
+\begin{equation}
+  Q_t=\min_{0\leq s<t}\{Q_s+c(y_{st})+\beta\},
+  \qquad Q_0=-\beta,
+  \label{eq:op}
+\end{equation}
+where $c(y_{st})=\min_\theta c(y_{st};\theta)$ and $\beta$ is the segment
+penalty in the convention used by the package.
+
+For each possible last change $s$, define the function-valued cost
+\begin{equation}
+  q_t^s(\theta)=Q_s+c(y_{st};\theta)+\beta.
+  \label{eq:functional-cost}
+\end{equation}
+The purpose of pruning is to remove an index $s$ when it can never be the
+last change of an optimal future segmentation.
+
+\subsection{The one-constraint pruning problem}
+
+Suppose that $r<s$.  The one-constraint relaxation used by DUST compares
+$q_t^s$ with $q_t^r$:
+\begin{equation}
+\left\{
+\begin{aligned}
+  &\min_{\theta\in\Theta}q_t^s(\theta),\\
+  &\text{s.t.}\quad q_t^s(\theta)-q_t^r(\theta)\leq 0.
+\end{aligned}
+\right.
+\label{eq:pruning-problem}
+\end{equation}
+The convex conjugate associated with $A$ is
+\begin{equation}
+  \Dstar(x)=x(\nabla A)^{-1}(x)-A\bigl((\nabla A)^{-1}(x)\bigr).
+  \label{eq:conjugate}
+\end{equation}
+The paper uses the following four scalar quantities, which correspond
+directly to the variables named $a,b,c,d$ in the C++ code:
+\begin{align}
+  a&=\overline S_{st}=\frac{S_{st}}{t-s},
+  &b&=\overline S_{rs}=\frac{S_{rs}}{s-r},
+  \label{eq:ab}\\
+  c&=\overline Q_{st}=\frac{Q_t-Q_s}{t-s},
+  &d&=\overline Q_{rs}=\frac{Q_s-Q_r}{s-r}.
+  \label{eq:cd}
+\end{align}
+
+\section{The decision function and its maximum}
+
+After changing variables from the nonnegative Lagrange multiplier to
+$x=\mu/(1-\mu)$, the paper obtains the decision function
+\begin{equation}
+  \mathbb{D}(x)
+  =-\Dstar\bigl(a+x(a-b)\bigr)-\bigl(c+x(c-d)\bigr),
+  \qquad x\in[0,x_{\max}).
+  \label{eq:decision}
+\end{equation}
+The test is safe because a positive value proves that the constrained
+minimum is above the pruning threshold.  Thus the pruning condition is
+\begin{equation}
+  \max_{0\leq x<x_{\max}}\mathbb{D}(x)>0.
+  \label{eq:prune}
+\end{equation}
+
+The function is concave because $\Dstar$ is convex.  If $a\neq b$, its
+stationary point satisfies
+\begin{align}
+  0&=-(a-b)(\Dstar)'\bigl(a+x^\star(a-b)\bigr)-(c-d),
+  \\[-2pt]
+  R&=-\frac{c-d}{a-b},
+  \label{eq:R}\\
+  m^\star&=((\Dstar)')^{-1}(R),
+  \\[-2pt]
+  x^\star&=\frac{m^\star-a}{a-b}.
+  \label{eq:xstar}
+\end{align}
+In the C++ policies, \texttt{R} is the natural-parameter value in the
+stationarity equation.  The model call \texttt{DstarPrimeInv}$(R)$ returns
+$m^\star$.
+It is a mistake to compare $R$ directly with a boundary expressed in the
+mean-parameter scale.  The current \texttt{DUST} code explicitly avoids that
+mistake by comparing $\texttt{DstarPrimeInv(R)}$ with the mean at the boundary.
+
+The maximizer is selected by the following rules:
+
+\begin{enumerate}
+  \item If $x^\star\leq0$, the maximum on the feasible domain is at $x=0$.
+        This is exactly the PELT test:
+        \begin{equation}
+          \mathbb{D}(0)=-\Dstar(a)-c.
+          \label{eq:pelt}
+        \end{equation}
+  \item If $0<x^\star<x_{\max}$, the maximum is the interior value
+        $\mathbb{D}(x^\star)$.
+  \item If $x^\star\geq x_{\max}$ and $x_{\max}$ is finite, the supremum is
+        the limiting value at the endpoint.  If $a>b$, the path moves toward
+        the right boundary of the mean domain; if $a<b$, it moves toward the
+        left boundary.
+  \item If $x_{\max}=+\infty$, the correct treatment depends on the
+        asymptotic derivative and, in equality cases, on the asymptotic value
+        of the decision function.  This case must not be confused with a
+        finite endpoint.
+\end{enumerate}
+
+The paper states the essential negative-stationary-point rule explicitly:
+when $x^\star<0$, the decision function is evaluated at zero and the test is
+the PELT inequality.  There is no special mathematical threshold at
+$x^\star=-1$.
+
+\subsection{Model domains and endpoint directions}
+
+The model-specific conjugates used in the paper and the code are summarized
+below.  The table is also the reason endpoint handling cannot be hard-coded
+to the left boundary.
+
+\begin{center}
+\small
+\begin{tabular}{lll}
+\toprule
+Model & $\Dstar(m)$ & Mean-domain information \\
+\midrule
+Gaussian & $m^2/2$ & $m\in\R$ \\
+Exponential & $-\log(m)-1$ & $m>0$ \\
+Poisson & $m(\log m-1)$ & $m>0$ \\
+Geometric & $(m-1)\log(m-1)-m\log m$ & $m>1$ \\
+Bernoulli/Binomial & $m\log m+(1-m)\log(1-m)$ & $0<m<1$ \\
+Negative Binomial & $m\log m-(1+m)\log(1+m)$ & $m>0$ \\
+Variance & $-\tfrac12(\log m+1)$ & $m>0$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+For Bernoulli and Binomial, the domain is bounded on both sides.  Therefore,
+when $a>b$, $x_{\max}$ is a right-boundary value and the endpoint must use
+$\Dstar(1)$, not $\Dstar(0)$.  For all other models, finite $x_{\max}$ in
+the $a<b$ direction reaches the left boundary.  The paper's Table
+\texttt{dual\_table} gives the corresponding formulas for $x_{\max}$.
+
+\section{What DUST and DUSTib mean in the code}
+
+\subsection{\texttt{DualMax\_DUST}}
+
+The current \texttt{DualMax\_DUST} implementation in
+\texttt{1D\_DualMaxPolicies.h:76--157} is an optimized closed-form test.
+Its main steps are:
+
+\begin{enumerate}
+  \item compute $a,b,c,d$ and the model-dependent domain limit;
+  \item handle a boundary value or a linear decision function;
+  \item evaluate the derivative at $x=0$; if the derivative is negative,
+        return the PELT test immediately;
+  \item handle an infinite domain using the derivative at infinity;
+  \item for a finite domain, compute the actual critical mean
+        $(\Dstar)'^{-1}(R)$ and compare it with the mean at the endpoint;
+  \item for an interior maximum, use the segment-cost shortcut
+        \texttt{Model::costEval(..., R, ...)} instead of explicitly
+        evaluating the full decision function at $x^\star$.
+\end{enumerate}
+
+The final shortcut is mathematically equivalent to evaluating
+$\mathbb{D}(x^\star)$.  It follows from the Legendre relation and the
+stationarity equation, and it avoids constructing $x^\star$ and the
+interior mean when the critical point is known to be feasible.
+
+\subsection{\texttt{DualMax\_DUSTib}}
+
+The current \texttt{DualMax\_DUSTib} implementation in
+\texttt{1D\_DualMaxPolicies.h:159--202} takes a more literal route:
+
+\begin{enumerate}
+  \item compute $R$;
+  \item compute $m^\star=((\Dstar)')^{-1}(R)$ and
+        $x^\star=(m^\star-a)/(a-b)$;
+  \item if the point is considered interior, evaluate
+        \begin{equation}
+          -\Dstar\bigl(a+x^\star(a-b)\bigr)
+          -\bigl(c+x^\star(c-d)\bigr);
+          \label{eq:dustib-direct}
+        \end{equation}
+  \item otherwise use a PELT or boundary/asymptotic branch.
+\end{enumerate}
+
+The intended formula is therefore the same as \texttt{DUST}.  The difference
+is implementation strategy, not a different pruning criterion:
+
+\begin{center}
+\small
+\begin{tabular}{p{0.25\linewidth}p{0.31\linewidth}p{0.31\linewidth}}
+\toprule
+Property & \texttt{DUST} & \texttt{DUSTib} \\
+\midrule
+Mathematical target & Maximum of Equation~\eqref{eq:decision} & Same maximum \\
+Interior evaluation & Legendre/segment-cost shortcut & Direct decision-function value \\
+Early PELT branch & Checks the derivative at $x=0$ first & Computes the inverse derivative before its PELT branch \\
+Endpoint handling & Selects left or right boundary from the direction of $a-b$ & Current code uses the left boundary in both finite-endpoint branches \\
+Highway path & Hand-vectorized for DUST & Explicitly falls back to the scalar engine \\
+Status in documentation & Default and recommended exact rule & Marked ``not yet working'' in the R documentation \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Why DUST is faster}
+
+There are four separate reasons.  They should not be conflated.
+
+\subsection{The main reason: SIMD is unavailable for DUSTib}
+
+The file \texttt{DUST\_1D\_HW.cpp:53--62} says that \texttt{DUSTib} is not
+hand-vectorized and delegates to the scalar \texttt{dust} engine.  The
+dispatch at lines 109--115 confirms that \texttt{DUSTib} calls
+\texttt{run\_dust\_engine<Model, DualMax\_DUSTib<Model>>}.  In contrast,
+\texttt{DUST} uses the Highway implementation when the package is built with
+Highway.  Its active candidates are stored in a flat array so that candidate
+values can be loaded in SIMD lanes.  The scalar engine uses the linked-list
+style active-index structure in \texttt{1D\_Indices.h}; this structure is not
+directly vectorizable.
+
+Consequently, comparing \texttt{DUST.1D.HW} with method \texttt{DUST} to
+the same entry point with method \texttt{DUSTib} is primarily a
+SIMD-versus-scalar comparison as well as a pruning-rule comparison.
+
+\subsection{DUST does less work per surviving candidate}
+
+The DUST policy checks the derivative at zero before calculating the inverse
+derivative.  When the derivative is negative, the maximum is already known to
+be the PELT point, so the expensive inverse and endpoint calculations are
+skipped.  The DUSTib policy currently computes
+\texttt{DstarPrimeInv(R)} and $x^\star$ before making its negative-point
+decision.
+
+For an interior maximum, DUST uses \texttt{costEval}, which is a compact
+model-specific expression for the value at the stationary point.  DUSTib
+constructs the stationary mean and evaluates $\Dstar$ plus the affine term.
+Both are constant-time operations, but the latter generally performs more
+floating-point work and more domain-sensitive logarithm evaluations.
+
+\subsection{Under-pruning increases later dynamic-programming work}
+
+Any missed positive decision-function value leaves a candidate in the active
+set.  The next iteration then evaluates that candidate in the OP step, and it
+can be tested again at later times.  Thus a branch error in DUSTib does not
+change the exact segmentation, provided it only causes under-pruning, but it
+can substantially increase runtime.  The current DUSTib negative-point and
+endpoint branches can cause precisely this type of under-pruning.
+
+\subsection{The comparison must be benchmarked fairly}
+
+On a scalar build, or when comparing \texttt{dust.1D} rather than
+\texttt{DUST.1D.HW}, the SIMD explanation does not apply.  The remaining
+difference is then due to operation count, branch behavior, active-set size,
+and numerical branch outcomes.  Benchmarks should report separately:
+
+\begin{itemize}
+  \item scalar DUST versus scalar DUSTib;
+  \item Highway DUST versus scalar DUSTib;
+  \item final active-set size and the complete active-set trajectory;
+  \item identical data, penalty, model normalization, compiler, and hardware.
+\end{itemize}
+
+\section{DUSTib corrections needed for full effectiveness}
+
+\subsection{\texorpdfstring{Correction 1: every negative $x^\star$ is a PELT case}{Correction 1: every negative xstar is a PELT case}}
+
+The current code contains:
+
+\begin{verbatim}
+if(xstar <= 0 && xstar > -1)
+{
+  return (- Model::Dstar(a) -c > 0);
+}
+\end{verbatim}
+
+The lower bound $-1$ has no role in the decision-function domain.  The
+change of variables used in the paper gives $x\geq0$, so any $x^\star<0$ is
+outside the feasible domain, regardless of how negative it is.  The literal
+correction is:
+
+\begin{verbatim}
+if (xstar <= 0.0)
+{
+  return (-Model::Dstar(a) - c > 0);
+}
+\end{verbatim}
+
+This is exactly the statement in the paper's proof: when $x^\star<0$, the
+maximum is at zero and the test is PELT.  The same rule should be used with a
+small numerical tolerance, for example $x^\star\leq\varepsilon_x$.
+
+\subsection{Correction 2: use the boundary reached by the path}
+
+The current DUSTib code uses \texttt{Dstar\_leftboundary()} in both finite
+endpoint branches:
+
+\begin{verbatim}
+return (-Model::Dstar_leftboundary()
+        - (c + x_max * (c-d))) > 0;
+\end{verbatim}
+
+This is wrong for a bounded-right-domain model when $a>b$.  Since
+$m(x)=a+x(a-b)$, the path moves upward when $a>b$ and reaches the right
+boundary.  The endpoint value must therefore be selected as:
+
+\begin{verbatim}
+  ? Model::Dstar_rightboundary()
+  : Model::Dstar_leftboundary();
+
+return (-Dstar_at_xmax
+        - (c + x_max * (c-d))) > 0;
+\end{verbatim}
+
+This matters for Bernoulli and Binomial, whose mean domain is $(0,1)$ and
+whose right boundary is $1$.  The current \texttt{DUST} policy already uses
+this directional selection at lines 146--152; DUSTib should use the same
+logic.
+
+\subsection{Correction 3: do not treat an infinite domain as a finite endpoint}
+
+The current test
+
+\begin{verbatim}
+if(xstar >= x_max) // case finite only
+\end{verbatim}
+
+is not actually restricted to a finite $x_{\max}$.  If both values are
+infinite, the expression can enter a branch containing
+$x_{\max}(c-d)$, which may be infinite or undefined.  The finite endpoint
+branch should explicitly require:
+
+\begin{verbatim}
+if (std::isfinite(x_max) && xstar >= x_max)
+{
+  // evaluate the directional boundary limit
+}
+\end{verbatim}
+
+The $x_{\max}=+\infty$ case should instead be handled by a model policy that
+provides the derivative limit at infinity and, when necessary, the value of
+the decision function at infinity.
+
+\subsection{Correction 4: make out-of-domain stationary points explicit}
+
+For Exponential, Geometric, Negative Binomial, and Variance models, the
+natural parameter has a one-sided domain.  The inverse derivative
+\texttt{DstarPrimeInv(R)} is meaningful only when $R$ belongs to the range of
+\texttt{DstarPrime}.  If it returns NaN, an invalid mean, or an infinite mean,
+the code must not silently continue to the generic asymptotic branch.
+
+A robust policy should expose a model-level operation that returns either a
+valid critical mean or an ``out of range'' result.  An out-of-range critical
+point is then handled by the appropriate endpoint rule.  A safe numerical
+fallback is to return ``do not prune'' if the endpoint cannot be evaluated
+reliably; this sacrifices speed but preserves exactness.
+
+\subsection{Correction 5: replace the ambiguous asymptotic helper}
+
+The scalar policies expose \texttt{Dstar\_superLinearLimit()}, but the
+DUSTib final branch uses it as if it were enough to decide the behavior at an
+unbounded endpoint.  Its name and values do not consistently represent the
+limit of $\Dstar$.  For example, for the Exponential model,
+$\Dstar(m)=-\log(m)-1\to-\infty$ as $m\to\infty$, while
+$(\Dstar)'(m)\to0$.
+
+The model interface should distinguish at least:
+
+\begin{verbatim}
+DstarPrimeAtInfinity()       // limit of the derivative
+dualAtInfinity(c, d, a, b)   // sign/value of the full endpoint limit
+\end{verbatim}
+
+The first quantity is enough when the asymptotic slope is strictly positive
+or negative.  The second is needed in equality cases, such as an asymptotic
+slope of zero.  The current DUST policy's use of
+\texttt{DstarPrime(+infinity)} is closer to the correct first-order test, but
+it should also document and handle equality cases explicitly.
+
+\subsection{A corrected branch structure}
+
+The following is a schematic replacement for the DUSTib branch logic.  It is
+not a complete patch because the scalar model interface first needs a
+well-defined invalid-domain and asymptotic result, but it shows the correct
+ordering:
+
+\begin{verbatim}
+// a, b, c, d already computed; require a != b here.
+const double f0 = -Model::Dstar(a) - c;
+const double g0 = -(a-b) * Model::DstarPrime(a) - (c-d);
+
+// The feasible decision-function domain starts at x = 0.
+if (g0 <= 0.0) return f0 > 0.0;
+
+const double R = -(c-d) / (a-b);
+const CriticalMean critical = Model::criticalMean(R);
+
+if (!critical.valid) {
+  // The stationary point is outside the mean domain.
+  // Select the endpoint from the sign of the derivative/domain direction.
+  return endpointOrAsymptoticTest<Model>(a, b, c, d);
+}
+
+const double xstar = (critical.mean - a) / (a-b);
+const double xmax = Model::xMax(a, b);
+
+if (xstar <= 0.0) return f0 > 0.0;
+
+if (std::isfinite(xmax) && xstar >= xmax)
+  return directionalEndpointTest<Model>(a, b, c, d, xmax);
+
+if (std::isfinite(xstar) && xstar < xmax)
+  return decisionAt<Model>(a, b, c, d, xstar) > 0.0;
+
+return asymptoticTest<Model>(a, b, c, d);
+\end{verbatim}
+
+At minimum, the first two literal corrections should be applied immediately:
+replace the $-1$ condition by $x^\star\leq0$ and select the endpoint boundary
+according to the sign of $a-b$.  The remaining changes make the method robust
+at domain and infinity boundaries rather than merely fixing the common
+interior cases.
+
+\section{Improvements for both approaches}
+
+\subsection{Use one mathematically authoritative maximization kernel}
+
+The two policies currently duplicate delicate model-dependent branch logic.
+That makes it easy for one policy to receive a boundary fix while the other
+does not.  A better design is to centralize the following operations:
+
+\begin{itemize}
+  \item the domain of the mean statistic;
+  \item the map $(\Dstar)'$ and its inverse;
+  \item left and right boundary values;
+  \item the directional endpoint selected by $a-b$;
+  \item finite and infinite endpoint evaluation;
+  \item a checked stationary-point result.
+\end{itemize}
+
+Then DUST and DUSTib can differ only in how they evaluate a valid interior
+maximum.  DUST can retain the segment-cost shortcut; DUSTib can retain the
+direct decision-function formula for diagnostic purposes.  Both must call
+the same endpoint and invalid-domain helpers.
+
+\subsection{Make DUSTib a debug/reference mode, not a second unchecked kernel}
+
+Once the shared maximization logic is available, DUSTib is useful as a
+reference implementation.  For every candidate, it can evaluate the direct
+decision function and compare its result with the DUST shortcut in debug
+builds.  This provides a strong regression check for the Legendre shortcut
+and for model-specific formulas without imposing the extra work on the
+production path.
+
+\subsection{Vectorize only after correctness is established}
+
+If DUSTib is retained as a user-facing method, it should either use the same
+Highway lane kernel as DUST or be documented as scalar reference code.  A
+second hand-vectorized branch tree would increase maintenance cost.  The
+preferred performance path is to vectorize the shared decision test and use
+lane masks for the PELT, interior, endpoint, and asymptotic cases.
+
+\subsection{Strengthen numerical safeguards}
+
+The implementation should use model-specific stable primitives and checked
+domains throughout:
+
+\begin{itemize}
+  \item use \texttt{log1p} and stable logistic evaluations near $0$ and $1$;
+  \item avoid evaluating $\log(0)$ or $0\log(0)$, even when a floating-point
+        average is within a few ulps of a boundary;
+  \item use a named tolerance policy rather than scattered constants such as
+        \texttt{1e-9} and \texttt{1e-14};
+  \item distinguish a finite endpoint, an infinite endpoint, and an invalid
+        stationary point;
+  \item never prune when the decision value is NaN or the domain status is
+        uncertain.
+\end{itemize}
+
+The last rule is conservative: it may reduce pruning, but it cannot destroy
+the exactness guarantee.
+
+\subsection{Test pruning decisions, not only final segmentations}
+
+The current tests in \texttt{tests/testthat/test-dust1D.R} verify that the
+methods return the same final change points on selected examples.  That is
+necessary but insufficient.  Different pruning schedules can produce the
+same final segmentation even when one method misses many valid pruning
+opportunities.
+
+The test suite should additionally compare each policy with an independent
+reference maximization of Equation~\eqref{eq:decision} on small examples.
+The reference should test:
+
+\begin{enumerate}
+  \item $x^\star$ slightly below zero and far below zero;
+  \item an interior $x^\star$;
+  \item $x^\star$ beyond a finite left endpoint;
+  \item $x^\star$ beyond a finite right endpoint for Bernoulli/Binomial;
+  \item $x_{\max}=+\infty$;
+  \item $a=b$, $a$ at a model boundary, and $a$ numerically close to a
+        boundary;
+  \item invalid or non-finite inverse-derivative values.
+\end{enumerate}
+
+The reference should compare the Boolean pruning decision and the active-set
+trajectory, not merely $Q_t$ and the backtracked change points.  For small
+$n$, an exhaustive grid plus a high-accuracy one-dimensional optimizer is
+adequate.  The production policy should never prune when the reference says
+the maximum is non-positive.
+
+\subsection{Improve candidate selection for higher-dimensional extensions}
+
+The paper recommends the nearest smaller active index as an effective
+single-constraint choice, which is what the current one-dimensional code
+uses.  This is a good default for one-parameter models.  For multi-parameter
+models, stronger lower bounds can be obtained by using several constraints,
+up to the parameter dimension under the paper's strong-duality result.
+The implementation should therefore separate:
+
+\begin{itemize}
+  \item the candidate-selection policy;
+  \item the number of constraints;
+  \item the maximizer for the resulting one- or multi-dimensional decision
+        function.
+\end{itemize}
+
+This avoids treating a one-dimensional closed form as if it automatically
+solved the multi-parameter problem.
+
+\subsection{Keep benchmarks comparable}
+
+The paper's conclusions concern exact pruning and measured computation time,
+not just arithmetic complexity.  Future comparisons should record the model
+normalization, penalty convention, active-set size, hardware, compiler,
+scalar/SIMD backend, and whether the reference method is allowed to apply a
+smallest-index PELT check.  In particular, the current
+\texttt{dust.object.1D.HW} documentation correctly notes that
+\texttt{DUSTib} falls back to the scalar object; this fact must be visible in
+any speed table.
+
+\section{Conclusions}
+
+The DUST paper gives one one-constraint decision function and one closed-form
+maximum for the one-parameter case.  The repository names two implementations
+of that idea \texttt{DUST} and \texttt{DUSTib}; they should have the same
+mathematical result.  \texttt{DUST} is faster because it performs an early
+PELT check, uses a Legendre/segment-cost shortcut, and, in the Highway entry
+point, is vectorized.  \texttt{DUSTib} currently performs more scalar work and
+falls back to the scalar engine.
+
+The most important DUSTib correction is to replace the condition
+$-1<x^\star\leq0$ by the mathematically correct condition $x^\star\leq0$.
+The next essential correction is to use the right boundary when $a>b$,
+particularly for Bernoulli and Binomial models.  Infinite endpoints and
+out-of-domain stationary points should then be handled through an explicit
+model-policy interface rather than through the current ambiguous final
+branch.
+
+After these corrections, the two policies should share a tested maximization
+kernel.  DUST can remain the optimized production method, while DUSTib can be
+retained as a transparent reference/debug implementation or vectorized if a
+separate production option is genuinely needed.
+
+\begin{thebibliography}{9}
+
+\bibitem{dustpaper}
+V. Runge, C. Truong, and S. Quern\'{e}.
+\newblock DUST: A Duality-Based Pruning Method For Exact Multiple Change-Point Detection.
+\newblock Local source: \texttt{PAPER\_DUST/DUST.tex}, especially the
+decision-function equation and the proof of the one-dimensional maximum.
+
+\bibitem{dustcode}
+\texttt{dust} source code.
+\newblock In particular: \texttt{src/1D\_DualMaxPolicies.h},
+\texttt{src/1D\_DUST\_Impl.h}, and \texttt{src/DUST\_1D\_HW.cpp}.
+
+\end{thebibliography}
+
+\end{document}

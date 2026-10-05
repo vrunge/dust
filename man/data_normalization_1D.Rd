@@ -4,7 +4,7 @@
 \alias{data_normalization_1D}
 \title{Data Normalization Function}
 \usage{
-data_normalization_1D(y, type = "gauss")
+data_normalization_1D(y, type = "gauss", size = NA_real_)
 }
 \arguments{
 \item{y}{A numeric vector representing the time series to be normalized and then segmented.}
@@ -12,6 +12,10 @@ data_normalization_1D(y, type = "gauss")
 \item{type}{A string specifying the model type for normalization.
 The available options are "gauss", "exp", "poisson", "geom", "bern", "binom", "negbin", "variance".
 The default is "gauss".}
+
+\item{size}{Known number of Binomial trials or Negative Binomial size.
+Required for those two models; the observed maximum and an estimated
+dispersion are not substitutes for the known model parameter.}
 }
 \value{
 A numeric vector that is the normalized version of the input time series `y`.
@@ -23,15 +27,31 @@ The normalization process depends on the statistical model type, which can be on
 "poisson" (Poisson distribution), "geom" (geometric distribution),
 "bern" (Bernoulli distribution), "binom" (binomial distribution),
 "negbin" (negative binomial distribution), or "variance"
+Poisson scaling changes the likelihood scale; supply a penalty appropriate
+for the scaled data. Binomial and Negative Binomial normalization use a
+known size rather than estimating it from the observations.
 }
 \examples{
-# Normalize a random time series using the Gaussian model
-normalized_y <- data_normalization_1D(rnorm(100), type = "gauss")
+### Gaussian: 3 segments of 300 points, noise sd = 2 -- normalization
+### rescales by an sdDiff() estimate of the noise, so the result has
+### noise sd close to 1.
+set.seed(40)
+y <- dataGenerator_1D(chpts = c(300, 600, 900), parameters = c(0, 1, 0),
+                       sdNoise = 2, type = "gauss")
+y_norm <- data_normalization_1D(y, type = "gauss")
+sd(diff(y_norm)) / sqrt(2)  # close to 1
 
-# Normalize using the Poisson model
-normalized_y <- data_normalization_1D(rpois(100, lambda = 3), type = "poisson")
+### Poisson: 3 segments of 300 points, rates 2/8/4 -- normalization
+### rescales by the overall mean, so the result has mean close to 1.
+set.seed(41)
+y <- dataGenerator_1D(chpts = c(300, 600, 900), parameters = c(2, 8, 4), type = "poisson")
+y_norm <- data_normalization_1D(y, type = "poisson")
+mean(y_norm)  # close to 1
 
-# Normalize using the Exponential model
-normalized_y <- data_normalization_1D(rexp(100), type = "exp")
+### Exponential: 3 segments of 300 points, rates 2/0.5/3
+set.seed(42)
+y <- dataGenerator_1D(chpts = c(300, 600, 900), parameters = c(2, 0.5, 3), type = "exp")
+y_norm <- data_normalization_1D(y, type = "exp")
+mean(y_norm)  # close to 1
 
 }

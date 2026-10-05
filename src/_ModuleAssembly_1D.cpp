@@ -1,6 +1,10 @@
 #include <Rcpp.h>
 
-// --- // Models // --- //
+// --- // Model policies (header-only, static functions, no vtable) // --- //
+#include "1D_DUST_Impl.h"
+#include "1D_OP_Impl.h"
+#include "1D_Indices.h"
+#include "1D_DualMaxPolicies.h"
 #include "1D_1_GaussModel.h"
 #include "1D_2_PoissonModel.h"
 #include "1D_3_ExpModel.h"
@@ -18,55 +22,37 @@ using namespace Rcpp;
 // --- //////////////////// --- //
 // ---------------------------- //
 
-DUST_1D *newModule1D(const std::string& model,
-                     const std::string& method,
-                     Nullable<int> nbLoops)
+// Resolve the model and pruning rule when the R module is created.
+
+template <class Model, class DualMaxPolicy>
+DUST_1D *newModuleT()
 {
-  ///////////////////  method separation                ///////////////////
-  ///////////////////  part 1 = rand = 0, det = 1       ///////////////////
-  ///////////////////  part 2 = Algo type for pruning   ///////////////////
+  return new DUST_1D_T<Model, DualMaxPolicy>();
+}
 
-  std::vector<std::string> method_INFO;
-  size_t pos = method.find('_');  // Find the position of the underscore
+template <class Model>
+DUST_1D *newModuleByAlgo(const std::string& method)
+{
+  if (method == "DUST")   return newModuleT<Model, DualMax_DUST<Model>>();
+  if (method == "DUSTib") return newModuleT<Model, DualMax_DUSTib<Model>>();
+  if (method == "PELT")   return newModuleT<Model, DualMax_PELT<Model>>();
+  // OP scans all previous endpoints in its own engine.
+  if (method == "OP")     return new DUST_1D_OP_T<Model>();
+  stop("Unrecognized method \"" + method + "\". Valid values: \"DUST\", \"DUSTib\", \"PELT\", \"OP\".");
+}
 
-  if (pos != std::string::npos)
-  {
-    method_INFO.push_back(method.substr(0, pos));        // First part before the underscore
-    method_INFO.push_back(method.substr(pos + 1));       // Second part after the underscore
-  }
-  else
-  {
-    method_INFO.push_back(method);
-    method_INFO.push_back(method);
-  }
-
-  ///////////////////  DEFAULT CHOICE  = best choice ///////////////////
-  std::string dualmax_algo = "DUST"; /// exact DUST
-  std::string constr_index = "det"; /// deterministic choice for constraint
-
-  if (method_INFO[0] == "rand"){constr_index = "rand";}
-  else if (method_INFO[0] == "det"){constr_index = "det";}
-  else if ((method_INFO[0] == "OP") || (method_INFO[0] == "PELT")){constr_index = "-";}
-
-  if (method_INFO[1] == "DUSTr") {dualmax_algo = "DUSTr";} //algo0
-  else if (method_INFO[1] == "DUST"){dualmax_algo = "DUST";} //algo1
-  else if (method_INFO[1] == "DUSTgs"){dualmax_algo = "DUSTgs";} //algo2
-  else if (method_INFO[1] == "DUSTbs"){dualmax_algo = "DUSTbs";} //algo3
-  else if (method_INFO[1] == "DUSTqn"){dualmax_algo = "DUSTqn";} //algo4
-  else if (method_INFO[1] == "PELT"){dualmax_algo = "PELT";} //algo5
-  else if (method_INFO[1] == "OP"){dualmax_algo = "OP";} //algo6
-  else if (method_INFO[1] == "DUSTib"){dualmax_algo = "DUSTib";} //algo7
-
-  if (model == "gauss")  return new Gauss_1D(dualmax_algo, constr_index, nbLoops);
-  else if (model == "poisson") return new Poisson_1D(dualmax_algo, constr_index, nbLoops);
-  else if (model == "exp") return new Exp_1D(dualmax_algo, constr_index, nbLoops);
-  else if (model == "geom") return new Geom_1D(dualmax_algo, constr_index, nbLoops);
-  else if (model == "bern") return new Bern_1D(dualmax_algo, constr_index, nbLoops);
-  else if (model == "binom") return new Binom_1D(dualmax_algo, constr_index, nbLoops);
-  else if (model == "negbin") return new Negbin_1D(dualmax_algo, constr_index, nbLoops);
-  else if (model == "variance") return new Variance_1D(dualmax_algo, constr_index, nbLoops);
-  else return new Gauss_1D(dualmax_algo, constr_index, nbLoops); /// DEFAULT GAUSS
-  return nullptr;
+DUST_1D *newModule1D(const std::string& model,
+                     const std::string& method)
+{
+  if (model == "gauss")  return newModuleByAlgo<GaussPolicy>(method);
+  else if (model == "poisson") return newModuleByAlgo<PoissonPolicy>(method);
+  else if (model == "exp") return newModuleByAlgo<ExpPolicy>(method);
+  else if (model == "geom") return newModuleByAlgo<GeomPolicy>(method);
+  else if (model == "bern") return newModuleByAlgo<BernPolicy>(method);
+  else if (model == "binom") return newModuleByAlgo<BinomPolicy>(method);
+  else if (model == "negbin") return newModuleByAlgo<NegbinPolicy>(method);
+  else if (model == "variance") return newModuleByAlgo<VariancePolicy>(method);
+  else stop("Unrecognized model \"" + model + "\".");
 }
 
 
@@ -76,20 +62,19 @@ DUST_1D *newModule1D(const std::string& model,
 // --- ///////////////////////// --- //
 // --------------------------------- //
 
-//' @title MyModule: Exposing DUST_1D to R
+//' @title Scalar segmentation module
 //'
 //' @name DUST_1D
 //'
 //' @description
-//' This module exposes the \code{DUST_1D} C++ class to R, allowing you to create
-//' instances of \code{DUST_1D} and call its methods directly from R.
+//' Rcpp module for the scalar DUST segmentation object.
 //'
 //' @export
 RCPP_MODULE(DUSTMODULE1D)
 {
   class_<DUST_1D>("DUST_1D")
 
-    .factory<const std::string&, const std::string&, Nullable<int>>(newModule1D)
+    .factory<const std::string&, const std::string&>(newModule1D)
 
     .method("append_data", &DUST_1D::append_data)
     .method("update_partition", &DUST_1D::update_partition)
@@ -98,4 +83,3 @@ RCPP_MODULE(DUSTMODULE1D)
     .method("dust", &DUST_1D::dust)
   ;
 }
-

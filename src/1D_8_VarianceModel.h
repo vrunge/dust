@@ -1,37 +1,59 @@
 #ifndef Variance_1D_H
 #define Variance_1D_H
 
-#include <Rcpp.h>
+#include <cmath>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <limits>
 
-#include "1D_DUST.h"
+struct VariancePolicy
+{
+  // NOTE: unlike every other 1D model, the sufficient statistic recorded
+  // in cumsum is data^2, not data (zero-mean Gaussian, unknown variance).
+  static inline double statistic(double data) { return data * data; }
 
-using namespace Rcpp;
+  // See 1D_1_GaussModel.h for why this takes (point, a) rather than
+  // (cumsum, point, t, s).
+  static inline double costEval(double point, double a)
+  {
+    return -0.5 * std::log(-2.0 * point) - point * a;
+  }
 
-class Variance_1D : public DUST_1D {
-public:
-  Variance_1D(std::string dualmax_algo, std::string constr_index, Nullable<int> nbLoops = Nullable<int>());
-protected:
-  double statistic(double& data) const override;
+  static inline double costMin(const std::vector<double>& cumsum, unsigned int t, unsigned int s)
+  {
+    double delta_t = t - s;
+    double diff_cumsum = cumsum[t] - cumsum[s];
+    if(diff_cumsum <= 0){diff_cumsum = 1e-100;} /// choice  1e-100 to avoid -Inf /// THIS IS IMPORTANT
+    return 0.5 * delta_t * (1.0 + std::log(diff_cumsum / delta_t));
+  }
 
-  double costEval(double point, unsigned int t, unsigned int s) const override;
-  double costMin(unsigned int t, unsigned int s) const override;
+  static inline double muMax(double a, double b)
+  {
+    if (b != 0) return std::min(1., a / b);
+    return 1.;
+  }
 
-  double dualEval(double point, double minCost_t, unsigned int t, unsigned int s, unsigned int r) const override;
-  double dualMax(double minCost_t, unsigned int t, unsigned int s, unsigned int r) const override;
+  static inline double xMax(double a, double b)
+  {
+    if (a < b) return -a / (a - b);
+    return std::numeric_limits<double>::infinity();
+  }
 
-  double muMax(double a, double b) const override;
-  double xMax(double a, double b) const override;
+  // Tolerance-based: see 1D_5_BernModel.h for why exact equality isn't
+  // reliable here (a reaches 0 via division, not just via summed zeros).
+  static inline bool isLeftBoundary(double a) { return a < 1e-9; }
+  static inline bool isRightBoundary(double a) { return false; } // unbounded above: no right boundary
+  static inline double Dstar_leftboundary() { return std::numeric_limits<double>::infinity(); }
+  static inline double Dstar_rightboundary() { return 0; } // unused: isRightBoundary always false
+  static inline double Dstar_superLinearLimit() { return 0; }
 
-  bool isLeftBoundary(double a) const override;
-  double Dstar_leftboundary() const override;
-  double Dstar_superLinearLimit() const override;
+  static inline double Dstar(double x) { return -0.5 * (std::log(x) + 1.0); }
+  static inline double DstarPrime(double x) { return -0.5 / x; }
+  static inline double DstarPrimeInv(double x) { return -0.5 / x; }
+  static inline double DstarSecond(double x) { return 0.5 / std::pow(x, 2); }
 
-  double Dstar(double x) const override;
-  double DstarPrime(double x) const override;
-  double DstarPrimeInv(double x) const override;
-  double DstarSecond(double x) const override;
-
-  std::string get_model() const override;
+  static inline const char* get_model() { return "variance"; }
 };
 
 #endif
