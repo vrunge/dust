@@ -30,11 +30,8 @@ test_that("Highway and scalar backends match for every cost model and method", {
 })
 
 test_that("DUST.1D.HW OP engine never prunes and matches PELT's costQ exactly, for every cost model", {
-  # Regression guard for DUST_1D_HW_OP_T / run_OP_HW (hw_op_step in
-  # DUST_1D_HW.cpp): the old HW method="OP" (methodCode==2) still ran
-  # smallest_index_prune+compact every step, so this checks both
-  # ground-truth agreement with PELT and that nb is trivially t at every
-  # step (the active set is never reduced).
+  # Regression guard: Highway OP must never prune, so nb is t at every
+  # step, and it must agree with PELT on the optimum.
   set.seed(42)
   chpts <- c(100, 200, 300)
 

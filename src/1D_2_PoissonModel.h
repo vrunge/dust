@@ -47,12 +47,10 @@ struct PoissonPolicy
   static inline bool isRightBoundary(double a) { return false; } // unbounded above: no right boundary
   static inline double Dstar_leftboundary() { return 0; }
   static inline double Dstar_rightboundary() { return std::numeric_limits<double>::infinity(); } // unused: isRightBoundary always false
-  static inline double Dstar_superLinearLimit() { return std::numeric_limits<double>::infinity(); }
 
   static inline double Dstar(double x) { return (x * (std::log(x) - 1.0)); }
   static inline double DstarPrime(double x) { return std::log(x); }
   static inline double DstarPrimeInv(double x) { return std::exp(x); }
-  static inline double DstarSecond(double x) { return std::pow(x, -1); }
 
   static inline const char* get_model() { return "poisson"; }
 };
