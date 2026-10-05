@@ -57,12 +57,10 @@ struct BernPolicy
   static inline bool isRightBoundary(double a) { return a > 1.0 - 1e-9; }
   static inline double Dstar_leftboundary() { return 0; }
   static inline double Dstar_rightboundary() { return 0; } // symmetric: Dstar(1) == Dstar(0)
-  static inline double Dstar_superLinearLimit() { return 0; }
 
   static inline double Dstar(double x) { return x * std::log(x) + (1.0 - x) * std::log(1.0 - x); }
   static inline double DstarPrime(double x) { return std::log(x) - std::log(1.0 - x); }
   static inline double DstarPrimeInv(double x) { return std::exp(x) / (1 + std::exp(x)); }
-  static inline double DstarSecond(double x) { return 1.0 / x + 1.0 / (1.0 - x); }
 
   static inline const char* get_model() { return "bern"; }
 };

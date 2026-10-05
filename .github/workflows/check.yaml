@@ -2,6 +2,11 @@ name: R CMD check
 
 on: [push, pull_request]
 
+# A newer push to the same branch or PR cancels the run still in progress.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
     runs-on: ${{ matrix.os }}
@@ -21,6 +26,9 @@ jobs:
             backend: scalar
     env:
       DUST_FORCE_SCALAR: ${{ matrix.backend == 'scalar' && '1' || '0' }}
+      MAKEFLAGS: -j4
+      # Skip the network-bound CRAN incoming checks.
+      _R_CHECK_CRAN_INCOMING_: false
     steps:
       - uses: actions/checkout@v6
       - name: Install Google Highway
@@ -30,9 +38,14 @@ jobs:
         if: matrix.os == 'macos-latest' && matrix.backend == 'Highway'
         run: brew install highway pkg-config
       - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::rcmdcheck
+          needs: check
+      # The runners have no LaTeX, so the PDF manual cannot be built.
       - uses: r-lib/actions/check-r-package@v2
         with:
-          args: 'c("--as-cran")'
+          args: 'c("--as-cran", "--no-manual")'
+          build_args: 'c("--no-manual")'

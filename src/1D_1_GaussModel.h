@@ -34,12 +34,10 @@ struct GaussPolicy
   static inline bool isRightBoundary(double a) { return false; } // unbounded domain: no right boundary
   static inline double Dstar_leftboundary() { return std::numeric_limits<double>::infinity(); }
   static inline double Dstar_rightboundary() { return std::numeric_limits<double>::infinity(); } // unused: isRightBoundary always false
-  static inline double Dstar_superLinearLimit() { return std::numeric_limits<double>::infinity(); }
 
   static inline double Dstar(double x) { return 0.5 * x * x; }
   static inline double DstarPrime(double x) { return x; }
   static inline double DstarPrimeInv(double x) { return x; }
-  static inline double DstarSecond(double x) { return 1.0; }
 
   static inline const char* get_model() { return "gauss"; }
 };
