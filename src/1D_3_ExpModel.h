@@ -44,10 +44,12 @@ struct ExpPolicy
   static inline bool isRightBoundary(double a) { return false; } // unbounded above: no right boundary
   static inline double Dstar_leftboundary() { return std::numeric_limits<double>::infinity(); }
   static inline double Dstar_rightboundary() { return 0; } // unused: isRightBoundary always false
+  static inline double Dstar_superLinearLimit() { return 0; }
 
   static inline double Dstar(double x) { return -(std::log(x) + 1.0); }
   static inline double DstarPrime(double x) { return -1.0 / x; }
   static inline double DstarPrimeInv(double x) { return -1.0 / x; }
+  static inline double DstarSecond(double x) { return 1.0 / std::pow(x, 2); }
 
   static inline const char* get_model() { return "exp"; }
 };

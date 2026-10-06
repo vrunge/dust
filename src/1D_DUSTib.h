@@ -69,6 +69,15 @@ template<int K> struct Math {
     if constexpr (K == 3) return std::log1p(-1/a);
     if constexpr (K == 6) return a < 1 ? std::log(a)-std::log1p(a) : -std::log1p(1/a);
   }
+  static double mean(double r) {
+    if constexpr (K == 0) return r;
+    if constexpr (K == 1) return std::exp(r);
+    if constexpr (K == 2) return -1/r;
+    if constexpr (K == 7) return -.5/r;
+    if constexpr (bounded) { double z=std::exp(-std::abs(r)); return r >= 0 ? 1/(1+z) : z/(1+z); }
+    if constexpr (K == 3) return -1/std::expm1(r);
+    if constexpr (K == 6) return std::exp(r)/(-std::expm1(r));
+  }
   static double partition(double r) {
     if constexpr (K == 0) return .5*r*r;
     if constexpr (K == 1) return std::exp(r);
@@ -91,7 +100,7 @@ inline bool positive(double value, double scale) {
   return std::isfinite(value) && std::isfinite(scale) && value > guard*(1+scale);
 }
 
-template<int K>
+template<int K, int V = 2>
 inline bool test(double a, double b, double c, double d) {
   using M = Math<K>;
   if (!M::valid(a) || !M::valid(b) || !std::isfinite(c) || !std::isfinite(d)) return false;
@@ -111,18 +120,48 @@ inline bool test(double a, double b, double c, double d) {
   const double r = -e/delta;
   if (!std::isfinite(r)) return pelt;
   if constexpr (M::negative) { if (r >= 0) return pelt; }
-  const double ar=M::partition(r), ra=r*a;
-  return positive(ar-ra-c,std::abs(ar)+std::abs(ra)+std::abs(c));
+  const auto inequality = [&]() {
+    const double ar=M::partition(r), ra=r*a;
+    return pelt || positive(ar-ra-c,std::abs(ar)+std::abs(ra)+std::abs(c));
+  };
+  if constexpr (V == 2) return inequality();
+  else {
+    const double m = M::mean(r);
+    // Under/overflow or a rounded endpoint: use the finite conjugate identity.
+    if (!M::valid(m) || M::boundary(m) || !std::isfinite(m)) return inequality();
+    const double x = (m-a)/delta;
+    if (!(x > 0) || !std::isfinite(x)) return inequality();
+    if constexpr (K != 0) {
+      const double lo = K == 3 ? 1.0 : 0.0;
+      if (delta < 0 && x >= (lo-a)/delta) return inequality();
+      if constexpr (K == 4 || K == 5)
+        if (delta > 0 && x >= (1-a)/delta) return inequality();
+    }
+    const double fm = M::conjugate(m);
+    if constexpr (V == 1) {
+      const double xe = x*e;
+      return pelt || positive(-fm-c-xe,std::abs(fm)+std::abs(c)+std::abs(xe));
+    } else {
+      const double w = 1/(1+x), mu = x*w;
+      const double wf = w*fm, md = mu*d;
+      // mu rounding to 1 destroys the sign certificate at the excluded end.
+      if (!(mu < 1) || w == 0) return inequality();
+      return pelt || positive(-wf-c+md,std::abs(wf)+std::abs(c)+std::abs(md));
+    }
+  }
 }
 } // namespace dustib
 
-template<class Model> struct DualMax_DUSTib {
+template<class Model, int Version> struct DualMax_IB {
   static constexpr const char* name() { return "DUSTib"; }
   static bool test(const std::vector<double>& sums, const std::vector<double>& costs,
                    double qt, unsigned t, unsigned s, unsigned r) {
-    return dustib::test<dustib::model_id<Model>>(
+    return dustib::test<dustib::model_id<Model>,Version>(
       (sums[t]-sums[s])/(t-s), (sums[s]-sums[r])/(s-r),
       (qt-costs[s])/(t-s), (costs[s]-costs[r])/(s-r));
   }
 };
+template<class P> struct IsIB : std::false_type {};
+template<class M, int V> struct IsIB<DualMax_IB<M,V>> : std::true_type {};
+template<class Model> using DualMax_DUSTib = DualMax_IB<Model,2>;
 #endif

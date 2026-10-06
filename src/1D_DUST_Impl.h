@@ -11,8 +11,7 @@
 
 using namespace Rcpp;
 
-// Scalar segmentation engine, parameterized by the cost model and the
-// pruning rule. The active candidates are kept in Indices_1D.
+// Scalar segmentation engine for a given model and pruning rule.
 
 template <class Model, class DualMaxPolicy>
 class DUST_1D_T : public DUST_1D
@@ -20,9 +19,7 @@ class DUST_1D_T : public DUST_1D
   public:
     DUST_1D_T() : DUST_1D(DualMaxPolicy::name()) {}
 
-    ////////////////////////////////////////////////////////////////////////////////
-    // --- // append_data, i. e. initializes all data-dependent vectors // --- //
-    ////////////////////////////////////////////////////////////////////////////////
+    // Add observations and update the cumulative sufficient statistics.
 
     void append_data(const Rcpp::NumericVector& inData, Nullable<double> inPenalty) override
     {
@@ -51,14 +48,9 @@ class DUST_1D_T : public DUST_1D
         index_.add_first(0);
       }
 
-      // Reads directly from R's own memory (no std::vector<double> copy
-      // of the input at the Rcpp boundary).
       for (std::size_t i = 0; i < m; ++i)
         cumsum.push_back(cumsum.back() + Model::statistic(inData[i]));
     }
-
-    ////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////
 
     void update_partition() override
     {
@@ -67,8 +59,7 @@ class DUST_1D_T : public DUST_1D
       unsigned int nbt = nb_indices.back();
       for (unsigned t = index_.get_first() + 1; t <= n; t++)
       {
-        ///////////// OP step /////////////
-        ///////////// OP step /////////////
+        // Optimal partitioning step.
         index_.reset();
         double minCost_t = std::numeric_limits<double>::infinity();
         unsigned int argMin = 0;
@@ -84,16 +75,11 @@ class DUST_1D_T : public DUST_1D
           index_.next();
         }
         while(index_.is_not_the_last());
-        //////// END (OP step) ////////
-        //////// END (OP step) ////////
-
         minCost_t += penalty;
         costRecord.push_back(minCost_t);
         chptRecord.push_back(argMin);
 
-        ///////////// DUST step /////////////
-        ///////////// DUST step /////////////
-
+        // Apply the pruning rule.
         index_.reset_pruning();
 
         while (index_.is_not_the_last_pruning())
@@ -108,27 +94,18 @@ class DUST_1D_T : public DUST_1D
             index_.next_pruning();
           }
         }
-        //////// END (DUST loop)
-        //////// END (DUST loop)
-
-        // Prune the last index (analogous with a "mu* = 0" duality simple test)
-        // this is the smallest available index = PELT RULE
+        // The last index gives the PELT test (zero multiplier).
         if (lastCost > minCost_t)
         {
           index_.prune_last();
           nbt--;
         }
 
-        ///////////// Update to next index /////////////
-        ///////////// Update to next index /////////////
         index_.add_first(t);
         nb_indices.push_back(nbt);
         nbt++;
       }
     }
-
-    ////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////
 
     List get_partition() override
     {
@@ -141,9 +118,6 @@ class DUST_1D_T : public DUST_1D
         _["changepoints"] = chpts,
         _["lastIndexSet"] = index_.get_list(),
         _["backend"] = "scalar",
-        // Constructed directly from the iterator range into the R-level
-        // vector: a single copy, instead of first copying the sub-range
-        // into a throwaway std::vector and then wrapping that.
         _["nb"] = Rcpp::IntegerVector(nb_indices.begin() + 1, nb_indices.end()),
         _["costQ"] = Rcpp::NumericVector(costRecord.begin() + 1, costRecord.end())
       );
@@ -151,9 +125,6 @@ class DUST_1D_T : public DUST_1D
 
   protected:
     std::string get_model() const override { return Model::get_model(); }
-
-    ////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////
 
   private:
     Indices_1D index_;

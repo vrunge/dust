@@ -1,6 +1,5 @@
 #include <Rcpp.h>
 
-// --- // Model policies (header-only, static functions, no vtable) // --- //
 #include "1D_DUST_Impl.h"
 #include "1D_OP_Impl.h"
 #include "1D_Indices.h"
@@ -15,14 +14,6 @@
 #include "1D_8_VarianceModel.h"
 
 using namespace Rcpp;
-
-// ---------------------------- //
-// --- //////////////////// --- //
-// --- // Object factory // --- //
-// --- //////////////////// --- //
-// ---------------------------- //
-
-// Resolve the model and pruning rule when the R module is created.
 
 template <class Model, class DualMaxPolicy>
 DUST_1D *newModuleT()
@@ -55,12 +46,6 @@ DUST_1D *newModule1D(const std::string& model,
   else stop("Unrecognized model \"" + model + "\".");
 }
 
-
-// --------------------------------- //
-// --- ///////////////////////// --- //
-// --- // Exposing the module // --- //
-// --- ///////////////////////// --- //
-// --------------------------------- //
 
 //' @title Scalar segmentation module
 //'

@@ -1,3 +1,11 @@
+# dust 0.2.0
+
+- Accelerated the Gaussian multivariate exact solver with verified active-face
+  searches and exhaustive fallback.
+- Renamed the multivariate search budget from nbLoops to nbIterations.
+  Added optional epsilon stopping by decision-function gain for coordinate
+  descent, projected gradient, and quasi-Newton searches.
+
 # dust 0.1.0
 
 - Added eight one-parameter models and Gaussian mean–variance segmentation,

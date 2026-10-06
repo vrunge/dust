@@ -18,11 +18,11 @@ pruning rule that discards candidates for the last change point. The
 DUST rule evaluates a dual decision function; see the [DUST
 paper](https://doi.org/10.48550/arXiv.2507.02467).
 
-This version covers eight one-parameter models and a Gaussian model with
-changes in both mean and variance. Both can be run on a complete series
-or through an Rcpp object that receives successive batches. The optional
-Highway backend accelerates supported calculations when available at
-build time.
+This version covers eight one-parameter models for 1D or independent
+multivariate data, and a Gaussian model with changes in both mean and
+variance. They can be run on a complete series or through an Rcpp object
+that receives successive batches. The optional Highway backend
+accelerates supported calculations when available at build time.
 
 > [Quick start](#start)
 
@@ -64,6 +64,36 @@ The default penalty is `2 * log(length(y))`. The result also contains
 `costQ`, the optimal penalized cost through each observation; `nb`, the
 number of active candidates over time; `lastIndexSet`, the candidates
 still active at the end; and the backend that ran.
+
+### Independent multivariate series
+
+`dust.MD()` takes a matrix with one component per row and one
+observation per column. It adds the component costs and finds change
+points shared across components. Its default penalty is
+`2 * nrow(data) * log(ncol(data))`.
+
+    set.seed(13)
+    multi <- rbind(c(rnorm(80), rnorm(80, mean = 2)),
+                   c(rnorm(80), rnorm(80, mean = -1)))
+    fit_md <- dust.MD(multi, model = "gauss", constraints = 2)
+    fit_md$changepoints
+
+The `constraints` largest still active indices below each candidate are used for its pruning test. The available methods are `"coordinateDescent"` (default), `"iterative"` (projected gradient with backtracking), `"QN"` (Armijo/BFGS), `"randomEval"`, `"exact"`, `"PELT"`, and unpruned `"OP"`. For Gaussian data, `"exact"` maximizes the joint decision over all selected constraints by checking a short sequence of stationary faces, then enumerating faces if needed. The fallback can take exponential time in `constraints`. For other models, `"exact"` uses PELT.
+
+`"iterative"` and `"QN"` jointly search the selected constraints, for at most `nbIterations` optimizer iterations per candidate (effective default 10). If `nbIterations` is omitted, `epsilon` can stop a numerical search when the gain in the decision function is at most the given threshold, with a cap of 1000 iterations. An explicit `nbIterations` takes priority. Every trial is checked for model-domain feasibility. Pruning requires a strictly positive decision value with a numerical tolerance; an exhausted budget or unsuccessful search retains the candidate. A finite search does not guarantee finding the maximum. Every search uses the available selected earlier indices, up to `constraints`, even when fewer are available.
+
+One `nbIterations` unit depends on the method. The budget restarts for each candidate at each time point; it is not a limit for the full segmentation. Every pruned method first checks the decision at zero (the PELT test) and stops immediately when it finds a feasible positive value.
+
+| Method | One `nbIterations` unit | `epsilon` stopping |
+|:--|:--|:--|
+| `coordinateDescent` | One full sweep through the selected multiplier coordinates. | After a sweep, stop if the normalized decision value increased by at most `epsilon`. |
+| `iterative` | One projected-gradient step, with up to 60 backtracking trials. | After an accepted step, stop if the gain is at most `epsilon`. |
+| `QN` | One quasi-Newton attempt, with up to 60 backtracking trials and, if needed, a gradient fallback with up to 60 more. | After an accepted step, stop if the gain is at most `epsilon`. |
+| `randomEval` | One random direction and radius, with up to 40 feasibility reductions. | Unavailable: consecutive random draws have no convergence meaning. |
+| `exact` | The budget is ignored. Gaussian data use the finite joint active-face solver; other models use PELT. | Ignored. |
+| `PELT` / `OP` | The budget is ignored. PELT tests only zero; OP does no pruning. | Ignored. |
+
+When `nbIterations` is omitted, its effective value is 10. If `epsilon` is supplied for one of the three numerical optimizers, the cap becomes 1000 instead. Supplying `nbIterations` explicitly disables `epsilon`, even when both arguments are present. The gain threshold is absolute and uses the normalized decision function; it does not certify that the maximum has been found.
 
 ### Changes in mean and variance
 
@@ -116,7 +146,17 @@ batch size.
     obj_mv$update_partition()
     obj_mv$get_partition()$changepoints
 
-Both objects also provide `get_info()`, including the backend actually
+`dust.object.MD()` accepts matrix batches in the same way:
+
+    obj_md <- dust.object.MD(model = "gauss", constraints = 2)
+    obj_md$append_data(multi[, 1:100, drop = FALSE],
+                       2 * nrow(multi) * log(ncol(multi)))
+    obj_md$update_partition()
+    obj_md$append_data(multi[, 101:160, drop = FALSE], NULL)
+    obj_md$update_partition()
+    obj_md$get_partition()$changepoints
+
+These objects also provide `get_info()`, including the backend actually
 used.
 
 [(Back to Top)](#top)
@@ -129,7 +169,12 @@ used.
 
 ## Models And Data Generators
 
-`dataGenerator_1D()` generates one-parameter examples.
+`dataGenerator_1D()` generates univariate examples. `dataGenerator_MD()`
+uses the same eight models to generate independent components with shared
+change points. Supply segment parameters as a matrix or data frame with
+segments in rows and components in columns; the result has components in
+rows and time in columns, as expected by `dust.MD()`. Noise levels and
+count-model sizes can be shared or specified per component.
 `data_normalization_1D()` applies the model-specific transformations
 needed before segmentation.
 
@@ -143,8 +188,8 @@ needed before segmentation.
 <tr>
 <th style="text-align: left;"><code>model</code></th>
 <th style="text-align: left;">Segment parameter</th>
-<th style="text-align: left;">Data supplied to
-<code>dust.1D()</code></th>
+<th style="text-align: left;">Data supplied to <code>dust.1D()</code> or
+each row of <code>dust.MD()</code></th>
 </tr>
 </thead>
 <tbody>
@@ -193,10 +238,10 @@ trials</td>
 </table>
 
 For Binomial and Negative Binomial observations, pass the known trial
-count or size to `data_normalization_1D(size = ...)`. When translating
-an objective based on raw counts, divide the penalty by the same known
-value. For Gaussian data, divide by a noise estimate if using the
-default penalty.
+count or size to `data_normalization_1D(size = ...)` for each component.
+When translating an objective based on raw counts, divide the penalty by
+the same known value. For Gaussian data, divide by a noise estimate if
+using the default penalty.
 
 The mean-and-variance model is available through `dust.meanVar()` and
 `dust.object.meanVar()`; it does not require a separate data generator.
@@ -215,6 +260,15 @@ For one-parameter models, `method = "DUST"` evaluates the dual decision
 test. `"DUSTib"` uses an inequality certificate, `"PELT"` uses the PELT
 rule, and `"OP"` scans all candidate endpoints without pruning. All four
 methods minimize the same segment objective.
+
+For multivariate data, `"coordinateDescent"`, `"iterative"`, `"QN"`, and
+`"randomEval"` seek a feasible positive value of the multivariate decision
+function. A finite search may leave some candidates active. The `nbIterations`
+argument controls the number of coordinate sweeps, optimizer iterations,
+or random evaluations. Regression tests compare all prefix costs and
+changepoints with `"PELT"` and unpruned `"OP"`. Additional checks against
+analytic decision maxima can be run from the package source directory
+with `Rscript tools/check-md-search.R` and `Rscript tools/check-md-exact.R`.
 
     set.seed(5)
     counts <- dataGenerator_1D(chpts = c(60, 120, 180),

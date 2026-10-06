@@ -49,6 +49,7 @@ struct NegbinPolicy
   static inline bool isRightBoundary(double a) { return false; } // unbounded above: no right boundary
   static inline double Dstar_leftboundary() { return 0; }
   static inline double Dstar_rightboundary() { return 0; } // unused: isRightBoundary always false
+  static inline double Dstar_superLinearLimit() { return 0; }
 
   static inline double Dstar(double x)
   {
@@ -61,6 +62,7 @@ struct NegbinPolicy
     return std::log1p(-inv1px);
   }
   static inline double DstarPrimeInv(double x) { return std::exp(x) / (1 - std::exp(x)); }
+  static inline double DstarSecond(double x) { return (1.0 / x) / (1.0 + x); }
 
   static inline const char* get_model() { return "negbin"; }
 };

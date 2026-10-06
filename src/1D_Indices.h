@@ -5,19 +5,14 @@
 #include <vector>
 #include <limits>
 
-// Active candidates are stored in decreasing order. link_[i] gives the
-// next smaller candidate; each insertion and removal takes constant time.
-// The constraint for candidate s is its next smaller active index.
+// Active candidates are stored in decreasing order; link_[i] points to the
+// next smaller candidate.
 
 class Indices_1D
 {
   public:
     void add_first(unsigned int value)
     {
-      // `value` is always link_.size() at the point of the call (indices
-      // are appended in strictly increasing order starting at 0): plain
-      // push_back, no heap allocation beyond the vector's own amortised
-      // growth (reserved up-front by append_data).
       link_.push_back(front_);
       front_ = value;
     }
@@ -30,10 +25,7 @@ class Indices_1D
 
     std::forward_list<unsigned int> get_list()
     {
-      // Only called once, to build the R-facing `lastIndexSet` output:
-      // O(k) in the (small) surviving-set size, materialising the same
-      // front-to-back (largest-to-smallest) order as the original
-      // forward_list did.
+      // Return the active set in decreasing order.
       std::forward_list<unsigned int> out;
       auto it = out.before_begin();
       for (unsigned int i = front_; i != END; i = link_[i])
@@ -46,8 +38,7 @@ class Indices_1D
     void reset_pruning() { before_ = END; current_ = front_; constraint_ = link_[front_]; }
     void next_pruning() { before_ = current_; current_ = link_[current_]; new_constraint(); }
 
-    // Relinks around current_, advances current_ to the element that takes
-    // its place (mirrors forward_list::erase_after's returned iterator).
+    // Remove current_ and advance to the next candidate.
     void prune_current()
     {
       unsigned int next_elem = link_[current_];

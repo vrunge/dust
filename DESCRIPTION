@@ -5,14 +5,16 @@ Version: 0.2.0
 Authors@R: c(
     person("Simon", "Querné", email = "simon.querne@gmail.com", role = c("aut")),
     person("Vincent", "Runge", email = "vincent.runge@univ-evry.fr", role = c("aut", "cre")),
+        person("Félix", "Laplante", email = "felixlaplante0@proton.me", role = c("aut")),
     person("Charles", "Truong", email = "ctruong@ens-paris-saclay.fr", role = c("ctb"))
             )
 Maintainer: Vincent Runge <vincent.runge@univ-evry.fr>
 Description: Implements DUST pruning for multiple change-point detection
-    in univariate time series. Includes eight one-parameter cost models and
-    a Gaussian model with changes in both mean and variance. The latter has
-    one- and two-constraint decision tests. Scalar and optional Google
-    Highway backends support one-shot and incremental analysis. The pruning
+    in univariate and independent multivariate time series. Includes eight
+    one-parameter cost models and a Gaussian model with changes in both mean
+    and variance. Multivariate pruning uses selected earlier change-point
+    candidates. Scalar and optional Google Highway backends support one-shot
+    and incremental analysis. The pruning
     method is described by Runge, Truong and Querné (2025)
     <doi:10.48550/arXiv.2507.02467>.
 URL: https://github.com/vrunge/dust

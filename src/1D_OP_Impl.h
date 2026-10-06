@@ -11,9 +11,7 @@
 
 using namespace Rcpp;
 
-// Optimal Partitioning scans every previous endpoint. It has its own
-// recursion because the general DUST engine also checks its oldest active
-// candidate for pruning.
+// Optimal partitioning scans all previous endpoints and does not prune.
 
 template <class Model>
 class DUST_1D_OP_T : public DUST_1D
@@ -77,17 +75,11 @@ class DUST_1D_OP_T : public DUST_1D
         stop("update_partition before requesting a partition");
       std::forward_list<unsigned int> chpts = backtrack_changepoints();
 
-      // Nothing is ever pruned: the full active set is {0, 1, ..., n},
-      // in the same largest-to-smallest order Indices_1D::get_list() uses
-      // (see 1D_Indices.h) -- built directly rather than via that class,
-      // since there is no index_ member here at all.
+      // All endpoints remain active.
       std::forward_list<unsigned int> lastIndexSet;
       for (unsigned int i = 0; i <= n; i++) lastIndexSet.push_front(i);
 
-      // nb is trivially t for every t (no index 0 excluded, matching
-      // DUST_1D_T's convention: nb_indices[0]=1 is never reported, and
-      // nb_indices[t] for the t-th step counts {0,...,t-1}, i.e. t
-      // entries, once the newly-added t itself is excluded).
+      // There are t active endpoints before adding endpoint t.
       std::vector<int> nb(n);
       for (unsigned int t = 1; t <= n; t++) nb[t - 1] = static_cast<int>(t);
 

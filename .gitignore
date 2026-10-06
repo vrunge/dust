@@ -1,3 +1,4 @@
+# R session and project files
 .Rproj.user/
 .Rhistory
 .RData
@@ -5,14 +6,16 @@
 .DS_Store
 *.Rproj
 README.html
+
+# Local package builds
 src/Makevars
 src/*.o
+src/*.a
 src/*.so
 src/*.dll
 src/*.dylib
 *.Rcheck/
 *.tar.gz
-paper_simulations/*.log
-paper_simulations/*.csv
-paper_simulations/*.pdf
-paper_simulations/*.png
+
+# Generated simulation results; keep scripts and input data
+paper_simulations/**/results/

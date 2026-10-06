@@ -1,6 +1,7 @@
 export(dust.1D, dust.object.1D)
+export(dust.MD, dust.object.MD)
 export(dust.meanVar, dust.object.meanVar)
-export(dataGenerator_1D, data_normalization_1D)
+export(dataGenerator_1D, dataGenerator_MD, data_normalization_1D)
 export(segmentation_Cost_1D, Cost_1D, sdDiff)
 importFrom(Rcpp, evalCpp)
 useDynLib(dust, .registration = TRUE)

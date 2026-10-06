@@ -6,9 +6,47 @@
 #include <limits>
 #include "1D_DUSTib.h"
 
-// Pruning rules for the scalar engine. The DUST rule evaluates the dual
-// decision function of Runge, Truong and Querné (2025),
-// doi:10.48550/arXiv.2507.02467.
+// The scalar DUST test evaluates the dual decision function. Runge, Truong
+// and Querné (2025, doi:10.48550/arXiv.2507.02467) compare its pruning
+// performance with PELT and FPOP, including for non-Gaussian models.
+
+template <class Model>
+inline bool isOnePointOrLinear(double a, double b)
+{
+  if(Model::isLeftBoundary(a) == true){return true;}
+  if(Model::isRightBoundary(a) == true){return true;}
+  /// the smallest visible gap is of size 1e-14
+  if(std::abs(a - b) < 1e-14){return true;}
+  return false;
+}
+
+// Bern/Binom are bounded on both sides; every other model only on the
+// left (or not at all).
+template <class Model>
+inline bool specialCasePruning(double a,
+                                double b,
+                                double c,
+                                double d,
+                                double mu_max)
+{
+  if(Model::isLeftBoundary(a) == true)
+  {
+    if (-c  - Model::Dstar_leftboundary() > 0) {return true;} /// test in mu = 0
+  }
+  else if(Model::isRightBoundary(a) == true)
+  {
+    if (-c  - Model::Dstar_rightboundary() > 0) {return true;} /// test in mu = 0
+  }
+  if(std::abs(a - b) < 1e-14)
+  {
+    double Dstar_a = Model::isLeftBoundary(a) ? Model::Dstar_leftboundary()
+                    : Model::isRightBoundary(a) ? Model::Dstar_rightboundary()
+                    : Model::Dstar(a);
+    if ( -c - Dstar_a > 0){return true;} /// mu = 0
+    if (-(c - mu_max * d)  - (1 - mu_max)*Dstar_a > 0){return true;} /// mu = mu_max
+  }
+  return false;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUAL = -(c - mu * d)  - (1- mu) * Dstar((a - mu * b) / (1 - mu));
@@ -25,26 +63,14 @@ struct DualMax_DUST
 {
   static constexpr const char* name() { return "DUST"; }
 
-  // Shared by the scalar engine (test() below) and the Highway engine,
-  // which computes a, b, c, d from its contiguous candidate arrays.
+  // Evaluate the decision from the four reduced quantities.
   static bool test_abcd(double a, double b, double c, double d)
   {
-    // Boundary a (Dstar takes its limit value) or linear dual (a == b up to
-    // the smallest visible gap 1e-14): test mu = 0, and mu = mu_max if linear.
-    const bool left = Model::isLeftBoundary(a), right = !left && Model::isRightBoundary(a);
-    const bool linear = std::abs(a - b) < 1e-14;
-    if (left || right || linear)
-    {
-      const double Dstar_a = left ? Model::Dstar_leftboundary() : right ? Model::Dstar_rightboundary() : Model::Dstar(a);
-      if (-c - Dstar_a > 0) return true;
-      if (!linear) return false;
-      const double mu_max = Model::muMax(a, b);
-      return -(c - mu_max * d) - (1 - mu_max) * Dstar_a > 0;
-    }
+    double mu_max = Model::muMax(a, b);
 
-    // if derivative in 0 is negative, the constrained maximum is at x=0
-    // (the PELT point): a is guaranteed away from either boundary here,
-    // so DstarPrime(a)/Dstar(a) are both well defined.
+    if(isOnePointOrLinear<Model>(a,b) == true){return specialCasePruning<Model>(a,b,c,d,mu_max);}
+
+    // If the derivative at zero is negative, the maximum is at the PELT point.
     if(-(a-b)*Model::DstarPrime(a) - (c-d) < 0)
     {
       return (- Model::Dstar(a) -c > 0);
@@ -101,7 +127,8 @@ struct DualMax_PELT
   {
     double a = (cumsum[t] - cumsum[s]) / (t - s);
     double c = (minCost_t - costRecord[s]) / (t - s);
-    return -Model::Dstar(a) - c > 0;
+    if (- Model::Dstar(a) - c > 0) {return true;}
+    return false;
   }
 };
 

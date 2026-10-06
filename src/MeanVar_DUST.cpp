@@ -47,11 +47,24 @@ struct DecisionData {
 template<bool check_zero_first = false>
 bool one_constraint(const DecisionData& a, const DecisionData& b)
 {
-  // An infinite prefix cost Q_s (a.q = -inf, or NaN when Q_t is infinite
-  // too) means s can never be optimal: always prune it. A candidate whose
-  // constraint alone is impossible is kept. (Evaluating the decision
-  // function there sits on a zero of the variance, whose sign is rounding.)
-  if (!std::isfinite(a.q) || !std::isfinite(b.q)) return std::isnan(a.q) || a.q == -inf;
+  if (!std::isfinite(a.q) || !std::isfinite(b.q)) {
+    // Match the original meanVar decision test for a candidate with an
+    // infinite prefix cost. Its boundary calculation can remove that
+    // impossible candidate; retaining it changes later constraints.
+    const double va = a.m2 - std::pow(a.m, 2);
+    const double vb = b.m2 - std::pow(b.m, 2);
+    const double delta2 = std::pow(a.m - b.m, 2);
+    const double x0 = 0.5 * ((va - vb) / delta2 - 1.0);
+    const double x1 = x0 * x0 + va / delta2;
+    const double x2 = a.q - b.q;
+    const double sign = x2 > 0.0 ? 1.0 : (x2 < 0.0 ? -1.0 : 0.0);
+    const double x = std::max(0.0, x0 + 1.0 / (2.0 * x2)
+      - sign * std::sqrt(x1 + 1.0 / (4.0 * x2 * x2)));
+    const double A = a.m2 + x * (a.m2 - b.m2);
+    const double B = a.m + x * (a.m - b.m);
+    return 0.5 * (1.0 + std::log(A - B * B))
+      - (a.q + x * (a.q - b.q)) > 0.0;
+  }
   const double va = a.m2 - a.m * a.m;
   const double vb = b.m2 - b.m * b.m;
   if (!(va > 0.0) || !std::isfinite(va) || !std::isfinite(vb)) return false;
@@ -133,7 +146,7 @@ bool two_constraints(const DecisionData& a, const DecisionData& b1,
 class MeanVarDust {
 public:
   MeanVarDust(std::string method, std::string requested_backend)
-    : method_(std::move(method)), two_constraints_(method_ == "2D")
+    : method_(std::move(method))
   {
     if (method_ != "1D" && method_ != "2D") stop("method must be '1D' or '2D'");
     if (requested_backend != "highway" && requested_backend != "scalar")
@@ -195,7 +208,7 @@ public:
         const uint32_t r2 = i >= 2 ? active_[i - 2] : r1;
         const DecisionData a = stats(s, previous_t, previous_q);
         const DecisionData b1 = stats(r1, s, costs_[s]);
-        const bool prune = !two_constraints_ ? one_constraint<true>(a, b1)
+        const bool prune = method_ == "1D" ? one_constraint<true>(a, b1)
           : two_constraints(a, b1, stats(r2, s, costs_[s]));
         drop_[i] = static_cast<uint8_t>(prune);
         any_pruned |= prune;
@@ -305,7 +318,6 @@ private:
   }
 
   std::string method_;
-  bool two_constraints_;
   bool highway_ = false, initialized_ = false;
   double penalty_ = 0.0;
   std::vector<double> sums_, sums2_, costs_;

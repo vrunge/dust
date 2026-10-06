@@ -40,7 +40,7 @@ test_that("dust.1D reports which backend actually ran, between lastIndexSet and 
 
   # Same field, same position, for every method -- including OP, which
   # (unlike DUST/PELT/DUSTib) has entirely separate scalar/Highway engines
-  # (DUST_1D_OP_T, and the Highway engine's OP method) with their own get_partition().
+  # (DUST_1D_OP_T / DUST_1D_HW_OP_T) with their own get_partition().
   for (method in c("DUST", "DUSTib", "PELT", "OP")) {
     for (backend in c("highway", "scalar")) {
       res <- dust.1D(y, penalty, method = method, backend = backend)

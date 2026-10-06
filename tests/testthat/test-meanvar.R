@@ -88,17 +88,14 @@ test_that("meanVar defaults to highway for both methods and object forms", {
 })
 
 test_that("meanVar reproduces the original dust pruning sets", {
-  # Same as the original dust from t = 10 on. Earlier, candidates with an
-  # infinite prefix cost (singleton segments) are now always pruned: the
-  # original kept or pruned them depending on rounding (FMA vs no FMA).
   y <- sin((1:40) * 1.31) + cos((1:40) * 0.37)
   expected <- list(
     `1D` = list(
-      nb = c(1,2,3,3,4,4,5,5,5,6,7,8,9,9,9,7,7,6,6,7,
+      nb = c(1,2,3,4,5,5,5,5,5,6,7,8,9,9,9,7,7,6,6,7,
              7,8,9,9,9,9,8,7,8,9,8,7,7,8,8,8,8,8,9,10),
       last = c(40,39,38,37,36,35,33,32,29,28,0)),
     `2D` = list(
-      nb = c(1,2,3,3,4,4,5,5,5,6,6,7,8,8,8,7,6,6,6,7,
+      nb = c(1,2,3,4,5,5,5,5,5,6,6,7,8,8,8,7,6,6,6,7,
              7,8,8,7,6,7,7,7,8,9,7,6,7,8,6,7,7,8,9,10),
       last = c(40,39,38,37,36,35,33,32,29,28,0)))
   for (method in c("1D", "2D")) for (backend in c("scalar", "highway")) {
