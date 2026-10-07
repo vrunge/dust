@@ -17,8 +17,8 @@ struct VecGaussPolicy
   template <class D, class V> static inline V vDstarPrime(D, V a) { return a; }
   template <class D, class V> static inline V vMuMax(D d, V, V) { return hn::Set(d, 1.0); }
   template <class D, class V> static inline V vXMax(D d, V, V) { return hn::Set(d, std::numeric_limits<double>::infinity()); }
-  template <class D, class V> static inline typename hn::Mask<D> vIsLeftBoundary(D d, V) { return hn::MaskFalse(d); }
-  template <class D, class V> static inline typename hn::Mask<D> vIsRightBoundary(D d, V) { return hn::MaskFalse(d); }
+  template <class D, class V> static inline typename hn::Mask<D> vIsLeftBoundary(D d, V) { return hn::Lt(hn::Zero(d), hn::Zero(d)); }
+  template <class D, class V> static inline typename hn::Mask<D> vIsRightBoundary(D d, V) { return hn::Lt(hn::Zero(d), hn::Zero(d)); }
   static constexpr double DstarLeftBoundary()  { return std::numeric_limits<double>::infinity(); }
   static constexpr double DstarRightBoundary() { return std::numeric_limits<double>::infinity(); }
   static constexpr double DstarPrimeAtInfinity() { return std::numeric_limits<double>::infinity(); }
@@ -54,7 +54,7 @@ struct VecPoissonPolicy
     return hn::IfThenElse(hn::Lt(a,b), finite, hn::Set(d, std::numeric_limits<double>::infinity()));
   }
   template <class D, class V> static inline typename hn::Mask<D> vIsLeftBoundary(D d, V a) { return hn::Lt(a, hn::Set(d,1e-9)); }
-  template <class D, class V> static inline typename hn::Mask<D> vIsRightBoundary(D d, V) { return hn::MaskFalse(d); }
+  template <class D, class V> static inline typename hn::Mask<D> vIsRightBoundary(D d, V) { return hn::Lt(hn::Zero(d), hn::Zero(d)); }
   static constexpr double DstarLeftBoundary()  { return 0.0; }
   static constexpr double DstarRightBoundary() { return std::numeric_limits<double>::infinity(); }
   static constexpr double DstarPrimeAtInfinity() { return std::numeric_limits<double>::infinity(); }
@@ -91,7 +91,7 @@ struct VecExpPolicy
     return hn::IfThenElse(hn::Lt(a,b), finite, hn::Set(d, std::numeric_limits<double>::infinity()));
   }
   template <class D, class V> static inline typename hn::Mask<D> vIsLeftBoundary(D d, V a) { return hn::Lt(a, hn::Set(d,1e-9)); }
-  template <class D, class V> static inline typename hn::Mask<D> vIsRightBoundary(D d, V) { return hn::MaskFalse(d); }
+  template <class D, class V> static inline typename hn::Mask<D> vIsRightBoundary(D d, V) { return hn::Lt(hn::Zero(d), hn::Zero(d)); }
   static constexpr double DstarLeftBoundary()  { return std::numeric_limits<double>::infinity(); }
   static constexpr double DstarRightBoundary() { return 0.0; }
   static constexpr double DstarPrimeAtInfinity() { return 0.0; }
@@ -132,7 +132,7 @@ struct VecGeomPolicy
     return hn::IfThenElse(hn::Lt(a,b), finite, hn::Set(d, std::numeric_limits<double>::infinity()));
   }
   template <class D, class V> static inline typename hn::Mask<D> vIsLeftBoundary(D d, V a) { return hn::Lt(a, hn::Set(d, 1.0+1e-9)); }
-  template <class D, class V> static inline typename hn::Mask<D> vIsRightBoundary(D d, V) { return hn::MaskFalse(d); }
+  template <class D, class V> static inline typename hn::Mask<D> vIsRightBoundary(D d, V) { return hn::Lt(hn::Zero(d), hn::Zero(d)); }
   static constexpr double DstarLeftBoundary()  { return 0.0; }
   static constexpr double DstarRightBoundary() { return 0.0; }
   static constexpr double DstarPrimeAtInfinity() { return 0.0; }
@@ -241,7 +241,7 @@ struct VecNegbinPolicy
     return hn::IfThenElse(hn::Lt(a,b), finite, hn::Set(d, std::numeric_limits<double>::infinity()));
   }
   template <class D, class V> static inline typename hn::Mask<D> vIsLeftBoundary(D d, V a) { return hn::Lt(a, hn::Set(d,1e-9)); }
-  template <class D, class V> static inline typename hn::Mask<D> vIsRightBoundary(D d, V) { return hn::MaskFalse(d); }
+  template <class D, class V> static inline typename hn::Mask<D> vIsRightBoundary(D d, V) { return hn::Lt(hn::Zero(d), hn::Zero(d)); }
   static constexpr double DstarLeftBoundary()  { return 0.0; }
   static constexpr double DstarRightBoundary() { return 0.0; }
   static constexpr double DstarPrimeAtInfinity() { return 0.0; }
@@ -283,7 +283,7 @@ struct VecVariancePolicy
     return hn::IfThenElse(hn::Lt(a,b), finite, hn::Set(d, std::numeric_limits<double>::infinity()));
   }
   template <class D, class V> static inline typename hn::Mask<D> vIsLeftBoundary(D d, V a) { return hn::Lt(a, hn::Set(d,1e-9)); }
-  template <class D, class V> static inline typename hn::Mask<D> vIsRightBoundary(D d, V) { return hn::MaskFalse(d); }
+  template <class D, class V> static inline typename hn::Mask<D> vIsRightBoundary(D d, V) { return hn::Lt(hn::Zero(d), hn::Zero(d)); }
   static constexpr double DstarLeftBoundary()  { return std::numeric_limits<double>::infinity(); }
   static constexpr double DstarRightBoundary() { return 0.0; }
   static constexpr double DstarPrimeAtInfinity() { return 0.0; }
