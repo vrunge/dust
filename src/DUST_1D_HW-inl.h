@@ -1,11 +1,6 @@
-// Highway kernels for DUST_1D_HW.cpp. This file is compiled once per SIMD
-// target (hwy/foreach_target.h) and the best one is chosen at run time.
-//
-// Only the O(k) optimal-cost scan is vectorized: its values also decide
-// the PELT rule (Q_s + C(s,t) > Q_t) and the smallest-index rule. The
-// DUST and DUSTib tests run scalar on the contiguous candidate arrays:
-// the DUST active set stays small (about ten candidates), and evaluating
-// every branch in every lane measured slower than the scalar early exits.
+/// Highway kernels for DUST_1D_HW.cpp (compiled for each SIMD target)
+/// Only the scan of the candidates is vectorized. DUST and DUSTib tests are
+/// scalar (about ten candidates, faster than SIMD).
 
 #if defined(DUST_1D_HW_INL_H_) == defined(HWY_TARGET_TOGGLE)
 #ifdef DUST_1D_HW_INL_H_
@@ -24,8 +19,8 @@ namespace hn = hwy::HWY_NAMESPACE;
 
 #include "HW_CostMin-inl.h"
 
-// Stores val[i] = Q_s + C(s, t) for every candidate s = A_pos[i] and
-// returns the first index of the minimum.
+////////////////////////////////////////////////////////////////////////////////
+/// val[i] = Q_s + C(s, t), returns the argmin
 template <int K>
 size_t Scan(State& s, double ct, double tp)
 {
@@ -56,11 +51,12 @@ size_t Scan(State& s, double ct, double tp)
   return static_cast<size_t>(ib[L]);
 }
 
-// Whether candidate i is pruned at time t with Q_t = qt.
+////////////////////////////////////////////////////////////////////////////////
+/// is candidate i pruned at time t?
 template <int K, int M>
 HWY_INLINE bool Prunes(const State& s, size_t i, double ct, double qt, double tp)
 {
-  // PELT rule: the oldest candidate has no constraint, and in PELT nothing has.
+  // PELT test (first candidate or PELT method)
   if (M == PELT || i == 0) return s.val[i] > qt;
   const double n = tp - s.A_pos[i];
   const double a = (ct - s.A_cumsum[i]) / n, c = (qt - s.A_cost[i]) / n;
@@ -68,8 +64,8 @@ HWY_INLINE bool Prunes(const State& s, size_t i, double ct, double qt, double tp
   else return dustib::test<K>(a, s.A_b[i], c, s.A_q[i]);
 }
 
-// Removes the dropped candidates and returns whether there were any.
-// drop[i] then flags the survivors whose predecessor changed.
+////////////////////////////////////////////////////////////////////////////////
+/// remove the pruned candidates (drop[i] then = predecessor has changed)
 template <int M>
 bool Compact(State& s)
 {
@@ -112,8 +108,7 @@ void Step(State& s, unsigned t)
   {
     s.drop.resize(k);
     for (size_t i = 0; i < k; i++) s.drop[i] = Prunes<K, M>(s, i, ct, qt, tp);
-    // DUST iterates to a fixed point. A test depends only on the candidate
-    // and its predecessor, so only the flagged survivors are re-tested.
+    // DUST: new tests for the candidates with a new predecessor
     while (Compact<M>(s) && M == DUST)
     {
       bool any = false;
@@ -127,7 +122,7 @@ void Step(State& s, unsigned t)
   s.push(ct, qt, tp, M == DUST || M == DUSTIB);
 }
 
-// Runs the dynamic program from the last processed time up to s.n.
+////////////////////////////////////////////////////////////////////////////////
 void Advance(State& s)
 {
   with_model(s.model, [&](auto model) {
@@ -146,5 +141,8 @@ void Advance(State& s)
 } // namespace HWY_NAMESPACE
 } // namespace dust_hw
 HWY_AFTER_NAMESPACE();
+
+/// variance model
+#include "DUST_1D_HW_Variance-inl.h"
 
 #endif

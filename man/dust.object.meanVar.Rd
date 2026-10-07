@@ -2,34 +2,25 @@
 % Please edit documentation in R/dustmeanVar.R
 \name{dust.object.meanVar}
 \alias{dust.object.meanVar}
-\title{Create an Online Mean-and-Variance DUST Object}
+\title{dust.object.meanVar}
 \usage{
 dust.object.meanVar(method = "1D", backend = "highway")
 }
 \arguments{
-\item{method}{\code{"1D"} (default) tests one constraint; \code{"2D"} tests two.
-Both methods fit the same mean-and-variance Gaussian model.}
+\item{method}{\code{"1D"} (default, one constraint), \code{"2D"} (two constraints) or \code{"PELT"}}
 
-\item{backend}{\code{"highway"} (default) uses SIMD when available and otherwise
-falls back to \code{"scalar"}; \code{"scalar"} always uses the scalar engine.
-The former spelling \code{"Highway"} remains an accepted alias.}
+\item{backend}{\code{"highway"} (default) or \code{"scalar"}}
 }
 \value{
-An online DUST object.
+A DUST object with the methods \code{append_data(data, penalty)}, \code{update_partition()}, \code{get_partition()}, \code{get_info()} and \code{dust(data, penalty)}
 }
 \description{
-The object has \code{append_data(data, penalty)}, \code{update_partition()},
-\code{get_partition()}, \code{get_info()}, and \code{dust(data, penalty)} methods.
-Append batches and call \code{update_partition()} to resume the computation.
-The penalty is fixed at the first nonempty append. If its \code{penalty} argument
-is \code{NULL}, that penalty is \code{4 * log(first batch size)}; later supplied
-penalties must equal the first penalty. The model needs at least two
-nonidentical values in a segment to have finite cost; an object with no
-finite complete segmentation reports an error from \code{get_partition()}.
-Call \code{update_partition()} after each append before retrieving a partition.
+Constructs a DUST object for changes in mean and variance, with methods to add data and update the segmentation
+}
+\details{
+The penalty is fixed at the first call of \code{append_data} (with \code{NULL}, \code{4 log(n)} with n the size of the first data).
 }
 \examples{
-set.seed(2)
 y <- c(rnorm(80), rnorm(80, mean = 2, sd = 1.5))
 ob <- dust.object.meanVar(method = "2D")
 ob$append_data(y[1:80], 4 * log(length(y)))

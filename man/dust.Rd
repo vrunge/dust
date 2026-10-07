@@ -6,12 +6,10 @@
 \alias{dust-package}
 \title{dust: Fast Multiple Change-Point Detection}
 \description{
-The \pkg{dust} package implements DUST pruning for multiple change-point
-detection. Its \code{dust.1D} and \code{dust.MD} interfaces support eight
-one-parameter cost models for univariate and independent multivariate data.
-The \code{dust.meanVar} interface detects changes in both the mean and
-variance of a Gaussian series. All three offer scalar and optional Highway
-backends and online objects for incremental analysis.
+Multiple change-point detection with the DUST pruning rule (DUality Simple Test).
+\code{dust.1D} for univariate data (8 models), \code{dust.MD} for independent multivariate data
+and \code{dust.meanVar} for changes in mean and variance. Each function has an object version
+to add data step by step (\code{dust.object.1D}, \code{dust.object.MD}, \code{dust.object.meanVar}).
 }
 \seealso{
 Useful links:

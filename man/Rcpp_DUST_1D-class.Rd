@@ -5,6 +5,6 @@
 \alias{Rcpp_DUST_1D-class}
 \title{Rcpp_DUST_1D Class}
 \description{
-An S4 class for handling one-dimensional DUST operations.
+S4 class of the 1D DUST object.
 }
 \keyword{internal}

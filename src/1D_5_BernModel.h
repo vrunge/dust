@@ -9,8 +9,6 @@ struct BernPolicy
 {
   static inline double statistic(double data) { return data; }
 
-  // See 1D_1_GaussModel.h for why this takes (point, a) rather than
-  // (cumsum, point, t, s).
   static inline double costEval(double point, double a)
   {
     double val = 0;
@@ -46,17 +44,12 @@ struct BernPolicy
     return (1 - a) / (a - b);
   }
 
-  // Tolerance-based, not exact equality: `a` reaches the boundary via
-  // division (e.g. (cumsum[t]-cumsum[s])/(t-s) landing on 1), which can
-  // miss bit-exact equality by a couple of ULPs while still being well
-  // within the region where Dstar/DstarPrime are numerically degenerate
-  // (Dstar(1) is a literal 0*(-inf) = NaN; DstarPrime(x) diverges as
-  // x -> 1). Bern/Binom are the only two models bounded on both sides,
-  // hence the only two that need isRightBoundary at all.
+  // boundaries with a tolerance (a is obtained by a division)
+  // bern and binom: the only models bounded on both sides
   static inline bool isLeftBoundary(double a) { return a < 1e-9; }
   static inline bool isRightBoundary(double a) { return a > 1.0 - 1e-9; }
   static inline double Dstar_leftboundary() { return 0; }
-  static inline double Dstar_rightboundary() { return 0; } // symmetric: Dstar(1) == Dstar(0)
+  static inline double Dstar_rightboundary() { return 0; } // Dstar(1) = Dstar(0)
   static inline double Dstar_superLinearLimit() { return 0; }
 
   static inline double Dstar(double x) { return x * std::log(x) + (1.0 - x) * std::log(1.0 - x); }

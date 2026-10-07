@@ -5,7 +5,6 @@
 \alias{Rcpp_DUST_1D_HW_Obj-class}
 \title{Rcpp_DUST_1D_HW_Obj Class}
 \description{
-An internal S4 class for the Highway backend of
-\code{\link{dust.object.1D}}.
+S4 class of the 1D DUST object (Highway).
 }
 \keyword{internal}

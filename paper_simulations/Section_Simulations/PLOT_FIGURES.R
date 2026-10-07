@@ -21,36 +21,9 @@ theme_paper <- theme_bw(base_size = 12) + theme(legend.position = "bottom")
 interval <- function(x) c(median = median(x, na.rm = TRUE),
                           lo = unname(quantile(x, 0.025, na.rm = TRUE)),
                           hi = unname(quantile(x, 0.975, na.rm = TRUE)))
-summarise_interval <- function(data, value, groups) {
-  key <- data[groups]
-  x <- data[[value]]
-  med <- aggregate(x, key, median, na.rm = TRUE)
-  lo <- aggregate(x, key, function(z) unname(quantile(z, 0.025, na.rm = TRUE)))
-  hi <- aggregate(x, key, function(z) unname(quantile(z, 0.975, na.rm = TRUE)))
-  names(med)[ncol(med)] <- "median"
-  names(lo)[ncol(lo)] <- "lo"
-  names(hi)[ncol(hi)] <- "hi"
-  merge(merge(med, lo, by = groups), hi, by = groups)
-}
 
-# Figure 1: remaining candidate indices over time (4 paper panels).
-d <- read_result("nb_plot")
-summary <- summarise_interval(d, "candidates", c("model", "n", "t"))
-panels <- list()
-for (model in c("gauss", "negbin")) for (n in unique(summary$n[summary$model == model])) {
-  z <- summary[summary$model == model & summary$n == n, ]
-  p <- ggplot(z, aes(t, median)) + geom_ribbon(aes(ymin = lo, ymax = hi), fill = "#78a9cf", alpha = .35) +
-    geom_line(colour = "#155b8a") + scale_x_log10() + scale_y_log10() + theme_paper +
-    labs(title = paste(toupper(model), "n =", format(n, scientific = FALSE)),
-         x = "Time", y = "Remaining candidates")
-  file <- paste0("pruning_capacity_", model, "_size_", format(n, scientific = TRUE), ".png")
-  if (n == 10000) file <- paste0("pruning_capacity_", model, "_size_10000.png")
-  if (n == 1e8) file <- paste0("pruning_capacity_", model, "_size_1e+08.png")
-  save_plot(p, file)
-  panels[[paste(model, n)]] <- p
-}
-save_plot(panels[[1]] + panels[[2]] + panels[[3]] + panels[[4]] + patchwork::plot_layout(ncol = 2),
-          "figure_1_pruning_capacity.png", 12, 8)
+# Figure 1 (paper Figure 3): remaining candidate indices over time.
+sim_plot_figure3(read_result("nb_plot"), figures)
 
 # Figure 2: candidate count against n, with log-log fit and 95% prediction band.
 d <- read_result("regressions")
@@ -105,23 +78,26 @@ for (model in c("gauss", "poisson")) {
 save_plot(panels[[1]] + panels[[2]], "figure_3_runtime_complexity.png", 12, 5)
 
 # Figure 4: runtime against the number of true changes.
-d <- read_result("density")
-d <- d[d$time_sec > 0, ]
-panels <- list()
-for (model in c("gauss", "negbin")) for (n in sort(unique(d$n))) {
-  z <- d[d$model == model & d$n == n, ]
-  s <- summarise_interval(z, "time_sec", c("algorithm", "changes"))
-  s$x <- log10(s$changes + 1)
-  p <- ggplot(s, aes(x, median, colour = algorithm, fill = algorithm)) +
-    geom_ribbon(aes(ymin = lo, ymax = hi), alpha = .16, colour = NA) + geom_line() + geom_point() +
-    scale_y_log10() + theme_paper + labs(title = paste(toupper(model), "n =", n),
-                                         x = "log10(true changes + 1)", y = "Elapsed time (seconds)")
-  file_n <- if (n == 1000) "1000" else if (n == 10000) "10000" else as.character(n)
-  save_plot(p, paste0("cpt_", model, "_", file_n, ".png"))
-  panels[[paste(model, n)]] <- p
-}
-save_plot(panels[[1]] + panels[[2]] + panels[[3]] + panels[[4]] + patchwork::plot_layout(ncol = 2),
-          "figure_4_runtime_by_changes.png", 12, 8)
+# Skipped when the timing simulation 4_SIMU_1D DENSITY.R was not run.
+if (file.exists(file.path(input, "density.csv"))) {
+  d <- read_result("density")
+  d <- d[d$time_sec > 0, ]
+  panels <- list()
+  for (model in c("gauss", "negbin")) for (n in sort(unique(d$n))) {
+    z <- d[d$model == model & d$n == n, ]
+    s <- summarise_interval(z, "time_sec", c("algorithm", "changes"))
+    s$x <- log10(s$changes + 1)
+    p <- ggplot(s, aes(x, median, colour = algorithm, fill = algorithm)) +
+      geom_ribbon(aes(ymin = lo, ymax = hi), alpha = .16, colour = NA) + geom_line() + geom_point() +
+      scale_y_log10() + theme_paper + labs(title = paste(toupper(model), "n =", n),
+                                           x = "log10(true changes + 1)", y = "Elapsed time (seconds)")
+    file_n <- if (n == 1000) "1000" else if (n == 10000) "10000" else as.character(n)
+    save_plot(p, paste0("cpt_", model, "_", file_n, ".png"))
+    panels[[paste(model, n)]] <- p
+  }
+  save_plot(panels[[1]] + panels[[2]] + panels[[3]] + panels[[4]] + patchwork::plot_layout(ncol = 2),
+            "figure_4_runtime_by_changes.png", 12, 8)
+} else message("density.csv not found: Figure 4 (runtime) skipped")
 
 # Figure 5: candidate count against the penalty factor.
 d <- read_result("beta")

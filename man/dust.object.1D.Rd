@@ -7,89 +7,50 @@
 dust.object.1D(model = "gauss", method = "DUST", backend = "highway")
 }
 \arguments{
-\item{model}{A character string specifying the model for the data. The default
-is \code{"gauss"}. Available models are:
+\item{model}{the model for the data. Available models are:
 \itemize{
-  \item \code{"gauss"}: Gaussian distribution with known variance.
-  \item \code{"poisson"}: Poisson distribution, typically for count data.
-  \item \code{"exp"}: Exponential distribution.
-  \item \code{"geom"}: Geometric distribution.
-  \item \code{"bern"}: Bernoulli distribution, typically for binary data.
-  \item \code{"binom"}: Binomial distribution, for experiments with a fixed
-    number of trials.
-  \item \code{"negbin"}: Negative Binomial distribution, for overdispersed
-    count data.
-  \item \code{"variance"}: Gaussian distribution with unknown variance and
-    zero mean.
+  \item \code{"gauss"}: Gaussian distribution with known variance (default)
+  \item \code{"poisson"}: Poisson distribution
+  \item \code{"exp"}: Exponential distribution
+  \item \code{"geom"}: Geometric distribution
+  \item \code{"bern"}: Bernoulli distribution
+  \item \code{"binom"}: Binomial distribution
+  \item \code{"negbin"}: Negative Binomial distribution
+  \item \code{"variance"}: Gaussian distribution with mean 0 and unknown variance
 }}
 
-\item{method}{A character string specifying the pruning algorithm used by
-the dual maximization test. The default is \code{"DUST"}, which generally
-selects an efficient method for the chosen model. The constraint index
-used by the pruning test is always the nearest smaller active index (the
-"det" rule): an earlier randomised-index variant was removed after
-measuring it both slower and no better at pruning. Currently implemented
-options are:
-\itemize{
-  \item \code{"DUST"}: Closed-form maximizer of the decision function
-  \item \code{"DUSTib"}: Audited one-constraint inequality test with explicit domain and boundary handling
-  \item \code{"PELT"}: PELT pruning rule.
-  \item \code{"OP"}: OP pruning rule.
-}}
+\item{method}{the pruning method: \code{"DUST"} (default), \code{"DUSTib"}, \code{"PELT"} or \code{"OP"} (see \code{\link{dust.1D}})}
 
-\item{backend}{Either \code{"highway"} (default) or \code{"scalar"}.
-\code{"highway"} uses Highway when available and the scalar engine
-otherwise. \code{"scalar"} always selects the scalar engine. The former
-spelling \code{"Highway"} remains an accepted alias.}
+\item{backend}{\code{"highway"} (default) or \code{"scalar"}}
 }
 \value{
-A DUST 1D object providing the following methods:
+A DUST 1D object with the methods
 \itemize{
-  \item \code{append_data}: add new observations to the data vector to be
-    analysed;
-  \item \code{update_partition}: update the optimal partition after new data
-    have been appended;
-  \item \code{get_partition}: retrieve the optimal partition once it has been
-    computed;
-  \item \code{get_info}: obtain information about the current object
-    (parameters, internal state, and actual backend);
-  \item \code{dust}: wrapper that runs \code{append_data},
-    \code{update_partition} and \code{get_partition} sequentially.
+  \item \code{append_data(data, penalty)}: add new data
+  \item \code{update_partition()}: update the segmentation with the new data
+  \item \code{get_partition()}: get the segmentation
+  \item \code{get_info()}: get information about the object (parameters, backend)
+  \item \code{dust(data, penalty)}: append_data, update_partition and get_partition
 }
 }
 \description{
-Constructs a DUST 1D object for multiple change-point detection in univariate
-time series.
+Constructs a DUST 1D object for multiple change-point detection in univariate time series.
+Data can be added step by step with \code{append_data} and \code{update_partition}.
 }
 \details{
-The first nonempty append fixes the penalty. With \code{NULL},
-  the default is \code{2 * log(first batch size)}, which can differ from
-  the one-shot default for the full data length. Later non-\code{NULL}
-  penalties must equal the first penalty. Empty appends do nothing.
-  Call \code{update_partition()} after appending and before
-  \code{get_partition()}; requesting a partition earlier is an error.
+The penalty is fixed at the first call of \code{append_data}. With \code{NULL}, it is \code{2 log(n)} with n the size of the first data vector.
+Call \code{update_partition()} before \code{get_partition()}.
 }
 \examples{
-### Streaming scenario: a 1200-point Gaussian series with 2 true mean
-### shifts (at 400 and 800) arrives in 3 uneven batches; each batch is
-### appended and the partition is updated without reprocessing earlier data.
-set.seed(10)
-true_chpts <- c(400, 800, 1200)
-y <- dataGenerator_1D(chpts = true_chpts, parameters = c(0, 1.5, -1),
-                       sdNoise = 1, type = "gauss")
-y <- data_normalization_1D(y, type = "gauss")
+y <- dataGenerator_1D(chpts = c(400, 800, 1200), parameters = c(0, 1.5, -1), type = "gauss")
 penalty <- 2 * log(length(y))
 
-ob <- dust.object.1D(model = "gauss", method = "DUST")
+ob <- dust.object.1D()
 ob$append_data(y[1:500], penalty)
 ob$update_partition()
-ob$get_partition()$changepoints  # based on the first 500 points only
+ob$get_partition()$changepoints
 
-ob$append_data(y[501:900], penalty)
+ob$append_data(y[501:1200], penalty)
 ob$update_partition()
-ob$get_partition()$changepoints  # resumed, now sees 900 points
-
-ob$append_data(y[901:1200], penalty)
-ob$update_partition()
-ob$get_partition()$changepoints  # all 1200 points, close to true_chpts
+ob$get_partition()$changepoints
 }

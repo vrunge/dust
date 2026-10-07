@@ -7,49 +7,20 @@
 dust.object.1D.HW(model = "gauss", method = "DUST")
 }
 \arguments{
-\item{model}{Statistical model; see \code{\link{dust.object.1D}}.}
+\item{model}{the model, see \code{\link{dust.object.1D}}}
 
-\item{method}{Pruning method; DUSTib has a native Highway kernel.}
+\item{method}{the pruning method, see \code{\link{dust.object.1D}}}
 }
 \value{
-An object with the same methods as \code{\link{dust.object.1D}}:
-\code{append_data}, \code{update_partition}, \code{get_partition},
-\code{get_info} and \code{dust}.
+a DUST 1D object (same methods as \code{\link{dust.object.1D}})
 }
 \description{
-Internal Highway implementation of \code{\link{dust.object.1D}}:
-data can be appended in batches, with
-\code{update_partition} resuming from where the previous call left off
-instead of reprocessing the whole series.
-
-Uses the Google Highway SIMD engine when available for DUST, DUSTib,
-PELT and OP. Otherwise returns a scalar object with the same interface.
-All methods require normalized Binomial proportions, positive Exponential
-observations and nonzero Variance residuals. Negative Binomial counts
-must be divided by the known size. Scale penalties accordingly.
+Highway version of \code{\link{dust.object.1D}} (scalar object if Highway is not available).
+Use \code{dust.object.1D(..., backend = "highway")}.
 }
 \examples{
-### Same streaming scenario as dust.object.1D(), but with an Exponential
-### series (rate shifts at 400 and 800) and the Highway-backed object.
-# The actual backend is available from ob$get_info()$backend.
-
-set.seed(11)
-true_chpts <- c(400, 800, 1200)
-y <- dataGenerator_1D(chpts = true_chpts, parameters = c(2, 0.5, 3), type = "exp")
-y <- data_normalization_1D(y, type = "exp")
-penalty <- 2 * log(length(y))
-
-ob <- dust.object.1D(model = "exp", method = "DUST", backend = "highway")
-ob$append_data(y[1:450], penalty)
-ob$update_partition()
-ob$get_partition()$changepoints
-
-ob$append_data(y[451:850], penalty)
-ob$update_partition()
-ob$get_partition()$changepoints
-
-ob$append_data(y[851:1200], penalty)
-ob$update_partition()
-ob$get_partition()$changepoints  # close to true_chpts
+y <- dataGenerator_1D(chpts = c(400, 800), parameters = c(2, 0.5), type = "exp")
+ob <- dust.object.1D(model = "exp", backend = "highway")
+ob$dust(y, 2 * log(800))$changepoints
 }
 \keyword{internal}

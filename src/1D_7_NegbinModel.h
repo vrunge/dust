@@ -11,8 +11,6 @@ struct NegbinPolicy
 {
   static inline double statistic(double data) { return data; }
 
-  // See 1D_1_GaussModel.h for why this takes (point, a) rather than
-  // (cumsum, point, t, s).
   static inline double costEval(double point, double a)
   {
     const double logTerm = -std::log1p(-std::exp(point));
@@ -43,12 +41,11 @@ struct NegbinPolicy
     return std::numeric_limits<double>::infinity();
   }
 
-  // Tolerance-based: see 1D_5_BernModel.h for why exact equality isn't
-  // reliable here (a reaches 0 via division, not just via summed zeros).
+  // boundaries with a tolerance (a is obtained by a division)
   static inline bool isLeftBoundary(double a) { return a < 1e-9; }
-  static inline bool isRightBoundary(double a) { return false; } // unbounded above: no right boundary
+  static inline bool isRightBoundary(double a) { return false; } // no right boundary
   static inline double Dstar_leftboundary() { return 0; }
-  static inline double Dstar_rightboundary() { return 0; } // unused: isRightBoundary always false
+  static inline double Dstar_rightboundary() { return 0; } // not used
   static inline double Dstar_superLinearLimit() { return 0; }
 
   static inline double Dstar(double x)

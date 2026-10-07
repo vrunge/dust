@@ -7,10 +7,11 @@ source_file <- normalizePath(file.path(root, "src", "MD_DUST.cpp"),
 code <- paste0('
 // [[Rcpp::plugins(cpp17)]]
 #include ', encodeString(source_file, quote = '"'), '
+using namespace dust_md;
 template<class Model>
 Rcpp::List probe_model(Rcpp::NumericVector S, Rcpp::NumericMatrix M,
                        double Q, Rcpp::NumericVector U,
-                       Rcpp::NumericVector x, int loops, bool qn) {
+                       Rcpp::NumericVector x, int loops) {
   Decision<Model> d;
   d.dimension = S.size(); d.constraints = U.size(); d.highway = false;
   d.a = Rcpp::as<std::vector<double>>(S);
@@ -19,24 +20,29 @@ Rcpp::List probe_model(Rcpp::NumericVector S, Rcpp::NumericMatrix M,
   d.scratch.resize(d.dimension);
   double scale = 0;
   const double value = d.value(Rcpp::as<std::vector<double>>(x), scale);
-  return Rcpp::List::create(Rcpp::Named("prune") = iterative_search(d, loops, qn),
+  d.work_x.reserve(d.constraints);
+  const bool exact_applies = dustib::model_id<Model> == 0 || d.constraints <= 2;
+  return Rcpp::List::create(Rcpp::Named("prune") = qn_search(d, loops, -1.0),
+                           Rcpp::Named("exact") = exact_applies ?
+                             Rcpp::LogicalVector::create(exact_search(d)) :
+                             Rcpp::LogicalVector::create(NA_LOGICAL),
                            Rcpp::Named("value") = value);
 }
 // [[Rcpp::export]]
 Rcpp::List probe_md(int model, Rcpp::NumericVector S, Rcpp::NumericMatrix M,
                    double Q, Rcpp::NumericVector U, Rcpp::NumericVector x,
-                   int loops, bool qn) {
+                   int loops) {
   if (M.nrow() != S.size() || M.ncol() != U.size() || x.size() != U.size())
     Rcpp::stop("incompatible dimensions");
   switch(model) {
-    case 0: return probe_model<GaussPolicy>(S,M,Q,U,x,loops,qn);
-    case 1: return probe_model<PoissonPolicy>(S,M,Q,U,x,loops,qn);
-    case 2: return probe_model<ExpPolicy>(S,M,Q,U,x,loops,qn);
-    case 3: return probe_model<GeomPolicy>(S,M,Q,U,x,loops,qn);
-    case 4: return probe_model<BernPolicy>(S,M,Q,U,x,loops,qn);
-    case 5: return probe_model<BinomPolicy>(S,M,Q,U,x,loops,qn);
-    case 6: return probe_model<NegbinPolicy>(S,M,Q,U,x,loops,qn);
-    case 7: return probe_model<VariancePolicy>(S,M,Q,U,x,loops,qn);
+    case 0: return probe_model<GaussPolicy>(S,M,Q,U,x,loops);
+    case 1: return probe_model<PoissonPolicy>(S,M,Q,U,x,loops);
+    case 2: return probe_model<ExpPolicy>(S,M,Q,U,x,loops);
+    case 3: return probe_model<GeomPolicy>(S,M,Q,U,x,loops);
+    case 4: return probe_model<BernPolicy>(S,M,Q,U,x,loops);
+    case 5: return probe_model<BinomPolicy>(S,M,Q,U,x,loops);
+    case 6: return probe_model<NegbinPolicy>(S,M,Q,U,x,loops);
+    case 7: return probe_model<VariancePolicy>(S,M,Q,U,x,loops);
   }
   Rcpp::stop("invalid model");
 }
@@ -58,9 +64,11 @@ theta <- function(model, z) switch(model,
 
 checks <- 0L
 check <- function(model, S, M, Q, U, x, positive, value = NULL) {
-  for (qn in c(FALSE, TRUE)) {
-    result <- probe_md(match(model, models) - 1L, S, M, Q, U, x, 400L, qn)
+  {
+    result <- probe_md(match(model, models) - 1L, S, M, Q, U, x, 400L)
     stopifnot(identical(result$prune, positive))
+    # Method "exact" evaluates the decision at its maximizer (DUST paper).
+    if (!is.na(result$exact)) stopifnot(identical(result$exact, positive))
     if (!is.null(value)) stopifnot(isTRUE(all.equal(result$value, value,
                                                   tolerance = 1e-11)))
     checks <<- checks + 1L

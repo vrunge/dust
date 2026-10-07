@@ -12,6 +12,7 @@
 #include "1D_6_BinomModel.h"
 #include "1D_7_NegbinModel.h"
 #include "1D_8_VarianceModel.h"
+#include "1D_Variance.h"
 
 using namespace Rcpp;
 
@@ -27,7 +28,6 @@ DUST_1D *newModuleByAlgo(const std::string& method)
   if (method == "DUST")   return newModuleT<Model, DualMax_DUST<Model>>();
   if (method == "DUSTib") return newModuleT<Model, DualMax_DUSTib<Model>>();
   if (method == "PELT")   return newModuleT<Model, DualMax_PELT<Model>>();
-  // OP scans all previous endpoints in its own engine.
   if (method == "OP")     return new DUST_1D_OP_T<Model>();
   stop("Unrecognized method \"" + method + "\". Valid values: \"DUST\", \"DUSTib\", \"PELT\", \"OP\".");
 }
@@ -42,7 +42,8 @@ DUST_1D *newModule1D(const std::string& model,
   else if (model == "bern") return newModuleByAlgo<BernPolicy>(method);
   else if (model == "binom") return newModuleByAlgo<BinomPolicy>(method);
   else if (model == "negbin") return newModuleByAlgo<NegbinPolicy>(method);
-  else if (model == "variance") return newModuleByAlgo<VariancePolicy>(method);
+  // variance: own engines (see 1D_Variance.h)
+  else if (model == "variance") return dust_variance::make_engine(method);
   else stop("Unrecognized model \"" + model + "\".");
 }
 

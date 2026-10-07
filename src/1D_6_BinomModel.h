@@ -9,8 +9,6 @@ struct BinomPolicy
 {
   static inline double statistic(double data) { return data; }
 
-  // See 1D_1_GaussModel.h for why this takes (point, a) rather than
-  // (cumsum, point, t, s).
   static inline double costEval(double point, double a)
   {
     double val = 0;
@@ -46,12 +44,11 @@ struct BinomPolicy
     return (1 - a) / (a - b);
   }
 
-  // See 1D_5_BernModel.h for why these are tolerance-based rather than
-  // exact equality, and why Binom additionally needs isRightBoundary.
+  // boundaries with a tolerance (see 1D_5_BernModel.h)
   static inline bool isLeftBoundary(double a) { return a < 1e-9; }
   static inline bool isRightBoundary(double a) { return a > 1.0 - 1e-9; }
   static inline double Dstar_leftboundary() { return 0; }
-  static inline double Dstar_rightboundary() { return 0; } // symmetric: Dstar(1) == Dstar(0)
+  static inline double Dstar_rightboundary() { return 0; } // Dstar(1) = Dstar(0)
   static inline double Dstar_superLinearLimit() { return 0; }
 
   static inline double Dstar(double x) { return x * std::log(x) + (1.0 - x) * std::log(1.0 - x); }

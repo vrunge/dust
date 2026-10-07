@@ -1,21 +1,20 @@
 #' Rcpp_DUST_1D Class
 #'
-#' An S4 class for handling one-dimensional DUST operations.
+#' S4 class of the 1D DUST object.
 #'
 #' @keywords internal
 setClass("Rcpp_DUST_1D")
 
 #' Rcpp_DUST_1D_HW_Obj Class
 #'
-#' An internal S4 class for the Highway backend of
-#' \code{\link{dust.object.1D}}.
+#' S4 class of the 1D DUST object (Highway).
 #'
 #' @keywords internal
 setClass("Rcpp_DUST_1D_HW_Obj")
 
 #' C++Object Class
 #'
-#' An S4 class for representing generic C++ objects.
+#' S4 class for C++ objects.
 #'
 #' @keywords internal
 setClass("C++Object")

@@ -2,101 +2,68 @@
 % Please edit documentation in R/dustMD.R
 \name{dust.MD}
 \alias{dust.MD}
-\title{Detect Changes in Independent Multivariate Data}
+\title{Multiple Change-Point Detection for Multivariate Data Using the DUST Algorithm}
 \usage{
 dust.MD(
   data,
   penalty = 2 * nrow(data) * log(ncol(data)),
   model = "gauss",
-  method = "coordinateDescent",
+  method = "exact",
   backend = "highway",
-  constraints = nrow(data),
+  constraints = 1L,
   nbIterations = NULL,
   epsilon = NULL
 )
 }
 \arguments{
-\item{data}{A nonempty numeric matrix with components in rows and time in
-columns.}
+\item{data}{a matrix (one time series per row)}
 
-\item{penalty}{A finite nonnegative penalty per change point. By default,
-\code{2 * nrow(data) * log(ncol(data))}.}
+\item{penalty}{the penalty for a change point. By default, \code{2 * nrow(data) * log(ncol(data))}}
 
-\item{model}{One of \code{"gauss"}, \code{"poisson"}, \code{"exp"},
-\code{"geom"}, \code{"bern"}, \code{"binom"}, \code{"negbin"}, or
-\code{"variance"}; see \code{\link{dust.1D}}.}
+\item{model}{the model: \code{"gauss"} (default), \code{"poisson"}, \code{"exp"}, \code{"geom"}, \code{"bern"}, \code{"binom"}, \code{"negbin"} or \code{"variance"}}
 
-\item{method}{\code{"coordinateDescent"} (default), \code{"iterative"},
-\code{"QN"}, \code{"randomEval"}, \code{"exact"}, \code{"PELT"}, or
-\code{"OP"}. Coordinate descent minimizes the negative of the concave
-DUST decision function. \code{"iterative"} uses projected gradient ascent
-with backtracking. \code{"QN"} uses safeguarded inverse BFGS updates and
-an Armijo line search. Both search jointly over the selected constraints
-and support all eight models, checking the mean domain at every trial.
-Multipliers forced to zero by a boundary segment mean are held fixed.
-Random evaluation checks sampled feasible points. For \code{model = "gauss"},
-\code{"exact"} solves the joint decision problem over all selected
-constraints by checking stationary faces of a concave quadratic.
-It tries a short active-face search, then enumerates faces if needed.
-The fallback can require exponentially many faces as \code{constraints}
-grows. If numerical rank or optimality checks are inconclusive, the candidate
-is retained. For other models, \code{"exact"} uses \code{"PELT"}.
-These methods prune only
-when a feasible decision value is strictly positive with a numerical
-tolerance. A failed search or exhausted budget retains the candidate;
-a finite search is not guaranteed to find the maximum. \code{"PELT"}
-uses only the decision at zero, and \code{"OP"} does no pruning.}
+\item{method}{the pruning method:
+\itemize{
+  \item \code{"exact"} (default): decision function evaluated at its maximum (closed formula with 1 constraint; with 2 constraints, the two one-constraint maxima and the critical point as in \code{dust.meanVar})
+  \item \code{"coordinateDescent"}: maximization of the decision function, one multiplier at a time
+  \item \code{"QN"}: maximization with a quasi-Newton algorithm (BFGS with Armijo condition)
+  \item \code{"randomEval"}: evaluation at random points
+  \item \code{"PELT"}: PELT pruning rule
+  \item \code{"OP"}: no pruning
+}}
 
-\item{backend}{\code{"highway"} (default) or \code{"scalar"}. Highway is used if
-available in the installed package; otherwise the scalar engine runs.}
+\item{backend}{\code{"highway"} (default) or \code{"scalar"}. The scalar engine is used if Highway is not available.}
 
-\item{constraints}{Number of earlier active indices used for each DUST
-test, from 1 to \code{nrow(data)}. The default uses all \code{nrow(data)}.
-They are always the largest active indices smaller than the tested
-index. All search methods use the available earlier indices, up to
-this limit, even when fewer than \code{constraints} exist.}
+\item{constraints}{number of indices used in the pruning test (the largest active indices smaller than the tested index), between 1 and \code{nrow(data)}. Default is 1.}
 
-\item{nbIterations}{Positive integer or \code{NULL} (default). A separate
-budget applies to each candidate's pruning test at each time point.
-For \code{"coordinateDescent"}, one iteration is one sweep over all
-selected multiplier coordinates. For \code{"iterative"}, it is one
-projected-gradient step with up to 60 backtracking trials. For
-\code{"QN"}, it is one quasi-Newton step with up to 60 backtracking
-trials and, if needed, one gradient fallback with up to 60 more.
-For \code{"randomEval"}, it is one random draw. Ignored by
-\code{"exact"}, \code{"PELT"}, and \code{"OP"}. When \code{NULL}, the
-effective budget is 10 unless \code{epsilon} is active.
-An explicit \code{nbIterations} takes priority over \code{epsilon}.}
+\item{nbIterations}{number of iterations (sweeps for \code{"coordinateDescent"}, steps for \code{"QN"}, random points for \code{"randomEval"}). By default, 1 for \code{"coordinateDescent"} and 10 otherwise.}
 
-\item{epsilon}{\code{NULL} (default) or a finite nonnegative threshold
-for the absolute gain in the normalized decision function after a
-complete coordinate sweep or an accepted optimizer step. Used only when
-\code{nbIterations}
-is \code{NULL}, with a cap of 1000 sweeps or iterations per candidate.
-The search stops when the gain is at most \code{epsilon}; this is a
-stopping heuristic, not a certificate that the maximum was found.
-Supported by \code{"coordinateDescent"}, \code{"iterative"}, and
-\code{"QN"}. Other methods ignore it, except \code{"randomEval"},
-which rejects an active \code{epsilon} because random draws have no
-meaningful consecutive gain.}
+\item{epsilon}{stopping rule for \code{"coordinateDescent"} and \code{"QN"} when \code{nbIterations} is \code{NULL}: the search stops when the decision function increases by less than \code{epsilon} (at most 1000 iterations)}
 }
 \value{
-A list with \code{changepoints}, \code{lastIndexSet}, actual \code{backend},
-  \code{nb} (active candidates over time), and \code{costQ} (optimal costs).
+A list containing the information computed by the DUST algorithm.
+\itemize{
+  \item \code{changepoints}: the sequence of optimal change points
+  \item \code{lastIndexSet}: the last non-pruned indices at time step n
+  \item \code{backend}: the backend used
+  \item \code{nb}: number of non-pruned indices over time
+  \item \code{costQ}: optimal (penalized) segmentation cost over time
+}
 }
 \description{
-Each column of \code{data} is one observation and each row is an independent
-component. All components use the same cost model. Segment costs are added
-across rows, while change points are shared.
+Change-point detection in independent multivariate time series with the DUST pruning rule.
+Each row of \code{data} is a time series, all with the same model and the same change points.
+}
+\note{
+The pruning is safe: an index is removed only when the decision function is positive.
+Before each search, a bound on the decision function can stop it early (no pruning possible).
 }
 \examples{
-set.seed(13)
-y <- rbind(c(rnorm(60), rnorm(60, 2)),
-           c(rnorm(60), rnorm(60, -1)))
-dust.MD(y, model = "gauss", constraints = 2)$changepoints
-dust.MD(y, method = "iterative", constraints = 2, nbIterations = 20)$changepoints
+y <- dataGenerator_MD(chpts = c(60, 120), parameters = cbind(c(0, 2), c(0, -1)), type = "gauss")
+dust.MD(y)$changepoints
+dust.MD(y, method = "coordinateDescent", constraints = 2, nbIterations = 20)$changepoints
 dust.MD(y, method = "QN", constraints = 2, epsilon = 1e-8)$changepoints
 }
 \seealso{
-\code{\link{dust.object.MD}}
+\code{\link{dust.object.MD}}, \code{\link{dataGenerator_MD}}
 }

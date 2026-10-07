@@ -11,7 +11,7 @@
 
 using namespace Rcpp;
 
-// Scalar segmentation engine for a given model and pruning rule.
+/// scalar engine (model + pruning rule)
 
 template <class Model, class DualMaxPolicy>
 class DUST_1D_T : public DUST_1D
@@ -19,7 +19,6 @@ class DUST_1D_T : public DUST_1D
   public:
     DUST_1D_T() : DUST_1D(DualMaxPolicy::name()) {}
 
-    // Add observations and update the cumulative sufficient statistics.
 
     void append_data(const Rcpp::NumericVector& inData, Nullable<double> inPenalty) override
     {
@@ -59,7 +58,7 @@ class DUST_1D_T : public DUST_1D
       unsigned int nbt = nb_indices.back();
       for (unsigned t = index_.get_first() + 1; t <= n; t++)
       {
-        // Optimal partitioning step.
+        // OP step
         index_.reset();
         double minCost_t = std::numeric_limits<double>::infinity();
         unsigned int argMin = 0;
@@ -79,7 +78,7 @@ class DUST_1D_T : public DUST_1D
         costRecord.push_back(minCost_t);
         chptRecord.push_back(argMin);
 
-        // Apply the pruning rule.
+        // pruning
         index_.reset_pruning();
 
         while (index_.is_not_the_last_pruning())
@@ -94,7 +93,7 @@ class DUST_1D_T : public DUST_1D
             index_.next_pruning();
           }
         }
-        // The last index gives the PELT test (zero multiplier).
+        // last index: PELT test
         if (lastCost > minCost_t)
         {
           index_.prune_last();

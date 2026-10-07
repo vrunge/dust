@@ -7,10 +7,9 @@
 DUST.1D.HW.backend()
 }
 \value{
-A length-1 character vector.
+"highway" or "scalar"
 }
 \description{
-Reports whether DUST.1D.HW was built with Google Highway
-SIMD ("highway") or the scalar engine ("scalar"). DUSTib supports both.
+Backend available in this installation: "highway" or "scalar".
 }
 \keyword{internal}

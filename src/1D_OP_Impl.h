@@ -11,7 +11,7 @@
 
 using namespace Rcpp;
 
-// Optimal partitioning scans all previous endpoints and does not prune.
+/// OP: no pruning
 
 template <class Model>
 class DUST_1D_OP_T : public DUST_1D
@@ -75,11 +75,9 @@ class DUST_1D_OP_T : public DUST_1D
         stop("update_partition before requesting a partition");
       std::forward_list<unsigned int> chpts = backtrack_changepoints();
 
-      // All endpoints remain active.
       std::forward_list<unsigned int> lastIndexSet;
       for (unsigned int i = 0; i <= n; i++) lastIndexSet.push_front(i);
 
-      // There are t active endpoints before adding endpoint t.
       std::vector<int> nb(n);
       for (unsigned int t = 1; t <= n; t++) nb[t - 1] = static_cast<int>(t);
 

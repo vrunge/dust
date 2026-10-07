@@ -5,6 +5,6 @@
 \alias{C++Object-class}
 \title{C++Object Class}
 \description{
-An S4 class for representing generic C++ objects.
+S4 class for C++ objects.
 }
 \keyword{internal}

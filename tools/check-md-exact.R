@@ -7,6 +7,7 @@ source_file <- normalizePath(file.path(root, "src", "MD_DUST.cpp"),
 code <- paste0('
 // [[Rcpp::plugins(cpp17)]]
 #include ', encodeString(source_file, quote = '"'), '
+using namespace dust_md;
 // [[Rcpp::export]]
 Rcpp::List probe_gauss_joint(Rcpp::NumericVector S, Rcpp::NumericMatrix M,
                              double Q, Rcpp::NumericVector U) {

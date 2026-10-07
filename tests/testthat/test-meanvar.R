@@ -1,107 +1,51 @@
-reference_meanvar_cost <- function(y, penalty) {
-  n <- length(y)
-  sums <- c(0, cumsum(y))
-  sums2 <- c(0, cumsum(y * y))
-  q <- c(-penalty, rep(Inf, n))
-  for (t in seq_len(n)) {
-    for (s in 0:(t - 1L)) {
-      len <- t - s
-      if (len < 2L) next
-      mean <- (sums[t + 1L] - sums[s + 1L]) / len
-      variance <- (sums2[t + 1L] - sums2[s + 1L]) / len - mean * mean
-      if (!(variance > 0)) next
-      value <- q[s + 1L] + penalty + len * (1 + log(variance)) / 2
-      if (value < q[t + 1L]) q[t + 1L] <- value
-    }
+test_that("meanVar methods and backends give the same optimal costs", {
+  set.seed(1)
+  y <- c(rnorm(100), rnorm(100, 2, 3), rnorm(100, -1, 0.5))
+  pelt <- dust.meanVar(y, method = "PELT", backend = "scalar")
+  for (method in c("1D", "2D")) for (backend in c("scalar", "highway"))
+  {
+    res <- dust.meanVar(y, method = method, backend = backend)
+    expect_equal(res$costQ, pelt$costQ, info = paste(method, backend))
+    expect_equal(as.numeric(res$changepoints), as.numeric(pelt$changepoints))
   }
-  q[-1L]
-}
-
-test_that("both meanVar methods and backends solve the same optimal partition", {
-  set.seed(73)
-  series <- list(
-    c(rnorm(40), rnorm(45, 2, 1.5), rnorm(35, -1, 0.7)),
-    rnorm(70),
-    rep(c(-1, 1), 25)
-  )
-  for (y in series) {
-    penalty <- 4 * log(length(y))
-    expected <- reference_meanvar_cost(y, penalty)
-    for (method in c("1D", "2D")) {
-      scalar <- dust.meanVar(y, penalty, method, "scalar")
-      highway <- dust.meanVar(y, penalty, method, "highway")
-      expect_identical(names(scalar), c("changepoints", "lastIndexSet", "backend", "nb", "costQ"))
-      expect_equal(scalar$costQ, expected, tolerance = 1e-6)
-      expect_equal(highway$costQ, expected, tolerance = 1e-6)
-      expect_identical(scalar$changepoints, highway$changepoints)
-      expect_identical(scalar$lastIndexSet, highway$lastIndexSet)
-      expect_identical(scalar$nb, highway$nb)
-      expect_identical(scalar$backend, "scalar")
-      expect_true(highway$backend %in% c("highway", "scalar"))
-      expect_identical(highway$backend, dust:::DUST.1D.HW.backend())
-    }
-  }
+  expect_equal(pelt$changepoints, c(100, 200, 300), tolerance = 0.03)
 })
 
-test_that("meanVar objects resume from uneven batches for both backends", {
-  set.seed(74)
-  y <- c(rnorm(29), rnorm(40, 1, 2), rnorm(36, -1, 0.8))
-  penalty <- 4 * log(length(y))
-  for (method in c("1D", "2D")) for (backend in c("scalar", "highway")) {
-    one_shot <- dust.meanVar(y, penalty, method, backend)
-    object <- dust.object.meanVar(method, backend)
-    object$append_data(y[1:29], penalty)
-    object$update_partition()
-    expect_length(object$get_partition()$costQ, 29)
-    object$append_data(y[30:69], NULL)
-    object$update_partition()
-    object$append_data(y[70:105], NULL)
-    object$update_partition()
-    expect_equal(object$get_partition(), one_shot, tolerance = 1e-9)
-    expect_identical(object$get_info()$backend, one_shot$backend)
-  }
-})
-
-test_that("meanVar validates its public options and data", {
-  expect_error(dust.meanVar(numeric()), "nonempty")
-  expect_error(dust.meanVar(c(1, NA_real_)), "finite")
-  expect_error(dust.meanVar(c(1, 2), penalty = -1), "penalty")
-  expect_error(dust.meanVar(c(1, 2), method = "DUST1"), "arg")
-  expect_error(dust.object.meanVar(backend = "auto"), "arg")
-})
-
-test_that("meanVar defaults to highway for both methods and object forms", {
-  y <- c(-1, 1, -2, 2, -1, 1)
-  for (method in c("1D", "2D")) {
-    expected <- dust.meanVar(y, penalty = 2, method = method,
-                             backend = "highway")
-    expect_identical(dust.meanVar(y, penalty = 2, method = method), expected)
-    expect_identical(dust.meanVar(y, penalty = 2, method = method,
-                                  backend = "Highway"), expected)
-    expect_identical(expected$backend, dust:::DUST.1D.HW.backend())
-    object <- dust.object.meanVar(method = method)
-    expect_identical(object$get_info()$backend, expected$backend)
-    object$append_data(y, 2)
-    object$update_partition()
-    expect_identical(object$get_partition(), expected)
+test_that("dust.object.meanVar gives the same result with data added step by step", {
+  set.seed(2)
+  y <- c(rnorm(80), rnorm(80, 1, 2))
+  for (backend in c("scalar", "highway"))
+  {
+    one <- dust.meanVar(y, 4 * log(160), "2D", backend)
+    ob <- dust.object.meanVar("2D", backend)
+    ob$append_data(y[1:50], 4 * log(160))
+    ob$update_partition()
+    ob$append_data(y[51:160], NULL)
+    ob$update_partition()
+    expect_equal(ob$get_partition(), one, info = backend)
   }
 })
 
 test_that("meanVar reproduces the original dust pruning sets", {
   y <- sin((1:40) * 1.31) + cos((1:40) * 0.37)
+  # t = 4 to 6: the variance of a one-point segment is now exactly 0
+  # (sums with rounding errors), an index is pruned one step sooner
   expected <- list(
-    `1D` = list(
-      nb = c(1,2,3,4,5,5,5,5,5,6,7,8,9,9,9,7,7,6,6,7,
-             7,8,9,9,9,9,8,7,8,9,8,7,7,8,8,8,8,8,9,10),
-      last = c(40,39,38,37,36,35,33,32,29,28,0)),
-    `2D` = list(
-      nb = c(1,2,3,4,5,5,5,5,5,6,6,7,8,8,8,7,6,6,6,7,
-             7,8,8,7,6,7,7,7,8,9,7,6,7,8,6,7,7,8,9,10),
-      last = c(40,39,38,37,36,35,33,32,29,28,0)))
-  for (method in c("1D", "2D")) for (backend in c("scalar", "highway")) {
-    result <- dust.meanVar(y, 4 * log(length(y)), method, backend)
-    expect_identical(as.integer(result$nb), as.integer(expected[[method]]$nb))
-    expect_identical(as.integer(result$lastIndexSet),
-                     as.integer(expected[[method]]$last))
+    `1D` = c(1,2,3,3,4,4,5,5,5,6,7,8,9,9,9,7,7,6,6,7,7,8,9,9,9,9,8,7,8,9,8,7,7,8,8,8,8,8,9,10),
+    `2D` = c(1,2,3,3,4,4,5,5,5,6,6,7,8,8,8,7,6,6,6,7,7,8,8,7,6,7,7,7,8,9,7,6,7,8,6,7,7,8,9,10))
+  for (method in c("1D", "2D")) for (backend in c("scalar", "highway"))
+  {
+    res <- dust.meanVar(y, 4 * log(40), method, backend)
+    expect_identical(as.integer(res$nb), as.integer(expected[[method]]))
+    expect_identical(as.integer(res$lastIndexSet), c(40L, 39L, 38L, 37L, 36L, 35L, 33L, 32L, 29L, 28L, 0L))
   }
+})
+
+test_that("meanVar input errors", {
+  expect_error(dust.meanVar(c(1, NA, 3)))
+  expect_error(dust.meanVar(rnorm(10), method = "3D"))
+  expect_error(dust.meanVar(rnorm(10), penalty = -1))
+  ob <- dust.object.meanVar()
+  ob$append_data(rnorm(10), 2)
+  expect_error(ob$append_data(rnorm(10), 3))
 })

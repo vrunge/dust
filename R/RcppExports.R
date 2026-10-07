@@ -6,17 +6,15 @@
 #' @name DUST_1D_HW_Obj
 #'
 #' @description
-#' Rcpp module for the Highway segmentation object used by
-#' \code{\link{dust.object.1D}}.
+#' Rcpp module for \code{\link{dust.object.1D}} with Highway.
 #'
 #' @export
 NULL
 
 #' DUST.1D.HW.backend
 #'
-#' @description Reports whether DUST.1D.HW was built with Google Highway
-#' SIMD ("highway") or the scalar engine ("scalar"). DUSTib supports both.
-#' @return A length-1 character vector.
+#' @description Backend available in this installation: "highway" or "scalar".
+#' @return "highway" or "scalar"
 #' @keywords internal
 DUST.1D.HW.backend <- function() {
     .Call(`_dust_DUST_1D_HW_backend`)
@@ -25,33 +23,17 @@ DUST.1D.HW.backend <- function() {
 #' DUST.1D.HW
 #'
 #' @description
-#' Same parameters and options as \code{\link{dust.1D}} -- all 8 cost
-#' models, all 4 pruning methods -- implemented using
-#' Google Highway SIMD for DUST, DUSTib, PELT and OP, with a scalar
-#' fallback when Highway is unavailable. DUSTib implements a tested
-#' one-constraint inequality certificate. The pruning schedule can change
-#' candidate counts and the choice among tied optimal segmentations.
+#' Same as \code{\link{dust.1D}} with the Highway (SIMD) engine.
+#' Use \code{dust.1D(..., backend = "highway")}.
 #'
-#' @param data Numeric vector, univariate time series.
-#' @param penalty Finite nonnegative penalty per change point. Default \code{2*log(length(data))}.
-#' @param model One of "gauss", "poisson", "exp", "geom", "bern", "binom", "negbin", "variance".
-#' @param method One of "DUST", "DUSTib", "PELT", "OP".
-#' @return list(changepoints, lastIndexSet, backend, nb, costQ)
+#' @param data a numeric vector
+#' @param penalty penalty value, \code{2 log(n)} by default
+#' @param model one of "gauss", "poisson", "exp", "geom", "bern", "binom", "negbin", "variance"
+#' @param method one of "DUST", "DUSTib", "PELT", "OP"
+#' @return a list with changepoints, lastIndexSet, backend, nb and costQ
 #' @examples
-#' ### Gaussian series, 4 segments of 500 points, 3 mean shifts.
-#' ### Compare the two backends through the public interface.
-#' set.seed(20)
-#' true_chpts <- c(500, 1000, 1500, 2000)
-#' y <- dataGenerator_1D(chpts = true_chpts, parameters = c(0, 1, -1, 2),
-#'                        sdNoise = 1, type = "gauss")
-#' y <- data_normalization_1D(y, type = "gauss")
-#' penalty <- 2 * log(length(y))
-#'
-#' res_hw <- dust.1D(y, penalty, model = "gauss", method = "DUST", backend = "highway")
-#' res_hw$changepoints  # close to true_chpts
-#'
-#' res_ref <- dust.1D(y, penalty, model = "gauss", method = "DUST", backend = "scalar")
-#' identical(as.integer(res_hw$changepoints), as.integer(res_ref$changepoints))
+#' y <- dataGenerator_1D(chpts = c(500, 1000), parameters = c(0, 1), type = "gauss")
+#' dust.1D(y, backend = "highway")$changepoints
 #' @keywords internal
 DUST.1D.HW <- function(data, penalty = NULL, model = "gauss", method = "DUST") {
     .Call(`_dust_DUST_1D_HW`, data, penalty, model, method)
@@ -67,35 +49,22 @@ DUST.1D.HW <- function(data, penalty = NULL, model = "gauss", method = "DUST") {
 #' @export
 NULL
 
-#' Calculate Standard Deviation or MAD of Differences in a Numeric Vector
+#' sdDiff
 #'
-#' The `sdDiff` function calculates a measure of variability (standard deviation or MAD)
-#' of a numeric vector.
-#' It supports three methods: "HALL", "MAD", and "SD".
+#' @description Estimation of the noise standard deviation from the differences of the data (robust to the changes in mean)
 #'
-#' @param y A numeric vector.
-#' @param method A character string specifying the method to use.
-#'   Options are: \code{"HALL"}, \code{"MAD"}, and \code{"SD"}.
-#'   Default is \code{"HALL"}.
-#'
-#' @return A numeric value representing the calculated measure of variability
-#'   according to the specified method.
-#'   \itemize{
-#'     \item \code{"HALL"}: Calculates the standard deviation using a specific weighted
-#'           difference method (HALL method).
-#'     \item \code{"MAD"}: Returns the MAD (Median Absolute Deviation) of the differences
-#'           between consecutive elements.
-#'     \item \code{"SD"}: Returns the standard deviation of the differences
-#'           between consecutive elements.
-#'   }
+#' @param y a numeric vector
+#' @param method \code{"HALL"} (default), \code{"MAD"} or \code{"SD"}
+#' \itemize{
+#'   \item \code{"HALL"}: Hall estimator (weighted differences)
+#'   \item \code{"MAD"}: MAD of the differences
+#'   \item \code{"SD"}: standard deviation of the differences
+#' }
+#' @return the estimated standard deviation
 #'
 #' @examples
-#' ### 3 segments of 300 points, mean shifts but constant noise sd = 2:
-#' ### all three estimators should recover a value close to 2.
-#' set.seed(30)
-#' y <- dataGenerator_1D(chpts = c(300, 600, 900), parameters = c(0, 1, 0),
-#'                        sdNoise = 2, type = "gauss")
-#' sdDiff(y, "HALL")
+#' y <- dataGenerator_1D(chpts = c(300, 600), parameters = c(0, 1), sdNoise = 2, type = "gauss")
+#' sdDiff(y)
 #' sdDiff(y, "MAD")
 #' sdDiff(y, "SD")
 #'
@@ -104,51 +73,32 @@ sdDiff <- function(y, method = "HALL") {
     .Call(`_dust_sdDiff`, y, method)
 }
 
-#' Data Normalization Function
+#' data_normalization_1D
 #'
 #' @name data_normalization_1D
 #'
-#' @description
-#' Normalizes the input time series data `y` according to the specified `type`.
-#' The normalization process depends on the statistical model type, which can be one of the following:
-#' "gauss" (Gaussian/normal distribution), "exp" (exponential distribution),
-#' "poisson" (Poisson distribution), "geom" (geometric distribution),
-#' "bern" (Bernoulli distribution), "binom" (binomial distribution),
-#' "negbin" (negative binomial distribution), or "variance"
-#' Poisson scaling changes the likelihood scale; supply a penalty appropriate
-#' for the scaled data. Binomial and Negative Binomial normalization use a
-#' known size rather than estimating it from the observations.
+#' @description Normalization of the data before using dust.1D with the default penalty
+#' \itemize{
+#'   \item \code{"gauss"}: division by \code{sdDiff(y)}
+#'   \item \code{"poisson"}, \code{"exp"}: division by the mean
+#'   \item \code{"binom"}, \code{"negbin"}: division by \code{size}
+#'   \item \code{"variance"}: the mean is removed
+#'   \item \code{"geom"}, \code{"bern"}: no change
+#' }
 #'
-#' @param y A numeric vector representing the time series to be normalized and then segmented.
-#' @param type A string specifying the model type for normalization.
-#' The available options are "gauss", "exp", "poisson", "geom", "bern", "binom", "negbin", "variance".
-#' The default is "gauss".
-#' @param size Known number of Binomial trials or Negative Binomial size.
-#'   Required for those two models; the observed maximum and an estimated
-#'   dispersion are not substitutes for the known model parameter.
-#' @return A numeric vector that is the normalized version of the input time series `y`.
+#' @param y a numeric vector
+#' @param type the model: \code{"gauss"} (default), \code{"poisson"}, \code{"exp"}, \code{"geom"}, \code{"bern"}, \code{"binom"}, \code{"negbin"}, \code{"variance"}
+#' @param size number of trials (binom) or number of successes (negbin). Required for these two models.
+#' @return the normalized data
 #' @examples
-#' ### Gaussian: 3 segments of 300 points, noise sd = 2 -- normalization
-#' ### rescales by an sdDiff() estimate of the noise, so the result has
-#' ### noise sd close to 1.
-#' set.seed(40)
-#' y <- dataGenerator_1D(chpts = c(300, 600, 900), parameters = c(0, 1, 0),
-#'                        sdNoise = 2, type = "gauss")
-#' y_norm <- data_normalization_1D(y, type = "gauss")
-#' sd(diff(y_norm)) / sqrt(2)  # close to 1
+#' y <- dataGenerator_1D(chpts = c(300, 600), parameters = c(0, 1), sdNoise = 2, type = "gauss")
+#' sdDiff(data_normalization_1D(y))
 #'
-#' ### Poisson: 3 segments of 300 points, rates 2/8/4 -- normalization
-#' ### rescales by the overall mean, so the result has mean close to 1.
-#' set.seed(41)
-#' y <- dataGenerator_1D(chpts = c(300, 600, 900), parameters = c(2, 8, 4), type = "poisson")
-#' y_norm <- data_normalization_1D(y, type = "poisson")
-#' mean(y_norm)  # close to 1
+#' y <- dataGenerator_1D(chpts = c(300, 600), parameters = c(2, 8), type = "poisson")
+#' mean(data_normalization_1D(y, type = "poisson"))
 #'
-#' ### Exponential: 3 segments of 300 points, rates 2/0.5/3
-#' set.seed(42)
-#' y <- dataGenerator_1D(chpts = c(300, 600, 900), parameters = c(2, 0.5, 3), type = "exp")
-#' y_norm <- data_normalization_1D(y, type = "exp")
-#' mean(y_norm)  # close to 1
+#' y <- dataGenerator_1D(chpts = c(300, 600), parameters = c(0.4, 0.7), nbTrials = 5, type = "binom")
+#' data_normalization_1D(y, type = "binom", size = 5)[1:10]
 #'
 #' @export
 data_normalization_1D <- function(y, type = "gauss", size = NA_real_) {

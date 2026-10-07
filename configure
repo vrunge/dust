@@ -13,9 +13,73 @@ if [ "${DUST_FORCE_SCALAR:-0}" = "1" ]; then
   echo "configure: scalar-only build requested by DUST_FORCE_SCALAR=1"
 elif command -v pkg-config >/dev/null 2>&1 && pkg-config --exists libhwy 2>/dev/null; then
   HWY_CPPFLAGS=`pkg-config --cflags libhwy`
+  # Highway headers as system headers: no warnings from them with -pedantic
+  # (e.g. token pasting of ',' and __VA_ARGS__ in hwy/base.h)
+  flags=""
+  for f in $HWY_CPPFLAGS; do
+    case "$f" in
+      -I/usr/include|-I/usr/local/include) flags="$flags $f" ;;   # already system folders
+      -I*) flags="$flags -isystem ${f#-I}" ;;
+      *) flags="$flags $f" ;;
+    esac
+  done
+  HWY_CPPFLAGS=$flags
   HWY_LIBS=`pkg-config --libs libhwy`
-  HWY_DEFINE="-DHAVE_HIGHWAY=1"
-  echo "configure: found Google Highway via pkg-config -- SIMD backends enabled"
+  # clang >= 23 makes Highway enable AVX10_2, whose target string some
+  # clang builds reject, breaking the AVX-512 code (CRAN clang-23 check).
+  HWY_DEFINE="-DHAVE_HIGHWAY=1 -DHWY_BROKEN_AVX10_2=HWY_AVX10_2"
+
+  # Highway headers can lag behind new compilers, so check that a small
+  # multi-target program builds with R's compiler before enabling SIMD.
+  : ${R_HOME=`R RHOME`}
+  CXX=`"${R_HOME}/bin/R" CMD config CXX17`
+  CXXFLAGS=`"${R_HOME}/bin/R" CMD config CXX17FLAGS`
+  CPPFLAGS=`"${R_HOME}/bin/R" CMD config CPPFLAGS`
+  LDFLAGS=`"${R_HOME}/bin/R" CMD config LDFLAGS`
+  TMP=`mktemp -d 2>/dev/null || echo "${TMPDIR:-/tmp}/dust_hwy_$$"`
+  mkdir -p "$TMP"
+  cat > "$TMP/probe.cpp" <<'PROBE'
+#undef HWY_TARGET_INCLUDE
+#define HWY_TARGET_INCLUDE "probe.cpp"
+#include <hwy/foreach_target.h>
+#include <hwy/highway.h>
+#include <hwy/contrib/math/math-inl.h>
+
+HWY_BEFORE_NAMESPACE();
+namespace probe {
+namespace HWY_NAMESPACE {
+namespace hn = hwy::HWY_NAMESPACE;
+double Sum(const double* x, size_t n)
+{
+  const hn::ScalableTag<double> d;
+  auto acc = hn::Zero(d);
+  for (size_t i = 0; i < n; i += hn::Lanes(d))
+    acc = hn::Add(acc, hn::CallLog(d, hn::LoadN(d, x + i, n - i)));
+  return hn::ReduceSum(d, acc);
+}
+}  // namespace HWY_NAMESPACE
+}  // namespace probe
+HWY_AFTER_NAMESPACE();
+
+#if HWY_ONCE
+namespace probe { HWY_EXPORT(Sum); }
+int main()
+{
+  const double x[3] = {1.0, 1.0, 1.0};
+  return HWY_DYNAMIC_DISPATCH(probe::Sum)(x, 3) == 0.0 ? 0 : 1;
+}
+#endif
+PROBE
+  if (cd "$TMP" && $CXX $CXXFLAGS $CPPFLAGS -I. $HWY_DEFINE $HWY_CPPFLAGS \
+        probe.cpp -o probe $LDFLAGS $HWY_LIBS) >/dev/null 2>&1; then
+    echo "configure: found Google Highway via pkg-config -- SIMD backends enabled"
+  else
+    echo "configure: Google Highway found but a test program failed to compile -- scalar backends enabled"
+    HWY_CPPFLAGS=""
+    HWY_LIBS=""
+    HWY_DEFINE=""
+  fi
+  rm -rf "$TMP"
 else
   echo "configure: Google Highway (libhwy) not found -- scalar backends enabled"
 fi

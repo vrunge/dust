@@ -1,4 +1,4 @@
-// Highway candidate scan for all MD methods, compiled for each SIMD target.
+/// MD DUST: Highway scan of the candidates (compiled for each SIMD target)
 #if defined(MD_DUST_INL_H_) == defined(HWY_TARGET_TOGGLE)
 #ifdef MD_DUST_INL_H_
 #undef MD_DUST_INL_H_
@@ -36,6 +36,42 @@ std::pair<double, size_t> ScanModel(const State& s, const double* current,
       cost = hn::Add(cost, CostMin<K>(
         d, hn::Sub(hn::Set(d, current[row]),
                    hn::LoadN(d, s.sums[row].data() + i, count)), span));
+    cost = hn::Add(cost, hn::LoadN(d, s.cost.data() + i, count));
+    hn::StoreN(cost, d, block, count);
+    for (size_t j = 0; j < count; ++j)
+    {
+      const double candidate = block[j];
+      if (values) (*values)[i + j] = candidate;
+      if (candidate < best) { best = candidate; argmin = i + j; }
+    }
+  }
+  return {best, argmin};
+}
+
+/// VARIANCE model: same scan with the rounding errors of the sums
+std::pair<double, size_t> ScanVariance(const State& s, const double* current,
+                                       const double* current_lo, double t,
+                                       std::vector<double>* values)
+{
+  const hn::ScalableTag<double> d;
+  const size_t lanes = hn::Lanes(d), k = s.pos.size();
+  const auto vt = hn::Set(d, t);
+  double best = std::numeric_limits<double>::infinity();
+  size_t argmin = 0;
+  double block[hn::MaxLanes(d)];
+  if (values) values->resize(k);
+  for (size_t i = 0; i < k; i += lanes)
+  {
+    const size_t count = std::min(lanes, k - i);
+    const auto span = hn::Sub(vt, hn::LoadN(d, s.pos.data() + i, count));
+    auto cost = hn::Zero(d);
+    for (size_t row = 0; row < s.sums.size(); ++row)
+    {
+      const auto statistic = hn::Add(
+        hn::Sub(hn::Set(d, current[row]), hn::LoadN(d, s.sums[row].data() + i, count)),
+        hn::Sub(hn::Set(d, current_lo[row]), hn::LoadN(d, s.sums_lo[row].data() + i, count)));
+      cost = hn::Add(cost, CostMin<7>(d, statistic, span));
+    }
     cost = hn::Add(cost, hn::LoadN(d, s.cost.data() + i, count));
     hn::StoreN(cost, d, block, count);
     for (size_t j = 0; j < count; ++j)

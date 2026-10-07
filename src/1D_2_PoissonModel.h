@@ -11,8 +11,6 @@ struct PoissonPolicy
 {
   static inline double statistic(double data) { return data; }
 
-  // See 1D_1_GaussModel.h for why this takes (point, a) rather than
-  // (cumsum, point, t, s).
   static inline double costEval(double point, double a)
   {
     return std::exp(point) - point * a;
@@ -41,12 +39,11 @@ struct PoissonPolicy
     return std::numeric_limits<double>::infinity();
   }
 
-  // Tolerance-based: see 1D_5_BernModel.h for why exact equality isn't
-  // reliable here (a reaches 0 via division, not just via summed zeros).
+  // boundaries with a tolerance (a is obtained by a division)
   static inline bool isLeftBoundary(double a) { return a < 1e-9; }
-  static inline bool isRightBoundary(double a) { return false; } // unbounded above: no right boundary
+  static inline bool isRightBoundary(double a) { return false; } // no right boundary
   static inline double Dstar_leftboundary() { return 0; }
-  static inline double Dstar_rightboundary() { return std::numeric_limits<double>::infinity(); } // unused: isRightBoundary always false
+  static inline double Dstar_rightboundary() { return std::numeric_limits<double>::infinity(); } // not used
   static inline double Dstar_superLinearLimit() { return std::numeric_limits<double>::infinity(); }
 
   static inline double Dstar(double x) { return (x * (std::log(x) - 1.0)); }

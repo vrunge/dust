@@ -6,8 +6,7 @@
 
 using namespace Rcpp;
 
-// Common interface for the scalar segmentation algorithms.
-// Model and pruning specific methods are implemented in DUST_1D_T.
+/// scalar engines: common class (see DUST_1D_T)
 
 class DUST_1D
 {

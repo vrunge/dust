@@ -15,63 +15,37 @@ dataGenerator_MD(
 )
 }
 \arguments{
-\item{chpts}{A vector of strictly increasing positive integer change-point
-indices. The last value is the data length.}
+\item{chpts}{a vector of increasing change-point indices (the last value is data length)}
 
-\item{parameters}{A numeric matrix or data frame with one row per segment
-and one column per component. For \code{"variance"}, parameters are
-standard deviations; for \code{"exp"}, they are rates.}
+\item{parameters}{a matrix or a data frame: one row per segment, one column per time series. For \code{"variance"}, standard deviations; for \code{"exp"}, rates.}
 
-\item{sdNoise}{(type \code{"gauss"}) Noise standard deviation, either one
-value shared by all components or one value per component.}
+\item{sdNoise}{(type \code{"gauss"}) standard deviation of the noise, one value or one value per time series}
 
-\item{gamma}{(type \code{"gauss"}) Exponential decay factors in \eqn{(0,1]}.
-A scalar applies to all segments and components. A vector of length
-\code{length(chpts)} gives segment factors shared by all components.
-A numeric matrix or data frame has one column per component and either
-one row or one row per segment. Decay restarts at each segment.
-The default, 1, gives piecewise constant means.}
+\item{gamma}{(type \code{"gauss"}) coefficient of the exponential decay in (0,1]: one value, one value per segment, or a matrix (one column per time series). By default = 1 for piecewise constant signals.}
 
-\item{nbTrials}{(type \code{"binom"}) Positive integer number of trials,
-either one value shared by all components or one value per component.}
+\item{nbTrials}{(type \code{"binom"}) number of trials, one value or one value per time series}
 
-\item{nbSuccess}{(type \code{"negbin"}) Positive integer number of successes,
-either one value shared by all components or one value per component.}
+\item{nbSuccess}{(type \code{"negbin"}) number of successes, one value or one value per time series}
 
-\item{type}{The common model: \code{"gauss"}, \code{"exp"},
-\code{"poisson"}, \code{"geom"}, \code{"bern"}, \code{"binom"},
-\code{"negbin"}, or \code{"variance"}.}
+\item{type}{the model: \code{"gauss"}, \code{"exp"}, \code{"poisson"}, \code{"geom"}, \code{"bern"}, \code{"binom"}, \code{"negbin"}, \code{"variance"}}
 }
 \value{
-A numeric matrix with components in rows and observations in
-  columns, the orientation expected by \code{\link{dust.MD}}. Its dimensions are
-  \code{ncol(parameters)} by the last value of \code{chpts}.
-  A single component still returns a matrix. Components are generated
-  independently by successive calls to \code{\link{dataGenerator_1D}}.
+a matrix with one time series per row (as in \code{\link{dust.MD}})
 }
 \description{
-Generating independent multivariate time series with shared
-  change points using the models of \code{\link{dataGenerator_1D}}.
+Generating multivariate time series (independent rows) with the same change points, with the models of \code{\link{dataGenerator_1D}}
 }
-\details{
-As in \code{dataGenerator_1D}, the binomial and negative-binomial
-  models return raw counts. Before fitting \code{dust.MD}, normalize these
-  componentwise with \code{\link{data_normalization_1D}}, using the
-  corresponding \code{nbTrials} or \code{nbSuccess} as \code{size}.
+\note{
+For \code{"binom"} and \code{"negbin"}, the counts have to be normalized (\code{\link{data_normalization_1D}} with \code{size}) before using \code{dust.MD}.
 }
 \examples{
-dataGenerator_MD(chpts = c(50, 100),
-                 parameters = data.frame(ts1 = c(0, 1), ts2 = c(2, -1)),
+dataGenerator_MD(chpts = c(50, 100), parameters = data.frame(ts1 = c(0, 1), ts2 = c(2, -1)),
                  sdNoise = c(0.2, 0.5), type = "gauss")
-dataGenerator_MD(chpts = c(50, 100),
-                 parameters = data.frame(ts1 = c(10, 10), ts2 = c(5, 20)),
+dataGenerator_MD(chpts = c(50, 100), parameters = data.frame(ts1 = c(10, 10), ts2 = c(5, 20)),
                  gamma = data.frame(ts1 = c(1, 0.9), ts2 = c(0.8, 1)),
                  sdNoise = 0.2, type = "gauss")
-dataGenerator_MD(chpts = c(50, 100),
-                 parameters = cbind(c(3, 5), c(2, 7)), type = "poisson")
-dataGenerator_MD(chpts = c(50, 100),
-                 parameters = cbind(c(0.4, 0.7), c(0.8, 0.2)),
+dataGenerator_MD(chpts = c(50, 100), parameters = cbind(c(3, 5), c(2, 7)), type = "poisson")
+dataGenerator_MD(chpts = c(50, 100), parameters = cbind(c(0.4, 0.7), c(0.8, 0.2)),
                  nbTrials = c(10, 30), type = "binom")
-dataGenerator_MD(chpts = c(50, 100),
-                 parameters = cbind(c(1, 3), c(2, 0.5)), type = "variance")
+dataGenerator_MD(chpts = c(50, 100), parameters = cbind(c(1, 3), c(2, 0.5)), type = "variance")
 }

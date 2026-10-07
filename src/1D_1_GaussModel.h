@@ -6,12 +6,12 @@
 #include <string>
 #include <limits>
 
-// Gaussian cost with known unit variance.
+/// Gaussian model, variance = 1
 struct GaussPolicy
 {
   static inline double statistic(double data) { return data; }
 
-  // a is the segment mean supplied by the pruning rule.
+  // a = segment mean
   static inline double costEval(double point, double a)
   {
     return point * (0.5 * point - a);

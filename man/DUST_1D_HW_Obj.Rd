@@ -4,6 +4,5 @@
 \alias{DUST_1D_HW_Obj}
 \title{Highway segmentation module}
 \description{
-Rcpp module for the Highway segmentation object used by
-\code{\link{dust.object.1D}}.
+Rcpp module for \code{\link{dust.object.1D}} with Highway.
 }

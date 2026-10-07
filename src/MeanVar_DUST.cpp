@@ -12,8 +12,7 @@ namespace {
 
 constexpr double inf = std::numeric_limits<double>::infinity();
 
-// The cost is the Gaussian negative log likelihood, up to a constant.
-// A singleton or a segment with non-positive empirical variance is invalid.
+/// Gaussian cost (mean and variance), infinite for 1 point or variance 0
 double segment_cost(double sum, double sum2, double len)
 {
   if (len < 2.0) return inf;
@@ -42,15 +41,12 @@ struct DecisionData {
   double m, m2, q;
 };
 
-// Test the maximum of D(x, 0), including its x=0 boundary. A positive
-// value is a pruning certificate; ambiguous floating-point cases keep s.
+/// one constraint: max of D(x, 0) (with x = 0)
 template<bool check_zero_first = false>
 bool one_constraint(const DecisionData& a, const DecisionData& b)
 {
   if (!std::isfinite(a.q) || !std::isfinite(b.q)) {
-    // Match the original meanVar decision test for a candidate with an
-    // infinite prefix cost. Its boundary calculation can remove that
-    // impossible candidate; retaining it changes later constraints.
+    // infinite cost: test of the original meanVar code
     const double va = a.m2 - std::pow(a.m, 2);
     const double vb = b.m2 - std::pow(b.m, 2);
     const double delta2 = std::pow(a.m - b.m, 2);
@@ -83,8 +79,7 @@ bool one_constraint(const DecisionData& a, const DecisionData& b)
     if (evaluate(0.0)) return true;
   }
   if (delta2 == 0.0) {
-    // With equal means the variance is affine in x, and the formula
-    // containing 1/(a.m-b.m)^2 cannot be used.
+    // same means: variance linear in x
     if (linear >= 0.0 && slope < 0.0) return true;
     if (linear > 0.0 && slope == 0.0) return true;
     if (linear == 0.0 || slope == 0.0) return evaluate(0.0);
@@ -93,7 +88,7 @@ bool one_constraint(const DecisionData& a, const DecisionData& b)
   const double x0 = linear / (2.0 * delta2);
   if (slope == 0.0) return evaluate(std::max(0.0, x0));
 
-  // Closed-form stationary point from dust::decisionTest1.
+  // critical point (dust::decisionTest1)
   const double root = x0 * x0 + va / delta2 + 1.0 / (4.0 * slope * slope);
   if (!(root >= 0.0) || !std::isfinite(root)) return evaluate(0.0);
   const double sign = slope > 0.0 ? 1.0 : -1.0;
@@ -148,7 +143,8 @@ public:
   MeanVarDust(std::string method, std::string requested_backend)
     : method_(std::move(method))
   {
-    if (method_ != "1D" && method_ != "2D") stop("method must be '1D' or '2D'");
+    if (method_ != "1D" && method_ != "2D" && method_ != "PELT")
+      stop("method must be '1D', '2D', or 'PELT'");
     if (requested_backend != "highway" && requested_backend != "scalar")
       stop("backend must be 'highway' or 'scalar'");
 #ifdef HAVE_HIGHWAY
@@ -172,20 +168,25 @@ public:
       penalty_ = inPenalty.isNull() ? 4.0 * std::log(static_cast<double>(data.size())) : as<double>(inPenalty);
       sums_.push_back(0.0);
       sums2_.push_back(0.0);
+      sums_lo_.push_back(0.0);
+      sums2_lo_.push_back(0.0);
       costs_.push_back(-penalty_);
       changepoints_.push_back(0);
       active_.push_back(0);
       if (highway_) {
         active_sums_.push_back(0.0);
         active_sums2_.push_back(0.0);
+        active_sums_lo_.push_back(0.0);
+        active_sums2_lo_.push_back(0.0);
         active_costs_.push_back(-penalty_);
         active_positions_.push_back(0.0);
       }
       initialized_ = true;
     }
+    // sums of y and y^2 + rounding errors (see 1D_Variance.h)
     for (double y : data) {
-      sums_.push_back(sums_.back() + y);
-      sums2_.push_back(sums2_.back() + y * y);
+      add(sums_, sums_lo_, y);
+      add(sums2_, sums2_lo_, y * y);
     }
   }
 
@@ -208,8 +209,17 @@ public:
         const uint32_t r2 = i >= 2 ? active_[i - 2] : r1;
         const DecisionData a = stats(s, previous_t, previous_q);
         const DecisionData b1 = stats(r1, s, costs_[s]);
-        const bool prune = method_ == "1D" ? one_constraint<true>(a, b1)
-          : two_constraints(a, b1, stats(r2, s, costs_[s]));
+        bool prune;
+        if (method_ == "PELT") {
+          const double cost = segment_cost(sum1(previous_t, s), sum2(previous_t, s),
+                                           previous_t - s);
+          // no pruning with an infinite cost (segment can become valid)
+          prune = std::isfinite(cost) && previous_q < inf &&
+            costs_[s] + cost > previous_q;
+        } else {
+          prune = method_ == "1D" ? one_constraint<true>(a, b1)
+            : two_constraints(a, b1, stats(r2, s, costs_[s]));
+        }
         drop_[i] = static_cast<uint8_t>(prune);
         any_pruned |= prune;
       }
@@ -222,6 +232,8 @@ public:
           if (highway_) {
             active_sums_[write] = active_sums_[i];
             active_sums2_[write] = active_sums2_[i];
+            active_sums_lo_[write] = active_sums_lo_[i];
+            active_sums2_lo_[write] = active_sums2_lo_[i];
             active_costs_[write] = active_costs_[i];
             active_positions_[write] = active_positions_[i];
           }
@@ -231,6 +243,8 @@ public:
         if (highway_) {
           active_sums_.resize(write);
           active_sums2_.resize(write);
+          active_sums_lo_.resize(write);
+          active_sums2_lo_.resize(write);
           active_costs_.resize(write);
           active_positions_.resize(write);
         }
@@ -240,6 +254,8 @@ public:
       if (highway_) {
         active_sums_.push_back(sums_[t]);
         active_sums2_.push_back(sums2_[t]);
+        active_sums_lo_.push_back(sums_lo_[t]);
+        active_sums2_lo_.push_back(sums2_lo_[t]);
         active_costs_.push_back(qt);
         active_positions_.push_back(static_cast<double>(t));
       }
@@ -273,8 +289,8 @@ public:
       _["data_length"] = sums_.empty() ? 0 : sums_.size() - 1,
       _["current_penalty"] = penalty_,
       _["pruning_algo"] = method_,
-      _["data_statistic"] = sums_,
-      _["data_statistic2"] = sums2_);
+      _["data_statistic"] = combined(sums_, sums_lo_),
+      _["data_statistic2"] = combined(sums2_, sums2_lo_));
   }
 
   List dust(NumericVector data, Nullable<double> penalty)
@@ -285,11 +301,31 @@ public:
   }
 
 private:
+  // TwoSum
+  static void add(std::vector<double>& sums, std::vector<double>& lo, double x)
+  {
+    const double a = sums.back(), sum = a + x, b = sum - a;
+    sums.push_back(sum);
+    lo.push_back(lo.back() + ((a - (sum - b)) + (x - b)));
+  }
+
+  static std::vector<double> combined(const std::vector<double>& sums,
+                                      const std::vector<double>& lo)
+  {
+    std::vector<double> out(sums.size());
+    for (size_t i = 0; i < sums.size(); ++i) out[i] = sums[i] + lo[i];
+    return out;
+  }
+
+  // sums of y and y^2 over (s, t]
+  double sum1(uint32_t t, uint32_t s) const { return (sums_[t] - sums_[s]) + (sums_lo_[t] - sums_lo_[s]); }
+  double sum2(uint32_t t, uint32_t s) const { return (sums2_[t] - sums2_[s]) + (sums2_lo_[t] - sums2_lo_[s]); }
+
   DecisionData stats(uint32_t s, uint32_t t, double qt) const
   {
     const double len = static_cast<double>(t - s);
-    return {(sums_[t] - sums_[s]) / len,
-            (sums2_[t] - sums2_[s]) / len,
+    return {sum1(t, s) / len,
+            sum2(t, s) / len,
             (qt - costs_[s]) / len};
   }
 
@@ -299,8 +335,7 @@ private:
     uint32_t index = 0;
     for (size_t i = active_.size(); i-- > 0;) {
       const uint32_t s = active_[i];
-      const double value = costs_[s]
-        + segment_cost(sums_[t] - sums_[s], sums2_[t] - sums2_[s], t - s);
+      const double value = costs_[s] + segment_cost(sum1(t, s), sum2(t, s), t - s);
       if (value < best) { best = value; index = s; }
     }
     return {best, index};
@@ -310,8 +345,9 @@ private:
   {
 #ifdef HAVE_HIGHWAY
     return HWY_DYNAMIC_DISPATCH(meanvar_hw::Scan)(
-      active_positions_.data(), active_sums_.data(), active_sums2_.data(), active_costs_.data(),
-      active_.data(), active_.size(), t, sums_[t], sums2_[t]);
+      active_positions_.data(), active_sums_.data(), active_sums_lo_.data(),
+      active_sums2_.data(), active_sums2_lo_.data(), active_costs_.data(),
+      active_.data(), active_.size(), t, sums_[t], sums_lo_[t], sums2_[t], sums2_lo_[t]);
 #else
     return scan_scalar(t);
 #endif
@@ -321,7 +357,9 @@ private:
   bool highway_ = false, initialized_ = false;
   double penalty_ = 0.0;
   std::vector<double> sums_, sums2_, costs_;
+  std::vector<double> sums_lo_, sums2_lo_;   // rounding errors
   std::vector<double> active_sums_, active_sums2_, active_costs_, active_positions_;
+  std::vector<double> active_sums_lo_, active_sums2_lo_;
   std::vector<uint8_t> drop_;
   std::vector<uint32_t> active_, changepoints_;
   std::vector<int> counts_;

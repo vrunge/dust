@@ -7,39 +7,23 @@
 DUST.1D.HW(data, penalty = NULL, model = "gauss", method = "DUST")
 }
 \arguments{
-\item{data}{Numeric vector, univariate time series.}
+\item{data}{a numeric vector}
 
-\item{penalty}{Finite nonnegative penalty per change point. Default \code{2*log(length(data))}.}
+\item{penalty}{penalty value, \code{2 log(n)} by default}
 
-\item{model}{One of "gauss", "poisson", "exp", "geom", "bern", "binom", "negbin", "variance".}
+\item{model}{one of "gauss", "poisson", "exp", "geom", "bern", "binom", "negbin", "variance"}
 
-\item{method}{One of "DUST", "DUSTib", "PELT", "OP".}
+\item{method}{one of "DUST", "DUSTib", "PELT", "OP"}
 }
 \value{
-list(changepoints, lastIndexSet, backend, nb, costQ)
+a list with changepoints, lastIndexSet, backend, nb and costQ
 }
 \description{
-Same parameters and options as \code{\link{dust.1D}} -- all 8 cost
-models, all 4 pruning methods -- implemented using
-Google Highway SIMD for DUST, DUSTib, PELT and OP, with a scalar
-fallback when Highway is unavailable. DUSTib implements a tested
-one-constraint inequality certificate. The pruning schedule can change
-candidate counts and the choice among tied optimal segmentations.
+Same as \code{\link{dust.1D}} with the Highway (SIMD) engine.
+Use \code{dust.1D(..., backend = "highway")}.
 }
 \examples{
-### Gaussian series, 4 segments of 500 points, 3 mean shifts.
-### Compare the two backends through the public interface.
-set.seed(20)
-true_chpts <- c(500, 1000, 1500, 2000)
-y <- dataGenerator_1D(chpts = true_chpts, parameters = c(0, 1, -1, 2),
-                       sdNoise = 1, type = "gauss")
-y <- data_normalization_1D(y, type = "gauss")
-penalty <- 2 * log(length(y))
-
-res_hw <- dust.1D(y, penalty, model = "gauss", method = "DUST", backend = "highway")
-res_hw$changepoints  # close to true_chpts
-
-res_ref <- dust.1D(y, penalty, model = "gauss", method = "DUST", backend = "scalar")
-identical(as.integer(res_hw$changepoints), as.integer(res_ref$changepoints))
+y <- dataGenerator_1D(chpts = c(500, 1000), parameters = c(0, 1), type = "gauss")
+dust.1D(y, backend = "highway")$changepoints
 }
 \keyword{internal}

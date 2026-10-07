@@ -2,89 +2,56 @@
 % Please edit documentation in R/dustMD.R
 \name{dust.object.MD}
 \alias{dust.object.MD}
-\title{Create an Incremental Multivariate DUST Object}
+\title{dust.object.MD}
 \usage{
 dust.object.MD(
   model = "gauss",
-  method = "coordinateDescent",
+  method = "exact",
   backend = "highway",
-  constraints = NULL,
+  constraints = 1L,
   nbIterations = NULL,
   epsilon = NULL
 )
 }
 \arguments{
-\item{model}{One of \code{"gauss"}, \code{"poisson"}, \code{"exp"},
-\code{"geom"}, \code{"bern"}, \code{"binom"}, \code{"negbin"}, or
-\code{"variance"}; see \code{\link{dust.1D}}.}
+\item{model}{the model: \code{"gauss"} (default), \code{"poisson"}, \code{"exp"}, \code{"geom"}, \code{"bern"}, \code{"binom"}, \code{"negbin"} or \code{"variance"}}
 
-\item{method}{\code{"coordinateDescent"} (default), \code{"iterative"},
-\code{"QN"}, \code{"randomEval"}, \code{"exact"}, \code{"PELT"}, or
-\code{"OP"}. Coordinate descent minimizes the negative of the concave
-DUST decision function. \code{"iterative"} uses projected gradient ascent
-with backtracking. \code{"QN"} uses safeguarded inverse BFGS updates and
-an Armijo line search. Both search jointly over the selected constraints
-and support all eight models, checking the mean domain at every trial.
-Multipliers forced to zero by a boundary segment mean are held fixed.
-Random evaluation checks sampled feasible points. For \code{model = "gauss"},
-\code{"exact"} solves the joint decision problem over all selected
-constraints by checking stationary faces of a concave quadratic.
-It tries a short active-face search, then enumerates faces if needed.
-The fallback can require exponentially many faces as \code{constraints}
-grows. If numerical rank or optimality checks are inconclusive, the candidate
-is retained. For other models, \code{"exact"} uses \code{"PELT"}.
-These methods prune only
-when a feasible decision value is strictly positive with a numerical
-tolerance. A failed search or exhausted budget retains the candidate;
-a finite search is not guaranteed to find the maximum. \code{"PELT"}
-uses only the decision at zero, and \code{"OP"} does no pruning.}
+\item{method}{the pruning method:
+\itemize{
+  \item \code{"exact"} (default): decision function evaluated at its maximum (closed formula with 1 constraint; with 2 constraints, the two one-constraint maxima and the critical point as in \code{dust.meanVar})
+  \item \code{"coordinateDescent"}: maximization of the decision function, one multiplier at a time
+  \item \code{"QN"}: maximization with a quasi-Newton algorithm (BFGS with Armijo condition)
+  \item \code{"randomEval"}: evaluation at random points
+  \item \code{"PELT"}: PELT pruning rule
+  \item \code{"OP"}: no pruning
+}}
 
-\item{backend}{\code{"highway"} (default) or \code{"scalar"}. Highway is used if
-available in the installed package; otherwise the scalar engine runs.}
+\item{backend}{\code{"highway"} (default) or \code{"scalar"}. The scalar engine is used if Highway is not available.}
 
-\item{constraints}{Number of earlier active indices. \code{NULL} (default)
-uses the number of rows in the first nonempty batch. With Gaussian
-\code{method = "exact"}, these indices are tested jointly.}
+\item{constraints}{number of indices used in the pruning test (1 by default). With \code{NULL}, the number of rows of the data.}
 
-\item{nbIterations}{Positive integer or \code{NULL} (default). A separate
-budget applies to each candidate's pruning test at each time point.
-For \code{"coordinateDescent"}, one iteration is one sweep over all
-selected multiplier coordinates. For \code{"iterative"}, it is one
-projected-gradient step with up to 60 backtracking trials. For
-\code{"QN"}, it is one quasi-Newton step with up to 60 backtracking
-trials and, if needed, one gradient fallback with up to 60 more.
-For \code{"randomEval"}, it is one random draw. Ignored by
-\code{"exact"}, \code{"PELT"}, and \code{"OP"}. When \code{NULL}, the
-effective budget is 10 unless \code{epsilon} is active.
-An explicit \code{nbIterations} takes priority over \code{epsilon}.}
+\item{nbIterations}{number of iterations (sweeps for \code{"coordinateDescent"}, steps for \code{"QN"}, random points for \code{"randomEval"}). By default, 1 for \code{"coordinateDescent"} and 10 otherwise.}
 
-\item{epsilon}{\code{NULL} (default) or a finite nonnegative threshold
-for the absolute gain in the normalized decision function after a
-complete coordinate sweep or an accepted optimizer step. Used only when
-\code{nbIterations}
-is \code{NULL}, with a cap of 1000 sweeps or iterations per candidate.
-The search stops when the gain is at most \code{epsilon}; this is a
-stopping heuristic, not a certificate that the maximum was found.
-Supported by \code{"coordinateDescent"}, \code{"iterative"}, and
-\code{"QN"}. Other methods ignore it, except \code{"randomEval"},
-which rejects an active \code{epsilon} because random draws have no
-meaningful consecutive gain.}
+\item{epsilon}{stopping rule for \code{"coordinateDescent"} and \code{"QN"} when \code{nbIterations} is \code{NULL}: the search stops when the decision function increases by less than \code{epsilon} (at most 1000 iterations)}
 }
 \value{
-An object with \code{append_data(data, penalty)}, \code{update_partition()},
-  \code{get_partition()}, \code{get_info()}, and \code{dust(data, penalty)} methods.
+A DUST object with the methods
+\itemize{
+  \item \code{append_data(data, penalty)}: add new data
+  \item \code{update_partition()}: update the segmentation
+  \item \code{get_partition()}: get the segmentation
+  \item \code{get_info()}: get information about the object
+  \item \code{dust(data, penalty)}: append_data, update_partition and get_partition
+}
 }
 \description{
-Append matrix batches with a fixed number of rows. Call
-\code{update_partition()} after appending and before \code{get_partition()}.
-The first nonempty append fixes the penalty. If it is \code{NULL}, the default
-is \code{2 * nrow(first batch) * log(ncol(first batch))}; later non-\code{NULL}
-penalties must equal it.
+Constructs a DUST object for multivariate data, with methods to add data and update the segmentation
+}
+\details{
+The penalty is fixed at the first call of \code{append_data} (with \code{NULL}, \code{2 * nrow * log(ncol)} of this first data matrix).
 }
 \examples{
-set.seed(14)
-y <- rbind(c(rnorm(50), rnorm(50, 2)),
-           c(rnorm(50), rnorm(50, -1)))
+y <- dataGenerator_MD(chpts = c(50, 100), parameters = cbind(c(0, 2), c(0, -1)), type = "gauss")
 obj <- dust.object.MD(constraints = 2)
 obj$append_data(y[, 1:60], 4 * log(ncol(y)))
 obj$update_partition()

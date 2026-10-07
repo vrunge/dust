@@ -1,4 +1,4 @@
-// Vectorized cost models for the Highway backend.
+/// vectorized models (Highway)
 
 #ifndef DUST_1D_HW_MODELS_H
 #define DUST_1D_HW_MODELS_H
@@ -141,7 +141,7 @@ struct VecGeomPolicy
   static inline V vCostEval(D d, V point, V mean)
   {
     auto logTerm = hn::Sub(hn::Neg(point), hn::Neg(hn::CallLog1p(d, hn::Neg(hn::CallExp(d, point)))));
-    // logTerm = -point + log1p(-exp(point))  (matches scalar exactly)
+    // logTerm = -point + log1p(-exp(point))
     logTerm = hn::Add(hn::Neg(point), hn::CallLog1p(d, hn::Neg(hn::CallExp(d, point))));
     return hn::Sub(hn::Neg(logTerm), hn::Mul(point, mean));
   }
@@ -186,7 +186,7 @@ struct VecBernPolicy
   template <class D, class V> static inline typename hn::Mask<D> vIsRightBoundary(D d, V a) { return hn::Gt(a, hn::Set(d, 1.0-1e-9)); }
   static constexpr double DstarLeftBoundary()  { return 0.0; }
   static constexpr double DstarRightBoundary() { return 0.0; }
-  static constexpr double DstarPrimeAtInfinity() { return 0.0; } // unreachable: xMax never infinite for this model
+  static constexpr double DstarPrimeAtInfinity() { return 0.0; } // not used
 
   template <class D, class V>
   static inline V vCostEval(D d, V point, V mean)
@@ -209,7 +209,7 @@ struct VecBernPolicy
   }
 };
 
-using VecBinomPolicy = VecBernPolicy; // same formulas for normalized Binomial observations
+using VecBinomPolicy = VecBernPolicy; // same as bern
 
 // Negative Binomial model
 struct VecNegbinPolicy

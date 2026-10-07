@@ -10,35 +10,22 @@ using namespace Rcpp;
 #include "preProcessing.h"
 
 
-//' Calculate Standard Deviation or MAD of Differences in a Numeric Vector
+//' sdDiff
 //'
-//' The `sdDiff` function calculates a measure of variability (standard deviation or MAD)
-//' of a numeric vector.
-//' It supports three methods: "HALL", "MAD", and "SD".
+//' @description Estimation of the noise standard deviation from the differences of the data (robust to the changes in mean)
 //'
-//' @param y A numeric vector.
-//' @param method A character string specifying the method to use.
-//'   Options are: \code{"HALL"}, \code{"MAD"}, and \code{"SD"}.
-//'   Default is \code{"HALL"}.
-//'
-//' @return A numeric value representing the calculated measure of variability
-//'   according to the specified method.
-//'   \itemize{
-//'     \item \code{"HALL"}: Calculates the standard deviation using a specific weighted
-//'           difference method (HALL method).
-//'     \item \code{"MAD"}: Returns the MAD (Median Absolute Deviation) of the differences
-//'           between consecutive elements.
-//'     \item \code{"SD"}: Returns the standard deviation of the differences
-//'           between consecutive elements.
-//'   }
+//' @param y a numeric vector
+//' @param method \code{"HALL"} (default), \code{"MAD"} or \code{"SD"}
+//' \itemize{
+//'   \item \code{"HALL"}: Hall estimator (weighted differences)
+//'   \item \code{"MAD"}: MAD of the differences
+//'   \item \code{"SD"}: standard deviation of the differences
+//' }
+//' @return the estimated standard deviation
 //'
 //' @examples
-//' ### 3 segments of 300 points, mean shifts but constant noise sd = 2:
-//' ### all three estimators should recover a value close to 2.
-//' set.seed(30)
-//' y <- dataGenerator_1D(chpts = c(300, 600, 900), parameters = c(0, 1, 0),
-//'                        sdNoise = 2, type = "gauss")
-//' sdDiff(y, "HALL")
+//' y <- dataGenerator_1D(chpts = c(300, 600), parameters = c(0, 1), sdNoise = 2, type = "gauss")
+//' sdDiff(y)
 //' sdDiff(y, "MAD")
 //' sdDiff(y, "SD")
 //'
@@ -164,51 +151,32 @@ double sdDiff(std::vector<double>& y, std::string method = "HALL")
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//' Data Normalization Function
+//' data_normalization_1D
 //'
 //' @name data_normalization_1D
 //'
-//' @description
-//' Normalizes the input time series data `y` according to the specified `type`.
-//' The normalization process depends on the statistical model type, which can be one of the following:
-//' "gauss" (Gaussian/normal distribution), "exp" (exponential distribution),
-//' "poisson" (Poisson distribution), "geom" (geometric distribution),
-//' "bern" (Bernoulli distribution), "binom" (binomial distribution),
-//' "negbin" (negative binomial distribution), or "variance"
-//' Poisson scaling changes the likelihood scale; supply a penalty appropriate
-//' for the scaled data. Binomial and Negative Binomial normalization use a
-//' known size rather than estimating it from the observations.
+//' @description Normalization of the data before using dust.1D with the default penalty
+//' \itemize{
+//'   \item \code{"gauss"}: division by \code{sdDiff(y)}
+//'   \item \code{"poisson"}, \code{"exp"}: division by the mean
+//'   \item \code{"binom"}, \code{"negbin"}: division by \code{size}
+//'   \item \code{"variance"}: the mean is removed
+//'   \item \code{"geom"}, \code{"bern"}: no change
+//' }
 //'
-//' @param y A numeric vector representing the time series to be normalized and then segmented.
-//' @param type A string specifying the model type for normalization.
-//' The available options are "gauss", "exp", "poisson", "geom", "bern", "binom", "negbin", "variance".
-//' The default is "gauss".
-//' @param size Known number of Binomial trials or Negative Binomial size.
-//'   Required for those two models; the observed maximum and an estimated
-//'   dispersion are not substitutes for the known model parameter.
-//' @return A numeric vector that is the normalized version of the input time series `y`.
+//' @param y a numeric vector
+//' @param type the model: \code{"gauss"} (default), \code{"poisson"}, \code{"exp"}, \code{"geom"}, \code{"bern"}, \code{"binom"}, \code{"negbin"}, \code{"variance"}
+//' @param size number of trials (binom) or number of successes (negbin). Required for these two models.
+//' @return the normalized data
 //' @examples
-//' ### Gaussian: 3 segments of 300 points, noise sd = 2 -- normalization
-//' ### rescales by an sdDiff() estimate of the noise, so the result has
-//' ### noise sd close to 1.
-//' set.seed(40)
-//' y <- dataGenerator_1D(chpts = c(300, 600, 900), parameters = c(0, 1, 0),
-//'                        sdNoise = 2, type = "gauss")
-//' y_norm <- data_normalization_1D(y, type = "gauss")
-//' sd(diff(y_norm)) / sqrt(2)  # close to 1
+//' y <- dataGenerator_1D(chpts = c(300, 600), parameters = c(0, 1), sdNoise = 2, type = "gauss")
+//' sdDiff(data_normalization_1D(y))
 //'
-//' ### Poisson: 3 segments of 300 points, rates 2/8/4 -- normalization
-//' ### rescales by the overall mean, so the result has mean close to 1.
-//' set.seed(41)
-//' y <- dataGenerator_1D(chpts = c(300, 600, 900), parameters = c(2, 8, 4), type = "poisson")
-//' y_norm <- data_normalization_1D(y, type = "poisson")
-//' mean(y_norm)  # close to 1
+//' y <- dataGenerator_1D(chpts = c(300, 600), parameters = c(2, 8), type = "poisson")
+//' mean(data_normalization_1D(y, type = "poisson"))
 //'
-//' ### Exponential: 3 segments of 300 points, rates 2/0.5/3
-//' set.seed(42)
-//' y <- dataGenerator_1D(chpts = c(300, 600, 900), parameters = c(2, 0.5, 3), type = "exp")
-//' y_norm <- data_normalization_1D(y, type = "exp")
-//' mean(y_norm)  # close to 1
+//' y <- dataGenerator_1D(chpts = c(300, 600), parameters = c(0.4, 0.7), nbTrials = 5, type = "binom")
+//' data_normalization_1D(y, type = "binom", size = 5)[1:10]
 //'
 //' @export
 // [[Rcpp::export]]

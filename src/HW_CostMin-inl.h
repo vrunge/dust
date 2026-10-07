@@ -1,4 +1,4 @@
-// Segment costs shared by the 1D and MD Highway candidate scans.
+/// segment costs for the Highway scans (1D and MD)
 // Included inside each Highway target namespace.
 template <int K, class D, class V = hn::Vec<D>>
 HWY_INLINE V CostMin(D d, V diff, V dt)

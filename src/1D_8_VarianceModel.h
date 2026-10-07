@@ -9,12 +9,9 @@
 
 struct VariancePolicy
 {
-  // NOTE: unlike every other 1D model, the sufficient statistic recorded
-  // in cumsum is data^2, not data (zero-mean Gaussian, unknown variance).
+  /// statistic = data^2 (gaussian with mean 0)
   static inline double statistic(double data) { return data * data; }
 
-  // See 1D_1_GaussModel.h for why this takes (point, a) rather than
-  // (cumsum, point, t, s).
   static inline double costEval(double point, double a)
   {
     return -0.5 * std::log(-2.0 * point) - point * a;
@@ -40,12 +37,11 @@ struct VariancePolicy
     return std::numeric_limits<double>::infinity();
   }
 
-  // Tolerance-based: see 1D_5_BernModel.h for why exact equality isn't
-  // reliable here (a reaches 0 via division, not just via summed zeros).
+  // boundaries with a tolerance (a is obtained by a division)
   static inline bool isLeftBoundary(double a) { return a < 1e-9; }
-  static inline bool isRightBoundary(double a) { return false; } // unbounded above: no right boundary
+  static inline bool isRightBoundary(double a) { return false; } // no right boundary
   static inline double Dstar_leftboundary() { return std::numeric_limits<double>::infinity(); }
-  static inline double Dstar_rightboundary() { return 0; } // unused: isRightBoundary always false
+  static inline double Dstar_rightboundary() { return 0; } // not used
   static inline double Dstar_superLinearLimit() { return 0; }
 
   static inline double Dstar(double x) { return -0.5 * (std::log(x) + 1.0); }

@@ -6,9 +6,7 @@
 #include <limits>
 #include "1D_DUSTib.h"
 
-// The scalar DUST test evaluates the dual decision function. Runge, Truong
-// and Querné (2025, doi:10.48550/arXiv.2507.02467) compare its pruning
-// performance with PELT and FPOP, including for non-Gaussian models.
+/// DUST pruning tests (Runge, Truong and Querne 2025, arXiv:2507.02467)
 
 template <class Model>
 inline bool isOnePointOrLinear(double a, double b)
@@ -20,8 +18,7 @@ inline bool isOnePointOrLinear(double a, double b)
   return false;
 }
 
-// Bern/Binom are bounded on both sides; every other model only on the
-// left (or not at all).
+// bern/binom bounded on both sides, the other models on the left (or not)
 template <class Model>
 inline bool specialCasePruning(double a,
                                 double b,
@@ -63,26 +60,23 @@ struct DualMax_DUST
 {
   static constexpr const char* name() { return "DUST"; }
 
-  // Evaluate the decision from the four reduced quantities.
   static bool test_abcd(double a, double b, double c, double d)
   {
     double mu_max = Model::muMax(a, b);
 
     if(isOnePointOrLinear<Model>(a,b) == true){return specialCasePruning<Model>(a,b,c,d,mu_max);}
 
-    // If the derivative at zero is negative, the maximum is at the PELT point.
+    // derivative in 0 negative: max in 0 (PELT)
     if(-(a-b)*Model::DstarPrime(a) - (c-d) < 0)
     {
       return (- Model::Dstar(a) -c > 0);
     }
 
     double x_max = Model::xMax(a,b);
-    // theta_star stores the right-hand side of DstarPrime(theta) = R.
-    // costEval takes R directly; the domain check needs DstarPrimeInv(R).
+    // DstarPrime(theta) = R
     double theta_star = -(c-d)/(a-b); // = R
 
-    // if derivative in +inf is positive, the dual is unbounded above on
-    // an infinite domain: pruning succeeds without needing theta_star.
+    // derivative in +inf positive: dual unbounded, we prune
     if(x_max == std::numeric_limits<double>::infinity())
     {
       if(-Model::DstarPrime(std::numeric_limits<double>::infinity()) - (c-d) > 0)
@@ -92,9 +86,9 @@ struct DualMax_DUST
     }
     else
     {
-      // Check whether the stationary point lies beyond the model domain.
+      // critical point outside the domain?
       double theta_at_xmax = a + x_max*(a-b);
-      double theta_crit = Model::DstarPrimeInv(theta_star); // actual critical theta
+      double theta_crit = Model::DstarPrimeInv(theta_star);
       bool overshoot = (a > b) ? (theta_crit >= theta_at_xmax) : (theta_crit <= theta_at_xmax);
       if(overshoot)
       {
@@ -132,6 +126,6 @@ struct DualMax_PELT
   }
 };
 
-// OP uses DUST_1D_OP_T in 1D_OP_Impl.h so that no candidate is pruned.
+/// OP: see 1D_OP_Impl.h
 
 #endif

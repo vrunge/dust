@@ -14,9 +14,7 @@
 #include "1D_7_NegbinModel.h"
 #include "1D_8_VarianceModel.h"
 
-// One-constraint sign certificates for the eight cost models. They use
-// the DUST dual decision function (Runge, Truong and Querné, 2025,
-// doi:10.48550/arXiv.2507.02467) with explicit domain checks.
+/// DUSTib: one-constraint test for the 8 models, with domain checks
 
 namespace dustib {
 constexpr double guard = 64 * std::numeric_limits<double>::epsilon();
@@ -55,7 +53,7 @@ template<int K> struct Math {
     if constexpr (bounded) return a * std::log(a) + (1-a) * std::log1p(-a);
     if constexpr (K == 3) return (a-1) * std::log1p(-1/a) - std::log(a);
     if constexpr (K == 6) {
-      // The log1p(-1/(1+a)) form loses small positive a to rounding.
+      // (log1p(-1/(1+a)) not accurate for small a)
       const double l = a < 1 ? std::log(a) - std::log1p(a) : -std::log1p(1/a);
       return a * l - std::log1p(a);
     }
@@ -112,7 +110,7 @@ inline bool test(double a, double b, double c, double d) {
   if (M::boundary(a)) return pelt;
   const double delta = a-b, e = c-d;
   if constexpr (M::negative) {
-    // e==0 is essential: H grows logarithmically, although G tends to 0.
+    // e == 0 needed: H grows like log, G goes to 0
     if (delta > 0 && e <= 0) return true;
   }
   const double u = delta*M::theta(a);
@@ -127,7 +125,7 @@ inline bool test(double a, double b, double c, double d) {
   if constexpr (V == 2) return inequality();
   else {
     const double m = M::mean(r);
-    // Under/overflow or a rounded endpoint: use the finite conjugate identity.
+    // under/overflow: conjugate identity
     if (!M::valid(m) || M::boundary(m) || !std::isfinite(m)) return inequality();
     const double x = (m-a)/delta;
     if (!(x > 0) || !std::isfinite(x)) return inequality();
@@ -144,7 +142,7 @@ inline bool test(double a, double b, double c, double d) {
     } else {
       const double w = 1/(1+x), mu = x*w;
       const double wf = w*fm, md = mu*d;
-      // mu rounding to 1 destroys the sign certificate at the excluded end.
+      // mu rounded to 1
       if (!(mu < 1) || w == 0) return inequality();
       return pelt || positive(-wf-c+md,std::abs(wf)+std::abs(c)+std::abs(md));
     }

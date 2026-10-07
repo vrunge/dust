@@ -11,17 +11,19 @@ factors <- sim_grid(profile, exp(seq(log(0.001), log(20), length.out = 100)),
                     exp(seq(log(0.001), log(20), length.out = 5)))
 repetitions <- sim_grid(profile, 100L, 2L)
 backend <- Sys.getenv("DUST_SIM_BACKEND", "highway")
-rows <- vector("list", length(models) * length(factors) * repetitions)
-k <- 0L
-set.seed(as.integer(Sys.getenv("DUST_SIM_SEED", "20261005")))
-for (model in models) for (replicate in seq_len(repetitions)) {
-  y <- sim_data(n, model, changes = 0L)
-  for (factor in factors) {
-    fit <- sim_dust(y, model, factor * log(n), backend = backend)
-    k <- k + 1L
-    rows[[k]] <- sim_row("beta", model, "dust", n, replicate, 0L,
-                         factor = factor, candidates = tail(fit$nb, 1L))
-  }
-  message("Completed penalty sweep: model=", model, ", replicate=", replicate)
-}
+tasks <- lapply(seq_len(length(models) * repetitions), function(i) {
+  g <- expand.grid(replicate = seq_len(repetitions), model = models,
+                   stringsAsFactors = FALSE)[i, ]
+  list(model = g$model, replicate = g$replicate)
+})
+rows <- sim_parallel(tasks, function(task) {
+  y <- sim_data(n, task$model, changes = 0L)
+  out <- lapply(factors, function(factor) {
+    fit <- sim_dust(y, task$model, factor * log(n), backend = backend)
+    sim_row("beta", task$model, "dust", n, task$replicate, 0L,
+            factor = factor, candidates = tail(fit$nb, 1L))
+  })
+  message("Completed penalty sweep: model=", task$model, ", replicate=", task$replicate)
+  do.call(rbind, out)
+}, seed = as.integer(Sys.getenv("DUST_SIM_SEED", "20261005")))
 sim_write(do.call(rbind, rows), "beta", profile)

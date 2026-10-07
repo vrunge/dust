@@ -2,56 +2,38 @@
 % Please edit documentation in R/RcppExports.R
 \name{data_normalization_1D}
 \alias{data_normalization_1D}
-\title{Data Normalization Function}
+\title{data_normalization_1D}
 \usage{
 data_normalization_1D(y, type = "gauss", size = NA_real_)
 }
 \arguments{
-\item{y}{A numeric vector representing the time series to be normalized and then segmented.}
+\item{y}{a numeric vector}
 
-\item{type}{A string specifying the model type for normalization.
-The available options are "gauss", "exp", "poisson", "geom", "bern", "binom", "negbin", "variance".
-The default is "gauss".}
+\item{type}{the model: \code{"gauss"} (default), \code{"poisson"}, \code{"exp"}, \code{"geom"}, \code{"bern"}, \code{"binom"}, \code{"negbin"}, \code{"variance"}}
 
-\item{size}{Known number of Binomial trials or Negative Binomial size.
-Required for those two models; the observed maximum and an estimated
-dispersion are not substitutes for the known model parameter.}
+\item{size}{number of trials (binom) or number of successes (negbin). Required for these two models.}
 }
 \value{
-A numeric vector that is the normalized version of the input time series `y`.
+the normalized data
 }
 \description{
-Normalizes the input time series data `y` according to the specified `type`.
-The normalization process depends on the statistical model type, which can be one of the following:
-"gauss" (Gaussian/normal distribution), "exp" (exponential distribution),
-"poisson" (Poisson distribution), "geom" (geometric distribution),
-"bern" (Bernoulli distribution), "binom" (binomial distribution),
-"negbin" (negative binomial distribution), or "variance"
-Poisson scaling changes the likelihood scale; supply a penalty appropriate
-for the scaled data. Binomial and Negative Binomial normalization use a
-known size rather than estimating it from the observations.
+Normalization of the data before using dust.1D with the default penalty
+\itemize{
+  \item \code{"gauss"}: division by \code{sdDiff(y)}
+  \item \code{"poisson"}, \code{"exp"}: division by the mean
+  \item \code{"binom"}, \code{"negbin"}: division by \code{size}
+  \item \code{"variance"}: the mean is removed
+  \item \code{"geom"}, \code{"bern"}: no change
+}
 }
 \examples{
-### Gaussian: 3 segments of 300 points, noise sd = 2 -- normalization
-### rescales by an sdDiff() estimate of the noise, so the result has
-### noise sd close to 1.
-set.seed(40)
-y <- dataGenerator_1D(chpts = c(300, 600, 900), parameters = c(0, 1, 0),
-                       sdNoise = 2, type = "gauss")
-y_norm <- data_normalization_1D(y, type = "gauss")
-sd(diff(y_norm)) / sqrt(2)  # close to 1
+y <- dataGenerator_1D(chpts = c(300, 600), parameters = c(0, 1), sdNoise = 2, type = "gauss")
+sdDiff(data_normalization_1D(y))
 
-### Poisson: 3 segments of 300 points, rates 2/8/4 -- normalization
-### rescales by the overall mean, so the result has mean close to 1.
-set.seed(41)
-y <- dataGenerator_1D(chpts = c(300, 600, 900), parameters = c(2, 8, 4), type = "poisson")
-y_norm <- data_normalization_1D(y, type = "poisson")
-mean(y_norm)  # close to 1
+y <- dataGenerator_1D(chpts = c(300, 600), parameters = c(2, 8), type = "poisson")
+mean(data_normalization_1D(y, type = "poisson"))
 
-### Exponential: 3 segments of 300 points, rates 2/0.5/3
-set.seed(42)
-y <- dataGenerator_1D(chpts = c(300, 600, 900), parameters = c(2, 0.5, 3), type = "exp")
-y_norm <- data_normalization_1D(y, type = "exp")
-mean(y_norm)  # close to 1
+y <- dataGenerator_1D(chpts = c(300, 600), parameters = c(0.4, 0.7), nbTrials = 5, type = "binom")
+data_normalization_1D(y, type = "binom", size = 5)[1:10]
 
 }

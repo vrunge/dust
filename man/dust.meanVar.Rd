@@ -2,7 +2,7 @@
 % Please edit documentation in R/dustmeanVar.R
 \name{dust.meanVar}
 \alias{dust.meanVar}
-\title{Detect Changes in Both Gaussian Mean and Variance}
+\title{Change-Point Detection in Mean and Variance Using the DUST Algorithm}
 \usage{
 dust.meanVar(
   data,
@@ -12,29 +12,26 @@ dust.meanVar(
 )
 }
 \arguments{
-\item{data}{A finite numeric vector.}
+\item{data}{a numeric vector}
 
-\item{penalty}{Nonnegative penalty per change point. The default is
-\code{4 * log(length(data))}.}
+\item{penalty}{the penalty for a change point. By default, \code{4 log(length(data))}}
 
-\item{method}{\code{"1D"} (default) tests one constraint; \code{"2D"} tests two.
-Both methods fit the same mean-and-variance Gaussian model.}
+\item{method}{\code{"1D"} (default, one constraint), \code{"2D"} (two constraints) or \code{"PELT"}}
 
-\item{backend}{\code{"highway"} (default) uses SIMD when available and otherwise
-falls back to \code{"scalar"}; \code{"scalar"} always uses the scalar engine.
-The former spelling \code{"Highway"} remains an accepted alias.}
+\item{backend}{\code{"highway"} (default) or \code{"scalar"}}
 }
 \value{
-A list with \code{changepoints}, \code{lastIndexSet}, actual \code{backend},
-  \code{nb} (active candidates by time), and \code{costQ} (optimal costs by time).
+A list with \code{changepoints}, \code{lastIndexSet}, \code{backend}, \code{nb} (number of non-pruned indices over time) and \code{costQ} (optimal costs over time)
 }
 \description{
-Detect Changes in Both Gaussian Mean and Variance
+Detection of changes in mean and variance in a Gaussian time series with the DUST pruning rule (two-parameter model).
+}
+\note{
+A segment needs at least two different values to have a finite cost.
 }
 \examples{
-set.seed(1)
 y <- c(rnorm(80), rnorm(80, mean = 2, sd = 1.5))
-dust.meanVar(y, method = "1D")$changepoints
+dust.meanVar(y)$changepoints
 dust.meanVar(y, method = "2D")$changepoints
 }
 \seealso{

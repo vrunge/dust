@@ -17,8 +17,7 @@ dataGenerator_1D(
 \arguments{
 \item{chpts}{a vector of increasing change-point indices (the last value is data length)}
 
-\item{parameters}{Vector of segment parameters. For \code{"variance"} these
-are standard deviations; for \code{"exp"} they are rates.}
+\item{parameters}{vector of the segment parameters (standard deviations for \code{"variance"}, rates for \code{"exp"})}
 
 \item{sdNoise}{(type \code{"gauss"}) standard deviation for the noise parameter}
 

@@ -2,41 +2,29 @@
 % Please edit documentation in R/RcppExports.R
 \name{sdDiff}
 \alias{sdDiff}
-\title{Calculate Standard Deviation or MAD of Differences in a Numeric Vector}
+\title{sdDiff}
 \usage{
 sdDiff(y, method = "HALL")
 }
 \arguments{
-\item{y}{A numeric vector.}
+\item{y}{a numeric vector}
 
-\item{method}{A character string specifying the method to use.
-Options are: \code{"HALL"}, \code{"MAD"}, and \code{"SD"}.
-Default is \code{"HALL"}.}
+\item{method}{\code{"HALL"} (default), \code{"MAD"} or \code{"SD"}
+\itemize{
+  \item \code{"HALL"}: Hall estimator (weighted differences)
+  \item \code{"MAD"}: MAD of the differences
+  \item \code{"SD"}: standard deviation of the differences
+}}
 }
 \value{
-A numeric value representing the calculated measure of variability
-  according to the specified method.
-  \itemize{
-    \item \code{"HALL"}: Calculates the standard deviation using a specific weighted
-          difference method (HALL method).
-    \item \code{"MAD"}: Returns the MAD (Median Absolute Deviation) of the differences
-          between consecutive elements.
-    \item \code{"SD"}: Returns the standard deviation of the differences
-          between consecutive elements.
-  }
+the estimated standard deviation
 }
 \description{
-The `sdDiff` function calculates a measure of variability (standard deviation or MAD)
-of a numeric vector.
-It supports three methods: "HALL", "MAD", and "SD".
+Estimation of the noise standard deviation from the differences of the data (robust to the changes in mean)
 }
 \examples{
-### 3 segments of 300 points, mean shifts but constant noise sd = 2:
-### all three estimators should recover a value close to 2.
-set.seed(30)
-y <- dataGenerator_1D(chpts = c(300, 600, 900), parameters = c(0, 1, 0),
-                       sdNoise = 2, type = "gauss")
-sdDiff(y, "HALL")
+y <- dataGenerator_1D(chpts = c(300, 600), parameters = c(0, 1), sdNoise = 2, type = "gauss")
+sdDiff(y)
 sdDiff(y, "MAD")
 sdDiff(y, "SD")
 

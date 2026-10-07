@@ -5,8 +5,7 @@
 #include <vector>
 #include <limits>
 
-// Active candidates are stored in decreasing order; link_[i] points to the
-// next smaller candidate.
+/// active indices in decreasing order, link_[i] = next smaller index
 
 class Indices_1D
 {
@@ -25,7 +24,6 @@ class Indices_1D
 
     std::forward_list<unsigned int> get_list()
     {
-      // Return the active set in decreasing order.
       std::forward_list<unsigned int> out;
       auto it = out.before_begin();
       for (unsigned int i = front_; i != END; i = link_[i])
@@ -38,7 +36,7 @@ class Indices_1D
     void reset_pruning() { before_ = END; current_ = front_; constraint_ = link_[front_]; }
     void next_pruning() { before_ = current_; current_ = link_[current_]; new_constraint(); }
 
-    // Remove current_ and advance to the next candidate.
+    // remove current_
     void prune_current()
     {
       unsigned int next_elem = link_[current_];
@@ -63,11 +61,9 @@ class Indices_1D
 
     std::vector<unsigned int> link_;
     unsigned int front_ = END;    // largest active index
-    unsigned int current_ = END;  // cursor: OP-step scan, then (same variable,
-                                   // reused sequentially, never concurrently)
-                                   // the index `s` currently tested for pruning
-    unsigned int before_;         // predecessor of current_ in the link chain, or END
-    unsigned int constraint_;     // index `r` = next-smaller active index
+    unsigned int current_ = END;  // OP scan, then index s tested for pruning
+    unsigned int before_;         // previous index in the chain (or END)
+    unsigned int constraint_;     // index r (next smaller active index)
 };
 
 #endif

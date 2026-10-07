@@ -7,8 +7,7 @@
 #'
 #' @description Generating univariate time series for multiple change-point detection based on uni-parametric models of the exponential family
 #' @param chpts a vector of increasing change-point indices (the last value is data length)
-#' @param parameters Vector of segment parameters. For \code{"variance"} these
-#'   are standard deviations; for \code{"exp"} they are rates.
+#' @param parameters vector of the segment parameters (standard deviations for \code{"variance"}, rates for \code{"exp"})
 #' @param sdNoise  (type \code{"gauss"}) standard deviation for the noise parameter
 #' @param gamma (type \code{"gauss"}) vector of numbers between 0 and 1 : the coefficient of the exponential decay. By default = 1 for piecewise constant signals. If one value, it is used for all segments. Otherwise we need as many values as in \code{chpts} vector.
 #' @param nbTrials (type \code{"binom"}) number of trials
