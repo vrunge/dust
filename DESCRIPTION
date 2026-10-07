@@ -1,7 +1,7 @@
 Package: dust
 Type: Package
 Title: Fast Multiple Change-Point Detection Using the DUST Pruning Method
-Version: 0.2.1
+Version: 0.2.2
 Authors@R: c(
     person("Simon", "Querné", email = "simon.querne@gmail.com", role = c("aut")),
     person("Vincent", "Runge", email = "vincent.runge@univ-evry.fr", role = c("aut", "cre")),
