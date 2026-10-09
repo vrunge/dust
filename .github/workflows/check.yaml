@@ -4,11 +4,21 @@ on: [push, pull_request]
 
 jobs:
   check:
-    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - {name: Linux x86-64, runner: ubuntu-latest, r: release}
+          - {name: Linux x86-64 (R devel), runner: ubuntu-latest, r: devel}
+          - {name: Linux ARM64, runner: ubuntu-24.04-arm, r: release}
+          - {name: macOS x86-64, runner: macos-15-intel, r: release}
+          - {name: macOS ARM64, runner: macos-latest, r: release}
+          - {name: Windows x86-64, runner: windows-latest, r: release}
+          - {name: Windows ARM64, runner: windows-11-arm, r: release}
+    env:
+      MAKEFLAGS: -j4
     steps:
       - uses: actions/checkout@v6
         with:
@@ -16,6 +26,8 @@ jobs:
       - name: Google Highway (submodule, latest master)
         run: git submodule update --remote src/highway
       - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.r }}
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::rcmdcheck
