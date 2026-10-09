@@ -3,8 +3,9 @@ CXX_STD = CXX17
 # MinGW checks the printf formats against the Microsoft runtime (no %zu, available in UCRT)
 PKG_CPPFLAGS = -I. -Ihighway -DHWY_HAVE_MULHIGH64=0 -DHWY_HAVE_DIVHIGH64=0 -DHWY_AUTOTUNE_STDSORT \
                -DHWY_BROKEN_AVX10_2=HWY_AVX10_2 -DHWY_DISABLE_FUTEX -D__printf__=__gnu_printf__
-# GCC on Windows does not align the stack for AVX spills (GCC bug 54412)
-PKG_CXXFLAGS = -pthread -Wa,-muse-unaligned-vector-move
+# x86-64: GCC does not align the stack for AVX spills (GCC bug 54412)
+UNALIGNED/x64 = -Wa,-muse-unaligned-vector-move
+PKG_CXXFLAGS = -pthread $(UNALIGNED$(R_ARCH))
 PKG_LIBS = -pthread
 HWY = highway/hwy/aligned_allocator.o highway/hwy/profiler.o highway/hwy/targets.o highway/hwy/timer.o \
       highway/hwy/contrib/thread_pool/thread_pool.o
