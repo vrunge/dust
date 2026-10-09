@@ -9,7 +9,7 @@
 #'
 #' @return the cost of the segmentation (without penalty)
 #'
-#' @details For \code{"gauss"}, \code{sum(data^2)/2} is added to get the negative log-likelihood (up to a constant).
+#' @details Costs are -2 log-likelihoods (the scale of the default penalty). For \code{"gauss"}, \code{sum(data^2)} is added (up to a constant).
 #' Binomial and negative binomial data have to be divided by the number of trials (or successes).
 #'
 #' @examples
@@ -62,7 +62,7 @@ segmentation_Cost_1D <- function(data, chpts, model = "gauss")
   ### to get a 0 cost value in case of a no-noise perfectly well segmented data
   if(model == "gauss")
   {
-    totalCost <- totalCost + sum(data^2)/2
+    totalCost <- totalCost + sum(data^2)
   }
   return(totalCost)
 }
@@ -160,5 +160,5 @@ Cost_1D <- function(S, a, b, model)
     if (diff <= 0) stop("Variance segment statistic must be positive", call. = FALSE)
     cost_value <- 0.5 * delta * (1.0 + log(diff / delta))
   }
-  return(cost_value)
+  return(2 * cost_value)   # -2 log-likelihood
 }

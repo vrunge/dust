@@ -99,7 +99,7 @@ For the Gaussian model, the data should first be normalized with
 - `nb`: the number of indices to consider at each time step (its length
   is equal to data length)
 
-- `costQ`: the minimal (penalized) cost at each time step
+- `costQ`: the minimal penalized cost at each time step (costs: -2 log-likelihood, the scale of the default penalty `2 log(n)`)
 
 Vector `nb` is a kind of complexity control vector, its values are
 directly related to the time complexity of the algorithm.

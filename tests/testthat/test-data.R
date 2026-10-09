@@ -40,7 +40,7 @@ test_that("segmentation_Cost_1D is the cost found by dust.1D", {
     y <- dataGenerator_1D(c(100, 200), list(gauss = c(0, 2), poisson = c(2, 6), variance = c(1, 3))[[model]], type = model)
     res <- dust.1D(y, 2 * log(200), model = model)
     cost <- segmentation_Cost_1D(y, res$changepoints, model)
-    if (model == "gauss") cost <- cost - sum(y^2) / 2
+    if (model == "gauss") cost <- cost - sum(y^2)
     k <- length(res$changepoints) - 1
     expect_equal(tail(res$costQ, 1), cost + k * 2 * log(200), info = model)
   }

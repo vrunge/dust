@@ -45,7 +45,7 @@ public:
   void operator()(size_t t)
   {
     const size_t arg = scan(t);
-    const double qt = val_[arg] + s_.penalty_;
+    const double qt = val_[arg] + s_.penalty_ / 2;
     s_.costs_.push_back(qt);
     s_.previous_.push_back(static_cast<int>(s_.candidates_.position(arg)));
     prune(t);
@@ -237,10 +237,11 @@ Detector& Detector::partial_fit(const double* X, size_t n_samples, size_t n_feat
     if (n_samples_ == 0)
     {
       sums_.reset(series);
-      costs_.push_back(-penalty_);
+      // costs: -log-likelihood with penalty / 2, the segmentation of -2 log-likelihood with penalty
+      costs_.push_back(-penalty_ / 2);
       previous_.push_back(0);
       candidates_.reset(series);
-      candidates_.push(0, -penalty_, sums_);
+      candidates_.push(0, -penalty_ / 2, sums_);
     }
     std::vector<double> statistics(series);
     for (size_t t = 0; t < n_samples; ++t)
@@ -262,6 +263,13 @@ Detector& Detector::partial_fit(const double* X, size_t n_samples, size_t n_feat
   for (int t = previous_[n_samples_]; t != 0; t = previous_[t]) chgpts_.push_back(t);
   std::reverse(chgpts_.begin(), chgpts_.end());
   return *this;
+}
+
+std::vector<double> Detector::min_costs() const
+{
+  std::vector<double> q = fitted(costs_);
+  for (double& v : q) v *= 2;
+  return q;
 }
 
 std::vector<int> Detector::candidates() const

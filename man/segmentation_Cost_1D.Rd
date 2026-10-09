@@ -20,7 +20,7 @@ the cost of the segmentation (without penalty)
 Total cost of a segmentation (sum of the segment costs computed by \code{\link{Cost_1D}})
 }
 \details{
-For \code{"gauss"}, \code{sum(data^2)/2} is added to get the negative log-likelihood (up to a constant).
+Costs are -2 log-likelihoods (the scale of the default penalty). For \code{"gauss"}, \code{sum(data^2)} is added (up to a constant).
 Binomial and negative binomial data have to be divided by the number of trials (or successes).
 }
 \examples{

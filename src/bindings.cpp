@@ -90,7 +90,7 @@ public:
     if (!pending_.empty()) stop("update_partition before requesting a partition");
     std::vector<int> changepoints = detector_->chgpts();
     changepoints.push_back(static_cast<int>(detector_->n_samples()));
-    const std::vector<double>& costs = detector_->min_costs();
+    const std::vector<double> costs = detector_->min_costs();
     return List::create(
       _["changepoints"] = changepoints,
       _["lastIndexSet"] = detector_->candidates(),

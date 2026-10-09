@@ -45,7 +45,8 @@ test_that("Gaussian exact prunes as the maximum of the decision function (conver
     qn <- dust.MD(y, method = "QN", constraints = constraints, nbIterations = 1000)
     expect_identical(exact$nb, qn$nb, info = constraints)
   }
-  expect_lt(sum(dust.MD(y, method = "exact", constraints = 3)$nb), sum(dust.MD(y, method = "PELT")$nb) / 5)
+  penalty <- 4 * 3 * log(400)
+  expect_lt(sum(dust.MD(y, penalty, method = "exact", constraints = 3)$nb), sum(dust.MD(y, penalty, method = "PELT")$nb) / 5)
 })
 
 test_that("dust.object.MD gives the same result with data added step by step", {

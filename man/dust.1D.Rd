@@ -37,7 +37,7 @@ A list containing the information computed by the DUST algorithm.
   \item \code{changepoints}: the sequence of optimal change points solving our penalized optimization problem
   \item \code{lastIndexSet}: the last non-pruned indices at time step n (= data length)
   \item \code{nb}: vector of size n (= data length) recording the number of non-pruned indices over time
-  \item \code{costQ}: vector of size n (= data length) recording the optimal (penalized) segmentation cost over time
+  \item \code{costQ}: vector of size n (= data length) recording the optimal penalized cost over time (costs: -2 log-likelihood)
 }
 }
 \description{

@@ -47,7 +47,7 @@ public:
   const Options& options() const { return options_; }
 
   const std::vector<int>& chgpts() const { return fitted(chgpts_); }        // 0 < tau < n_samples
-  const std::vector<double>& min_costs() const { return fitted(costs_); }   // Q_t, t = 0..n_samples
+  std::vector<double> min_costs() const;   // Q_t, t = 0..n_samples, costs: -2 log-likelihood
   const std::vector<int>& n_candidates() const { return fitted(nb_); }
   std::vector<int> candidates() const;
   size_t n_samples() const { return n_samples_; }

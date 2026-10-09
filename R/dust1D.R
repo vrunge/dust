@@ -22,7 +22,7 @@
 #'   \item \code{changepoints}: the sequence of optimal change points solving our penalized optimization problem
 #'   \item \code{lastIndexSet}: the last non-pruned indices at time step n (= data length)
 #'   \item \code{nb}: vector of size n (= data length) recording the number of non-pruned indices over time
-#'   \item \code{costQ}: vector of size n (= data length) recording the optimal (penalized) segmentation cost over time
+#'   \item \code{costQ}: vector of size n (= data length) recording the optimal penalized cost over time (costs: -2 log-likelihood)
 #' }
 #'
 #' @note The input data should be first normalized by function \code{data_normalization_1D} to use the default penalty in Gaussian model, instead of value \code{2 sdDiff(data)^2 log(length(data))}.
