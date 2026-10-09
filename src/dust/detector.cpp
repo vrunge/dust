@@ -15,7 +15,8 @@ namespace dust {
 
 Detector::Detector(Method method, Cost cost, double penalty, Options options)
   : method_(method), cost_(cost), penalty_(penalty), options_(std::move(options)),
-    scan_(scan_function(cost, method == Method::OP || method == Method::FrontPELT))
+    scan_(scan_function(cost, method == Method::OP ||
+      (method == Method::FrontPELT && cost != Cost::GaussianMeanVariance)))
 {
   const Options& o = options_;
   if (!std::isfinite(penalty) || penalty < 0.0)
@@ -42,8 +43,13 @@ class Detector::Step
 public:
   Step(Detector& s, hwy::ThreadPool* pool) : s_(s), pool_(pool) {}
 
-  void operator()(size_t t)
+  void operator()(size_t t, double value = 0)
   {
+    if constexpr (K == Cost::GaussianMeanVariance)
+    {
+      if (t == 1 || value != s_.meanvar_last_value_) s_.meanvar_run_start_ = t;
+      s_.meanvar_last_value_ = value;
+    }
     const size_t arg = scan(t);
     const double qt = val_[arg] + s_.penalty_ / 2;
     s_.costs_.push_back(qt);
@@ -81,7 +87,9 @@ private:
     switch (s_.method_)
     {
       case Method::OP: return;
-      case Method::FrontPELT: return prune_front(t);
+      case Method::FrontPELT:
+        if constexpr (K == Cost::GaussianMeanVariance) return prune<Dual::None>(t);
+        else return prune_front(t);
       case Method::PELT: return prune<Dual::None>(t);
       case Method::DUST: break;
     }
@@ -114,21 +122,34 @@ private:
     size_t kept = 0;
     for (size_t i = 0; i < k; ++i)
     {
-      if (pelt_prunes(t, i)) continue;
+      if constexpr (K == Cost::GaussianMeanVariance)
+      {
+        const size_t certificate = s_.meanvar_pruned_at_[c.position(i)];
+        // (certificate, t] must contain two different values. Merely waiting
+        // one time step is insufficient when the future data are constant.
+        if (certificate != 0)
+        {
+          if (certificate + 1 < s_.meanvar_run_start_) continue;
+          // Already certified: no need to repeat the dual search while waiting.
+          if (kept != i) c.move(i, kept);
+          ++kept;
+          continue;
+        }
+      }
+      bool remove = pelt_prunes(t, i);
       if constexpr (M == Dual::ClosedForm || M == Dual::ClosedFormIB)
-        if (kept > 0)
+        if (!remove && kept > 0)
         {
           const size_t r = kept - 1;
           const double inv_span = 1.0 / (tt - pos[i]), inv_before = 1.0 / (pos[i] - pos[r]);
           const double a = ((hi_t[0] - hi[i]) + (lo_t[0] - lo[i])) * inv_span;
           const double b = ((hi[i] - hi[r]) + (lo[i] - lo[r])) * inv_before;
           const double cc = (qt - cost[i]) * inv_span, d = (cost[i] - cost[r]) * inv_before;
-          if (M == Dual::ClosedForm ? closed_form_prunes<K>(a, b, cc, d) : closed_form_ib_prunes<K>(a, b, cc, d))
-            continue;
+          remove = M == Dual::ClosedForm ? closed_form_prunes<K>(a, b, cc, d) : closed_form_ib_prunes<K>(a, b, cc, d);
         }
       // a segment of one point has an infinite cost
       if constexpr (M == Dual::MeanVariance)
-        if (kept > 0 && tt - pos[i] >= 2)
+        if (!remove && kept > 0 && tt - pos[i] >= 2)
         {
           const double *hi2 = c.sums_hi(1), *lo2 = c.sums_lo(1);
           const double inv = 1.0 / (tt - pos[i]);
@@ -140,12 +161,20 @@ private:
                            ((hi2[i] - hi2[r]) + (lo2[i] - lo2[r])) * inv, (cost[i] - cost[r]) * inv};
           };
           const Moments b = before(kept - 1);
-          if (s_.options_.constraints == 1 ? mean_variance_prunes(a, b)
-                                           : mean_variance_prunes(a, b, kept >= 2 ? before(kept - 2) : b))
-            continue;
+          remove = s_.options_.constraints == 1 ? mean_variance_prunes(a, b)
+            : mean_variance_prunes(a, b, kept >= 2 ? before(kept - 2) : b);
         }
       if constexpr (M == Dual::Search)
-        if (kept > 0 && search_prunes(t, i, kept)) continue;
+        if (!remove && kept > 0) remove = search_prunes(t, i, kept);
+      if (remove)
+      {
+        if constexpr (K == Cost::GaussianMeanVariance)
+        {
+          size_t& certificate = s_.meanvar_pruned_at_[c.position(i)];
+          if (certificate == 0) certificate = t;
+        }
+        else continue;
+      }
       if (kept != i) c.move(i, kept);
       ++kept;
     }
@@ -214,6 +243,9 @@ Detector& Detector::fit(const double* X, size_t n_samples, size_t n_features)
   previous_.clear();
   nb_.clear();
   chgpts_.clear();
+  meanvar_pruned_at_.clear();
+  meanvar_last_value_ = 0;
+  meanvar_run_start_ = 1;
   return partial_fit(X, n_samples, n_features);
 }
 
@@ -224,8 +256,8 @@ Detector& Detector::partial_fit(const double* X, size_t n_samples, size_t n_feat
     throw std::invalid_argument("the number of features cannot change after the first fit");
   if (cost_ != Cost::GaussianMeanVariance && options_.constraints > static_cast<int>(n_features))
     throw std::invalid_argument("constraints must be between 1 and the number of features");
-  if (method_ == Method::DUST && n_features != 1 &&
-      (cost_ == Cost::GaussianMeanVariance || options_.solver == Solver::ExactIB))
+  if (n_features != 1 && (cost_ == Cost::GaussianMeanVariance ||
+      (method_ == Method::DUST && options_.solver == Solver::ExactIB)))
     throw std::invalid_argument("this solver and cost are for one feature");
   if (n_samples == 0) return *this;
 
@@ -251,16 +283,19 @@ Detector& Detector::partial_fit(const double* X, size_t n_samples, size_t n_feat
     }
     n_samples_ += n_samples;
     n_features_ = n_features;
+    if constexpr (K == Cost::GaussianMeanVariance) meanvar_pruned_at_.resize(n_samples_ + 1, 0);
 
     hwy::AlignedUniquePtr<hwy::ThreadPool> pool;
     if (options_.num_threads > 1) pool = hwy::MakeUniqueAligned<hwy::ThreadPool>(options_.num_threads - 1);
     Step<K> step(*this, pool.get());
-    for (size_t t = costs_.size(); t <= n_samples_; ++t) step(t);
+    const size_t first = costs_.size();
+    for (size_t t = first; t <= n_samples_; ++t)
+      if constexpr (K == Cost::GaussianMeanVariance) step(t, X[(t - first) * n_features]);
+      else step(t);
   });
-  if (!std::isfinite(costs_.back())) throw std::domain_error("no finite segmentation is available for these data");
-
   chgpts_.clear();
-  for (int t = previous_[n_samples_]; t != 0; t = previous_[t]) chgpts_.push_back(t);
+  if (std::isfinite(costs_.back()))
+    for (int t = previous_[n_samples_]; t != 0; t = previous_[t]) chgpts_.push_back(t);
   std::reverse(chgpts_.begin(), chgpts_.end());
   return *this;
 }

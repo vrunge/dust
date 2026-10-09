@@ -8,14 +8,14 @@
 #' @param model the model: \code{"gauss"} (default), \code{"poisson"}, \code{"exp"}, \code{"geom"}, \code{"bern"}, \code{"binom"}, \code{"negbin"} or \code{"variance"}
 #' @param method the pruning method:
 #' \itemize{
-#'   \item \code{"exact"} (default): decision function evaluated at its maximum (closed formula with 1 constraint; with 2 constraints, the two one-constraint maxima and the critical point as in \code{dust.meanVar})
+#'   \item \code{"exact"} (default): Gaussian dual maximization. Other models use numerical one-constraint maxima; with two constraints, axis maxima and unbounded directions, plus an interior critical point in dimension two. In higher dimensions the non-Gaussian test is conservative, not a general exact maximizer.
 #'   \item \code{"coordinateDescent"}: maximization of the decision function, one multiplier at a time
 #'   \item \code{"QN"}: maximization with a quasi-Newton algorithm (BFGS with Armijo condition)
 #'   \item \code{"randomEval"}: evaluation at random points
 #'   \item \code{"PELT"}: PELT pruning rule
 #'   \item \code{"OP"}: no pruning
 #' }
-#' @param constraints number of indices used in the pruning test (the largest active indices smaller than the tested index), between 1 and \code{nrow(data)}. Default is 1.
+#' @param constraints number of indices used in the pruning test (the largest active indices smaller than the tested index), between 1 and \code{nrow(data)}. Default is 1. With \code{"exact"}, non-Gaussian models use at most two constraints.
 #' @param nbIterations number of iterations (sweeps for \code{"coordinateDescent"}, steps for \code{"QN"}, random points for \code{"randomEval"}). By default, 1 for \code{"coordinateDescent"} and 10 otherwise.
 #' @param threads number of threads for the scan of the indices. By default, all the cores for \code{"OP"}, \code{"PELT"} and \code{"PELTpar"} (many indices), 1 otherwise.
 #' @param epsilon stopping rule for \code{"coordinateDescent"} and \code{"QN"} when \code{nbIterations} is \code{NULL}: the search stops when the decision function increases by less than \code{epsilon} (at most 1000 iterations)
@@ -25,7 +25,7 @@
 #'   \item \code{changepoints}: the sequence of optimal change points
 #'   \item \code{lastIndexSet}: the last non-pruned indices at time step n
 #'   \item \code{nb}: number of non-pruned indices over time
-#'   \item \code{costQ}: optimal (penalized) segmentation cost over time
+#'   \item \code{costQ}: optimal penalized cost on the -2 log-likelihood scale, with segmentation-independent terms omitted
 #' }
 #'
 #' @note The pruning is safe: an index is removed only when the decision function is positive.
@@ -59,7 +59,7 @@ dust.MD <- function(data,
 #' @description Constructs a DUST object for multivariate data, with methods to add data and update the segmentation
 #'
 #' @inheritParams dust.MD
-#' @param constraints number of indices used in the pruning test (1 by default). With \code{NULL}, the number of rows of the data.
+#' @param constraints number of indices used in the pruning test (1 by default). With \code{NULL}, the number of rows of the data. With \code{"exact"}, non-Gaussian models use at most two; \code{get_info()} reports this limit.
 #'
 #' @details The penalty is fixed at the first call of \code{append_data} (with \code{NULL}, \code{2 * nrow * log(ncol)} of this first data matrix).
 #'

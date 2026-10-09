@@ -24,7 +24,7 @@ dust.MD(
 
 \item{method}{the pruning method:
 \itemize{
-  \item \code{"exact"} (default): decision function evaluated at its maximum (closed formula with 1 constraint; with 2 constraints, the two one-constraint maxima and the critical point as in \code{dust.meanVar})
+  \item \code{"exact"} (default): Gaussian dual maximization. Other models use numerical one-constraint maxima; with two constraints, axis maxima and unbounded directions, plus an interior critical point in dimension two. In higher dimensions the non-Gaussian test is conservative, not a general exact maximizer.
   \item \code{"coordinateDescent"}: maximization of the decision function, one multiplier at a time
   \item \code{"QN"}: maximization with a quasi-Newton algorithm (BFGS with Armijo condition)
   \item \code{"randomEval"}: evaluation at random points
@@ -32,7 +32,7 @@ dust.MD(
   \item \code{"OP"}: no pruning
 }}
 
-\item{constraints}{number of indices used in the pruning test (the largest active indices smaller than the tested index), between 1 and \code{nrow(data)}. Default is 1.}
+\item{constraints}{number of indices used in the pruning test (the largest active indices smaller than the tested index), between 1 and \code{nrow(data)}. Default is 1. With \code{"exact"}, non-Gaussian models use at most two constraints.}
 
 \item{nbIterations}{number of iterations (sweeps for \code{"coordinateDescent"}, steps for \code{"QN"}, random points for \code{"randomEval"}). By default, 1 for \code{"coordinateDescent"} and 10 otherwise.}
 
@@ -46,7 +46,7 @@ A list containing the information computed by the DUST algorithm.
   \item \code{changepoints}: the sequence of optimal change points
   \item \code{lastIndexSet}: the last non-pruned indices at time step n
   \item \code{nb}: number of non-pruned indices over time
-  \item \code{costQ}: optimal (penalized) segmentation cost over time
+  \item \code{costQ}: optimal penalized cost on the -2 log-likelihood scale, with segmentation-independent terms omitted
 }
 }
 \description{

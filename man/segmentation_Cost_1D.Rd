@@ -20,12 +20,13 @@ the cost of the segmentation (without penalty)
 Total cost of a segmentation (sum of the segment costs computed by \code{\link{Cost_1D}})
 }
 \details{
-Costs are -2 log-likelihoods (the scale of the default penalty). For \code{"gauss"}, \code{sum(data^2)} is added (up to a constant).
-Binomial and negative binomial data have to be divided by the number of trials (or successes).
+Costs are on the -2 log-likelihood scale, with segmentation-independent terms omitted. For \code{"gauss"}, \code{sum(data^2)} is added to obtain the residual sum of squares.
+Binomial and negative binomial data have to be divided by the number of trials (or successes). The returned cost is the likelihood score divided by that size; divide the penalty by the same size.
 }
 \examples{
 data <- dataGenerator_1D(chpts = c(300, 600, 900), parameters = c(0.6, 0.2, 0.4),
                          nbSuccess = 10, type = "negbin")
+data <- data_normalization_1D(data, type = "negbin", size = 10)
 segmentation_Cost_1D(data, c(300, 600, 900), model = "negbin")
 segmentation_Cost_1D(data, c(150, 450, 900), model = "negbin")  # higher cost
 

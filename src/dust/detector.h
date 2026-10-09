@@ -46,8 +46,14 @@ public:
   double penalty() const { return penalty_; }
   const Options& options() const { return options_; }
 
-  const std::vector<int>& chgpts() const { return fitted(chgpts_); }        // 0 < tau < n_samples
-  std::vector<double> min_costs() const;   // Q_t, t = 0..n_samples, costs: -2 log-likelihood
+  const std::vector<int>& chgpts() const
+  {
+    fitted(chgpts_);
+    if (!std::isfinite(costs_.back()))
+      throw std::domain_error("no finite segmentation is available for these data");
+    return chgpts_;   // 0 < tau < n_samples
+  }
+  std::vector<double> min_costs() const;   // Q_t, t = 0..n_samples, -2 log-likelihood up to segmentation-independent terms
   const std::vector<int>& n_candidates() const { return fitted(nb_); }
   std::vector<int> candidates() const;
   size_t n_samples() const { return n_samples_; }
@@ -74,6 +80,9 @@ private:
   std::vector<int> previous_;   // last change point before t
   std::vector<int> nb_;
   std::vector<int> chgpts_;
+  std::vector<size_t> meanvar_pruned_at_;   // certificates awaiting a valid replacement segment
+  double meanvar_last_value_ = 0;
+  size_t meanvar_run_start_ = 1;   // first time in the current run of equal values
 };
 
 } // namespace dust

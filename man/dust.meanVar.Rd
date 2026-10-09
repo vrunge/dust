@@ -28,6 +28,8 @@ Detection of changes in mean and variance in a Gaussian time series with the DUS
 }
 \note{
 A segment needs at least two different values to have a finite cost.
+Pruning certificates are applied only after the replacement segment also contains two different values.
+The \code{nb} counts include candidates waiting for this condition.
 }
 \examples{
 y <- c(rnorm(80), rnorm(80, mean = 2, sd = 1.5))

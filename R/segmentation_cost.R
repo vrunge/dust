@@ -9,12 +9,13 @@
 #'
 #' @return the cost of the segmentation (without penalty)
 #'
-#' @details Costs are -2 log-likelihoods (the scale of the default penalty). For \code{"gauss"}, \code{sum(data^2)} is added (up to a constant).
-#' Binomial and negative binomial data have to be divided by the number of trials (or successes).
+#' @details Costs are on the -2 log-likelihood scale, with segmentation-independent terms omitted. For \code{"gauss"}, \code{sum(data^2)} is added to obtain the residual sum of squares.
+#' Binomial and negative binomial data have to be divided by the number of trials (or successes). The returned cost is the likelihood score divided by that size; divide the penalty by the same size.
 #'
 #' @examples
 #' data <- dataGenerator_1D(chpts = c(300, 600, 900), parameters = c(0.6, 0.2, 0.4),
 #'                          nbSuccess = 10, type = "negbin")
+#' data <- data_normalization_1D(data, type = "negbin", size = 10)
 #' segmentation_Cost_1D(data, c(300, 600, 900), model = "negbin")
 #' segmentation_Cost_1D(data, c(150, 450, 900), model = "negbin")  # higher cost
 #'
@@ -83,6 +84,7 @@ segmentation_Cost_1D <- function(data, chpts, model = "gauss")
 #' @examples
 #' data <- dataGenerator_1D(chpts = c(300, 600), parameters = c(0.6, 0.2),
 #'                          nbSuccess = 10, type = "negbin")
+#' data <- data_normalization_1D(data, type = "negbin", size = 10)
 #' S <- c(0, cumsum(data))
 #' Cost_1D(S, a = 1, b = 301, model = "negbin")  # data[1:300]
 #'

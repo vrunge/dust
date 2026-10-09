@@ -10,6 +10,8 @@
 #' @return A list with \code{changepoints}, \code{lastIndexSet}, \code{nb} (number of non-pruned indices over time) and \code{costQ} (optimal costs over time)
 #'
 #' @note A segment needs at least two different values to have a finite cost.
+#' Pruning certificates are applied only after the replacement segment also contains two different values.
+#' The \code{nb} counts include candidates waiting for this condition.
 #'
 #' @seealso \code{\link{dust.object.meanVar}}
 #'

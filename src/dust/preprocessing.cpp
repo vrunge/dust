@@ -36,15 +36,20 @@ double sd_diff(const std::vector<double>& y, const std::string& method)
   {
     if (!all_finite(y) || y.size() < 5)
       throw std::invalid_argument("y is not a numeric vector or length < 5 (the HALL method cannot be used)");
-    const double weight[4] = {0.1942, 0.2809, 0.3832, -0.8582};
+    constexpr double weight[3] = {0.1942, 0.2809, 0.3832};
+    constexpr double last = weight[0] + weight[1] + weight[2];
+    constexpr double norm = weight[0] * weight[0] + weight[1] * weight[1] +
+      weight[2] * weight[2] + last * last;
     double sum_squares = 0.0;
     for (size_t j = 0; j + 3 < y.size(); ++j)
     {
-      double column = 0.0;
-      for (size_t i = 0; i < 4; ++i) column += weight[i] * y[j + i];
+      // Differences make the filter exactly translation invariant, including
+      // constant data; normalize its squared weights to preserve unit noise scale.
+      const double column = weight[0] * (y[j] - y[j + 3]) +
+        weight[1] * (y[j + 1] - y[j + 3]) + weight[2] * (y[j + 2] - y[j + 3]);
       sum_squares += column * column;
     }
-    return std::sqrt(sum_squares / (y.size() - 3));
+    return std::sqrt(sum_squares / ((y.size() - 3) * norm));
   }
   if (method != "MAD" && method != "SD") throw std::invalid_argument("method must be one of HALL, MAD, or SD");
   if (!all_finite(y) || y.size() < 2)

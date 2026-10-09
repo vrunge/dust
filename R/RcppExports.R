@@ -29,7 +29,7 @@ sdDiff <- function(y, method = "HALL") {
 #'
 #' @name data_normalization_1D
 #'
-#' @description Normalization of the data before using dust.1D with the default penalty
+#' @description Model-specific transformations of univariate data
 #' \itemize{
 #'   \item \code{"gauss"}: division by \code{sdDiff(y)}
 #'   \item \code{"poisson"}, \code{"exp"}: division by the mean
@@ -42,6 +42,10 @@ sdDiff <- function(y, method = "HALL") {
 #' @param type the model: \code{"gauss"} (default), \code{"poisson"}, \code{"exp"}, \code{"geom"}, \code{"bern"}, \code{"binom"}, \code{"negbin"}, \code{"variance"}
 #' @param size number of trials (binom) or number of successes (negbin). Required for these two models.
 #' @return the normalized data
+#' @details For Poisson likelihood segmentation, use the original counts with the default penalty.
+#' If the counts are divided by their mean, divide the penalty by the same mean to preserve the objective.
+#' For binomial and negative binomial data, divide the penalty by \code{size} as well.
+#' Exponential rescaling only adds a segmentation-independent constant to the cost.
 #' @examples
 #' y <- dataGenerator_1D(chpts = c(300, 600), parameters = c(0, 1), sdNoise = 2, type = "gauss")
 #' sdDiff(data_normalization_1D(y))
@@ -56,4 +60,3 @@ sdDiff <- function(y, method = "HALL") {
 data_normalization_1D <- function(y, type = "gauss", size = NA_real_) {
     .Call(`_dust_data_normalization_1D`, y, type, size)
 }
-

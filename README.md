@@ -96,10 +96,10 @@ For the Gaussian model, the data should first be normalized with
 
 - `lastIndexSet`: the non-pruned indices at the end of the analysis
 
-- `nb`: the number of indices to consider at each time step (its length
+- `nb`: the number of indices retained after pruning at each time step (its length
   is equal to data length)
 
-- `costQ`: the minimal penalized cost at each time step (costs: -2 log-likelihood, the scale of the default penalty `2 log(n)`)
+- `costQ`: the minimal penalized cost at each time step, on the -2 log-likelihood scale, with terms independent of the segmentation omitted. For `gauss`, add `sum(y[1:t]^2)` to `costQ[t]` to obtain the residual sum of squares plus the change-point penalties.
 
 Vector `nb` is a kind of complexity control vector, its values are
 directly related to the time complexity of the algorithm.
@@ -123,14 +123,11 @@ The default penalty is `2 * nrow(data) * log(ncol(data))`.
     z <- c(rnorm(100, sd = 0.6), rnorm(100, sd = 2), rnorm(100, mean = 1, sd = 0.8))
     dust.meanVar(z)$changepoints
 
-    ## [1] 100 201 300
-
     dust.meanVar(z, method = "2D")$changepoints
-
-    ## [1] 100 201 300
 
 Here the default penalty is `4 log(n)` and methods `"1D"` and `"2D"` use
 one or two constraints in the pruning test.
+Segments need at least two different values. Pruning certificates are applied only after the replacement segment also contains two different values; `nb` includes candidates waiting for this condition.
 
 [(Back to Top)](#top)
 
@@ -234,14 +231,12 @@ successes</td>
 
     set.seed(5)
     counts <- dataGenerator_1D(chpts = c(60, 120, 180), parameters = c(2, 8, 3), type = "poisson")
-    counts <- data_normalization_1D(counts, type = "poisson")
     dust.1D(counts, model = "poisson")$changepoints
-
-    ## [1]  60 119 180
 
 For binomial and negative binomial data, use
 `data_normalization_1D(y, type, size)` with the number of trials (or
 successes) and divide the penalty by the same value.
+For Poisson likelihood segmentation, use the original counts. If you divide them by their positive mean `m`, divide the penalty by `m` too; leaving the penalty unchanged changes the optimization problem. Exponential rescaling only adds a constant independent of the segmentation.
 
 [(Back to Top)](#top)
 
@@ -270,9 +265,7 @@ For multivariate data (`dust.MD`), the decision function has one
 multiplier per constraint (`constraints` = number of indices used in the
 test, 1 by default) and we can use:
 
-- `"exact"`: evaluation at the maximum of the decision function (closed
-  formula with one constraint, two-constraint rule as in `dust.meanVar`,
-  exact solver for the Gaussian model with more constraints)
+- `"exact"`: Gaussian dual maximization (closed formulas with one or two constraints, a face solver with more). For other models, one-constraint maxima are found numerically; with two constraints, axis maxima and unbounded directions are evaluated, with an interior critical point also considered in dimension two. In higher dimensions this is a conservative pruning test, not a general exact maximizer. These non-Gaussian tests use at most two constraints, including when `constraints = NULL`; `get_info()` reports this limit.
 
 - `"coordinateDescent"`: coordinate descent, `nbIterations` sweeps
 
@@ -293,8 +286,7 @@ test, 1 by default) and we can use:
 
     ## [1]  80 160
 
-All these methods give the same segmentation (the optimal one), only the
-number of non-pruned indices changes.
+These methods target the same optimal penalized objective; their pruning effort and number of non-pruned indices differ. When several segmentations tie, the returned change points need not be identical.
 
 [(Back to Top)](#top)
 
@@ -306,16 +298,11 @@ number of non-pruned indices changes.
 
 ## Pruning Capacity
 
-The vector `nb` gives the number of non-pruned indices over time. With
-no change in the data, PELT keeps almost all the indices while DUST
-keeps very few of them.
+The vector `nb` gives the number of non-pruned indices over time. The following example compares the pruning of DUST and PELT on Gaussian noise without changes. The number retained depends on the data and penalty; DUST typically keeps fewer indices in this setting.
 
     set.seed(21)
     x <- rnorm(10^4)
     c(DUST = mean(dust.1D(x, method = "DUST")$nb), PELT = mean(dust.1D(x, method = "PELT")$nb))
-
-    ##      DUST      PELT 
-    ##   11.6858 5000.5000
 
 The simulations of the paper are in the folder `paper_simulations/` (not
 in the CRAN package).

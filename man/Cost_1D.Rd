@@ -24,6 +24,7 @@ Cost of the segment (a, b] from the cumulative sums of the data
 \examples{
 data <- dataGenerator_1D(chpts = c(300, 600), parameters = c(0.6, 0.2),
                          nbSuccess = 10, type = "negbin")
+data <- data_normalization_1D(data, type = "negbin", size = 10)
 S <- c(0, cumsum(data))
 Cost_1D(S, a = 1, b = 301, model = "negbin")  # data[1:300]
 

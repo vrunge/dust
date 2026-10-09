@@ -17,7 +17,7 @@ data_normalization_1D(y, type = "gauss", size = NA_real_)
 the normalized data
 }
 \description{
-Normalization of the data before using dust.1D with the default penalty
+Model-specific transformations of univariate data
 \itemize{
   \item \code{"gauss"}: division by \code{sdDiff(y)}
   \item \code{"poisson"}, \code{"exp"}: division by the mean
@@ -25,6 +25,12 @@ Normalization of the data before using dust.1D with the default penalty
   \item \code{"variance"}: the mean is removed
   \item \code{"geom"}, \code{"bern"}: no change
 }
+}
+\details{
+For Poisson likelihood segmentation, use the original counts with the default penalty.
+If the counts are divided by their mean, divide the penalty by the same mean to preserve the objective.
+For binomial and negative binomial data, divide the penalty by \code{size} as well.
+Exponential rescaling only adds a segmentation-independent constant to the cost.
 }
 \examples{
 y <- dataGenerator_1D(chpts = c(300, 600), parameters = c(0, 1), sdNoise = 2, type = "gauss")

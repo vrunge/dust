@@ -37,7 +37,7 @@ A list containing the information computed by the DUST algorithm.
   \item \code{changepoints}: the sequence of optimal change points solving our penalized optimization problem
   \item \code{lastIndexSet}: the last non-pruned indices at time step n (= data length)
   \item \code{nb}: vector of size n (= data length) recording the number of non-pruned indices over time
-  \item \code{costQ}: vector of size n (= data length) recording the optimal penalized cost over time (costs: -2 log-likelihood)
+  \item \code{costQ}: vector of size n recording the optimal penalized cost on the -2 log-likelihood scale, with segmentation-independent terms omitted. For Gaussian data, add \code{sum(data[1:t]^2)} to \code{costQ[t]} to obtain the residual sum of squares plus penalties.
 }
 }
 \description{
@@ -54,7 +54,6 @@ y <- data_normalization_1D(y)
 dust.1D(y)$changepoints
 
 y <- dataGenerator_1D(chpts = c(250, 500, 750), parameters = c(2, 8, 3), type = "poisson")
-y <- data_normalization_1D(y, type = "poisson")
 dust.1D(y, model = "poisson")$changepoints
 
 y <- dataGenerator_1D(chpts = c(300, 600), parameters = c(0.6, 0.2), type = "geom")

@@ -62,6 +62,8 @@ public:
     if (d == 0) stop("data must have at least one row");
     if (d_ != 0 && d != d_) stop("the number of rows cannot change after the first append");
     if (n == 0) return;
+    if (cost_ == dust::Cost::GaussianMeanVariance && d != 1)
+      stop("meanVar requires one feature");
     const double dof = cost_ == dust::Cost::GaussianMeanVariance ? 2.0 : static_cast<double>(d);
     if (!detector_)
     {
@@ -79,9 +81,8 @@ public:
   {
     if (pending_.empty()) return;
     RNGScope scope;   // randomEval
-    std::vector<double> data;
-    data.swap(pending_);
-    detector_->partial_fit(data.data(), data.size() / d_, d_);
+    detector_->partial_fit(pending_.data(), pending_.size() / d_, d_);
+    pending_.clear();
   }
 
   List get_partition() const
@@ -100,13 +101,17 @@ public:
 
   List get_info() const
   {
+    size_t constraints = options_.constraints == 0 ? d_ : static_cast<size_t>(options_.constraints);
+    if (parsed_.first == dust::Method::DUST && parsed_.second == dust::Solver::Exact &&
+        cost_ != dust::Cost::GaussianMean && cost_ != dust::Cost::GaussianMeanVariance)
+      constraints = std::min<size_t>(constraints, 2);
     return List::create(
       _["data_length"] = length_,
       _["dimension"] = d_,
       _["current_penalty"] = detector_ ? detector_->penalty() : 0.0,
       _["model"] = model_,
       _["pruning_algo"] = method_,
-      _["constraints"] = options_.constraints == 0 ? d_ : static_cast<size_t>(options_.constraints),
+      _["constraints"] = constraints,
       _["nbIterations"] = options_.iterations,
       _["epsilon"] = options_.epsilon >= 0.0 ? wrap(options_.epsilon) : R_NilValue,
       _["threads"] = options_.num_threads);
@@ -172,7 +177,7 @@ double sdDiff(std::vector<double> y, std::string method = "HALL")
 //'
 //' @name data_normalization_1D
 //'
-//' @description Normalization of the data before using dust.1D with the default penalty
+//' @description Model-specific transformations of univariate data
 //' \itemize{
 //'   \item \code{"gauss"}: division by \code{sdDiff(y)}
 //'   \item \code{"poisson"}, \code{"exp"}: division by the mean
@@ -185,6 +190,10 @@ double sdDiff(std::vector<double> y, std::string method = "HALL")
 //' @param type the model: \code{"gauss"} (default), \code{"poisson"}, \code{"exp"}, \code{"geom"}, \code{"bern"}, \code{"binom"}, \code{"negbin"}, \code{"variance"}
 //' @param size number of trials (binom) or number of successes (negbin). Required for these two models.
 //' @return the normalized data
+//' @details For Poisson likelihood segmentation, use the original counts with the default penalty.
+//' If the counts are divided by their mean, divide the penalty by the same mean to preserve the objective.
+//' For binomial and negative binomial data, divide the penalty by \code{size} as well.
+//' Exponential rescaling only adds a segmentation-independent constant to the cost.
 //' @examples
 //' y <- dataGenerator_1D(chpts = c(300, 600), parameters = c(0, 1), sdNoise = 2, type = "gauss")
 //' sdDiff(data_normalization_1D(y))
