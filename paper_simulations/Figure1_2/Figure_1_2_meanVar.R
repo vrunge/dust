@@ -64,7 +64,7 @@ if (!plot_only) {
 
   summary <- list(n = n, n_rep = n_rep, penalty = penalty, seed = seed,
                   package = "dust", package_version = as.character(packageVersion("dust")),
-                  backend = fit1$backend, one = one, two = two)
+                  one = one, two = two)
   saveRDS(summary, file.path(out_dir, "figure_1_2_summary.rds"))
 
   # A fresh R process draws the figure after the large simulation matrices are released.

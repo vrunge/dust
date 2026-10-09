@@ -1,0 +1,5 @@
+[submodule "src/highway"]
+	path = src/highway
+	url = https://github.com/google/highway.git
+	branch = master
+	ignore = untracked

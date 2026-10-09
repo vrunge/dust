@@ -10,49 +10,25 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// DUST_1D_HW_backend
-CharacterVector DUST_1D_HW_backend();
-RcppExport SEXP _dust_DUST_1D_HW_backend() {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(DUST_1D_HW_backend());
-    return rcpp_result_gen;
-END_RCPP
-}
-// DUST_1D_HW
-List DUST_1D_HW(NumericVector data, Nullable<double> penalty, std::string model, std::string method);
-RcppExport SEXP _dust_DUST_1D_HW(SEXP dataSEXP, SEXP penaltySEXP, SEXP modelSEXP, SEXP methodSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< Nullable<double> >::type penalty(penaltySEXP);
-    Rcpp::traits::input_parameter< std::string >::type model(modelSEXP);
-    Rcpp::traits::input_parameter< std::string >::type method(methodSEXP);
-    rcpp_result_gen = Rcpp::wrap(DUST_1D_HW(data, penalty, model, method));
-    return rcpp_result_gen;
-END_RCPP
-}
 // sdDiff
-double sdDiff(std::vector<double>& y, std::string method);
+double sdDiff(std::vector<double> y, std::string method);
 RcppExport SEXP _dust_sdDiff(SEXP ySEXP, SEXP methodSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::vector<double>& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< std::vector<double> >::type y(ySEXP);
     Rcpp::traits::input_parameter< std::string >::type method(methodSEXP);
     rcpp_result_gen = Rcpp::wrap(sdDiff(y, method));
     return rcpp_result_gen;
 END_RCPP
 }
 // data_normalization_1D
-std::vector<double> data_normalization_1D(std::vector<double>& y, std::string type, double size);
+std::vector<double> data_normalization_1D(std::vector<double> y, std::string type, double size);
 RcppExport SEXP _dust_data_normalization_1D(SEXP ySEXP, SEXP typeSEXP, SEXP sizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::vector<double>& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< std::vector<double> >::type y(ySEXP);
     Rcpp::traits::input_parameter< std::string >::type type(typeSEXP);
     Rcpp::traits::input_parameter< double >::type size(sizeSEXP);
     rcpp_result_gen = Rcpp::wrap(data_normalization_1D(y, type, size));
@@ -60,20 +36,12 @@ BEGIN_RCPP
 END_RCPP
 }
 
-RcppExport SEXP _rcpp_module_boot_DUSTHWMODULE1D();
-RcppExport SEXP _rcpp_module_boot_DUSTMODULEMD();
-RcppExport SEXP _rcpp_module_boot_DUSTMODULEmeanVar2();
-RcppExport SEXP _rcpp_module_boot_DUSTMODULE1D();
+RcppExport SEXP _rcpp_module_boot_DUSTMODULE();
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_dust_DUST_1D_HW_backend", (DL_FUNC) &_dust_DUST_1D_HW_backend, 0},
-    {"_dust_DUST_1D_HW", (DL_FUNC) &_dust_DUST_1D_HW, 4},
     {"_dust_sdDiff", (DL_FUNC) &_dust_sdDiff, 2},
     {"_dust_data_normalization_1D", (DL_FUNC) &_dust_data_normalization_1D, 3},
-    {"_rcpp_module_boot_DUSTHWMODULE1D", (DL_FUNC) &_rcpp_module_boot_DUSTHWMODULE1D, 0},
-    {"_rcpp_module_boot_DUSTMODULEMD", (DL_FUNC) &_rcpp_module_boot_DUSTMODULEMD, 0},
-    {"_rcpp_module_boot_DUSTMODULEmeanVar2", (DL_FUNC) &_rcpp_module_boot_DUSTMODULEmeanVar2, 0},
-    {"_rcpp_module_boot_DUSTMODULE1D", (DL_FUNC) &_rcpp_module_boot_DUSTMODULE1D, 0},
+    {"_rcpp_module_boot_DUSTMODULE", (DL_FUNC) &_rcpp_module_boot_DUSTMODULE, 0},
     {NULL, NULL, 0}
 };
 

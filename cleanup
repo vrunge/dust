@@ -1,6 +1,0 @@
-#!/bin/sh
-# Removes configure-generated files so a fresh `R CMD build` never bundles
-# a stale, machine-specific src/Makevars alongside src/Makevars.in.
-rm -f src/Makevars
-rm -f src/*.o src/*.so src/*.dll
-exit 0

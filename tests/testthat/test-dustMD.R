@@ -17,12 +17,12 @@ test_that("every dust.MD method gives the optimal segmentation (as OP)", {
   for (model in models)
   {
     y <- data_MD(model)
-    op <- dust.MD(y, model = model, method = "OP", backend = "scalar")
+    op <- dust.MD(y, model = model, method = "OP")
     for (method in c("exact", "coordinateDescent", "QN", "randomEval", "PELT"))
-      for (constraints in 1:2) for (backend in c("scalar", "highway"))
+      for (constraints in 1:2)
       {
-        res <- dust.MD(y, model = model, method = method, backend = backend, constraints = constraints)
-        info <- paste(model, method, constraints, backend)
+        res <- dust.MD(y, model = model, method = method, constraints = constraints)
+        info <- paste(model, method, constraints)
         expect_equal(res$costQ, op$costQ, tolerance = 1e-9, info = info)
         expect_equal(res$changepoints, op$changepoints, info = info)
       }
@@ -51,15 +51,15 @@ test_that("Gaussian exact prunes as the maximum of the decision function (conver
 test_that("dust.object.MD gives the same result with data added step by step", {
   set.seed(4)
   y <- data_MD("gauss")
-  for (method in c("exact", "coordinateDescent", "QN")) for (backend in c("scalar", "highway"))
+  for (method in c("exact", "coordinateDescent", "QN"))
   {
-    one <- dust.MD(y, 4 * log(150), method = method, backend = backend, constraints = 2)
-    ob <- dust.object.MD(method = method, backend = backend, constraints = 2)
+    one <- dust.MD(y, 4 * log(150), method = method, constraints = 2)
+    ob <- dust.object.MD(method = method, constraints = 2)
     ob$append_data(y[, 1:40, drop = FALSE], 4 * log(150))
     ob$update_partition()
     ob$append_data(y[, 41:150], NULL)
     ob$update_partition()
-    expect_equal(ob$get_partition(), one, info = paste(method, backend))
+    expect_equal(ob$get_partition(), one, info = method)
   }
 })
 

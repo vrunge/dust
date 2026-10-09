@@ -19,8 +19,7 @@ for (model in models) for (n in sizes) for (spacing in spacing_grid) {
     y <- sim_data_spacing(n, model, spacing)
     penalty <- sim_penalty(n, model)
     for (algorithm in c("dust", "fpop")) {
-      result <- sim_measure(y, model, penalty, algorithm,
-                            backend = Sys.getenv("DUST_SIM_BACKEND", "highway"))
+      result <- sim_measure(y, model, penalty, algorithm)
       k <- length(rows) + 1L
       rows[[k]] <- sim_row("density", model, algorithm, n, replicate,
                            changes, time_sec = result$time_sec)

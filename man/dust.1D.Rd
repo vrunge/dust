@@ -9,7 +9,7 @@ dust.1D(
   penalty = 2 * log(length(data)),
   model = "gauss",
   method = "DUST",
-  backend = "highway"
+  threads = .default_threads(method)
 )
 }
 \arguments{
@@ -25,17 +25,17 @@ dust.1D(
   \item \code{"DUSTib"}: one-constraint test with explicit domain checks
   \item \code{"PELT"}: PELT pruning rule
   \item \code{"OP"}: no pruning
+  \item \code{"PELTpar"}: PELT rule tested only on the smallest candidates, so they stay contiguous (faster scan, with threads)
 }
 The constraint is always the largest non-pruned index smaller than the tested index.}
 
-\item{backend}{\code{"highway"} (default) or \code{"scalar"}. The scalar engine is used if Highway is not available.}
+\item{threads}{number of threads for the scan of the indices. By default, all the cores for \code{"OP"}, \code{"PELT"} and \code{"PELTpar"} (many indices), 1 otherwise.}
 }
 \value{
 A list containing the information computed by the DUST algorithm.
 \itemize{
   \item \code{changepoints}: the sequence of optimal change points solving our penalized optimization problem
   \item \code{lastIndexSet}: the last non-pruned indices at time step n (= data length)
-  \item \code{backend}: the backend used ("highway" or "scalar")
   \item \code{nb}: vector of size n (= data length) recording the number of non-pruned indices over time
   \item \code{costQ}: vector of size n (= data length) recording the optimal (penalized) segmentation cost over time
 }

@@ -1,16 +1,9 @@
-#' Rcpp_DUST_1D Class
+#' Rcpp_Detector Class
 #'
-#' S4 class of the 1D DUST object.
-#'
-#' @keywords internal
-setClass("Rcpp_DUST_1D")
-
-#' Rcpp_DUST_1D_HW_Obj Class
-#'
-#' S4 class of the 1D DUST object (Highway).
+#' S4 class of the change point detection object (\code{\link{dust.object.1D}}, \code{\link{dust.object.MD}}, \code{\link{dust.object.meanVar}}).
 #'
 #' @keywords internal
-setClass("Rcpp_DUST_1D_HW_Obj")
+setClass("Rcpp_Detector")
 
 #' C++Object Class
 #'

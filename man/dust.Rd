@@ -32,6 +32,7 @@ Authors:
 Other contributors:
 \itemize{
   \item Charles Truong \email{ctruong@ens-paris-saclay.fr} [contributor]
+  \item Google LLC (Highway library in src/highway) [copyright holder]
 }
 
 }

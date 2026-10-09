@@ -56,9 +56,9 @@ sim_penalty <- function(n, model, factor = 1) {
   as.numeric(2 * paper_c0[[model]] * factor * log(n) / scale)
 }
 
-sim_dust <- function(y, model, penalty, method = "DUST", backend = "highway") {
+sim_dust <- function(y, model, penalty, method = "DUST") {
   dust::dust.1D(y, penalty = penalty, model = model,
-                method = method, backend = backend)
+                method = method)
 }
 
 sim_compare <- function(y, model, penalty) {
@@ -74,9 +74,9 @@ sim_compare <- function(y, model, penalty) {
   } else stop("no comparison implementation for model: ", model)
 }
 
-sim_measure <- function(y, model, penalty, algorithm = "dust", method = "DUST", backend = "highway") {
+sim_measure <- function(y, model, penalty, algorithm = "dust", method = "DUST") {
   call_fit <- function() {
-    fit <- if (algorithm == "dust") sim_dust(y, model, penalty, method, backend) else sim_compare(y, model, penalty)
+    fit <- if (algorithm == "dust") sim_dust(y, model, penalty, method) else sim_compare(y, model, penalty)
     fit
   }
   benchmark <- microbenchmark::microbenchmark(fit <- call_fit(), times = 1L)

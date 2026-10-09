@@ -4,7 +4,11 @@
 \alias{dust.object.1D}
 \title{dust.object.1D}
 \usage{
-dust.object.1D(model = "gauss", method = "DUST", backend = "highway")
+dust.object.1D(
+  model = "gauss",
+  method = "DUST",
+  threads = .default_threads(method)
+)
 }
 \arguments{
 \item{model}{the model for the data. Available models are:
@@ -19,9 +23,9 @@ dust.object.1D(model = "gauss", method = "DUST", backend = "highway")
   \item \code{"variance"}: Gaussian distribution with mean 0 and unknown variance
 }}
 
-\item{method}{the pruning method: \code{"DUST"} (default), \code{"DUSTib"}, \code{"PELT"} or \code{"OP"} (see \code{\link{dust.1D}})}
+\item{method}{the pruning method: \code{"DUST"} (default), \code{"DUSTib"}, \code{"PELT"}, \code{"PELTpar"} or \code{"OP"} (see \code{\link{dust.1D}})}
 
-\item{backend}{\code{"highway"} (default) or \code{"scalar"}}
+\item{threads}{number of threads (see \code{\link{dust.1D}})}
 }
 \value{
 A DUST 1D object with the methods
@@ -29,7 +33,7 @@ A DUST 1D object with the methods
   \item \code{append_data(data, penalty)}: add new data
   \item \code{update_partition()}: update the segmentation with the new data
   \item \code{get_partition()}: get the segmentation
-  \item \code{get_info()}: get information about the object (parameters, backend)
+  \item \code{get_info()}: get information about the object (parameters)
   \item \code{dust(data, penalty)}: append_data, update_partition and get_partition
 }
 }

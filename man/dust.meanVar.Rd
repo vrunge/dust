@@ -8,7 +8,7 @@ dust.meanVar(
   data,
   penalty = 4 * log(length(data)),
   method = "1D",
-  backend = "highway"
+  threads = .default_threads(method)
 )
 }
 \arguments{
@@ -18,10 +18,10 @@ dust.meanVar(
 
 \item{method}{\code{"1D"} (default, one constraint), \code{"2D"} (two constraints) or \code{"PELT"}}
 
-\item{backend}{\code{"highway"} (default) or \code{"scalar"}}
+\item{threads}{number of threads for the scan of the indices. By default, all the cores for \code{"PELT"} (many indices), 1 otherwise.}
 }
 \value{
-A list with \code{changepoints}, \code{lastIndexSet}, \code{backend}, \code{nb} (number of non-pruned indices over time) and \code{costQ} (optimal costs over time)
+A list with \code{changepoints}, \code{lastIndexSet}, \code{nb} (number of non-pruned indices over time) and \code{costQ} (optimal costs over time)
 }
 \description{
 Detection of changes in mean and variance in a Gaussian time series with the DUST pruning rule (two-parameter model).

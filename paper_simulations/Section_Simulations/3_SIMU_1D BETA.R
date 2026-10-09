@@ -10,7 +10,6 @@ n <- sim_grid(profile, 1e7, 5000L)
 factors <- sim_grid(profile, exp(seq(log(0.001), log(20), length.out = 100)),
                     exp(seq(log(0.001), log(20), length.out = 5)))
 repetitions <- sim_grid(profile, 100L, 2L)
-backend <- Sys.getenv("DUST_SIM_BACKEND", "highway")
 tasks <- lapply(seq_len(length(models) * repetitions), function(i) {
   g <- expand.grid(replicate = seq_len(repetitions), model = models,
                    stringsAsFactors = FALSE)[i, ]
@@ -19,7 +18,7 @@ tasks <- lapply(seq_len(length(models) * repetitions), function(i) {
 rows <- sim_parallel(tasks, function(task) {
   y <- sim_data(n, task$model, changes = 0L)
   out <- lapply(factors, function(factor) {
-    fit <- sim_dust(y, task$model, factor * log(n), backend = backend)
+    fit <- sim_dust(y, task$model, factor * log(n))
     sim_row("beta", task$model, "dust", n, task$replicate, 0L,
             factor = factor, candidates = tail(fit$nb, 1L))
   })

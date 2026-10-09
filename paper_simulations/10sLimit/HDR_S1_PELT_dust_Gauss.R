@@ -38,7 +38,7 @@ for (i in seq(from = 3.5, to = 4.0, by = 0.1)) {
     data <- build_data(n, nb_seg)
 
     timing <- system.time(
-      res <- dust.1D(data, 2 * log(n), model = "gauss", method = "PELT", backend = "highway")
+      res <- dust.1D(data, 2 * log(n), model = "gauss", method = "PELT", threads = 1)
     )
 
     n_detected <- length(res$changepoints)
@@ -97,7 +97,7 @@ for (i in seq(from = 1.08, to = 1.28, by = 0.04)) {
     data <- build_data(n, nb_seg)
 
     timing <- system.time(
-      res <- dust.1D(data, 2 * log(n), model = "gauss", method = "PELT", backend = "highway")
+      res <- dust.1D(data, 2 * log(n), model = "gauss", method = "PELT", threads = 1)
     )
 
     n_detected <- length(res$changepoints)
@@ -156,7 +156,7 @@ for (i in seq(from = 3.5, to = 4.0, by = 0.1)) {
     data <- build_data(n, nb_seg)
 
     timing <- system.time(
-      res <- dust.1D(data, 2 * log(n), model = "gauss", method = "PELT", backend = "highway")
+      res <- dust.1D(data, 2 * log(n), model = "gauss", method = "PELT", threads = 1)
     )
 
     n_detected <- length(res$changepoints)

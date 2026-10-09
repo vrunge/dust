@@ -73,7 +73,7 @@ one_run <- function(job) {
   if (job$rep %% 2L == 0L) methods <- rev(methods)
   rows <- lapply(methods, function(method) {
     elapsed <- unname(system.time(
-      fit <- dust::dust.meanVar(y, penalty = penalty, method = method, backend = "highway")
+      fit <- dust::dust.meanVar(y, penalty = penalty, method = method, threads = 1)
     )[["elapsed"]])
     data.frame(nb_seg = job$nb_seg, rep = job$rep, seed = job$seed, method = method,
                time_s = elapsed,
@@ -119,7 +119,7 @@ summary$mean_segments <- vapply(seq_len(nrow(summary)), function(i) {
 write.csv(timings, file.path(out_dir, "timings.csv"), row.names = FALSE)
 write.csv(summary, file.path(out_dir, "summary.csv"), row.names = FALSE)
 saveRDS(list(n = n, penalty = penalty, repetitions = n_rep, first_rep = first_rep,
-             base_seed = base_seed, workers = workers, backend = "highway",
+             base_seed = base_seed, workers = workers,
              library = find.package("dust"), timings = timings, summary = summary,
              elapsed_s = proc.time()[["elapsed"]] - start,
              dust_version = as.character(utils::packageVersion("dust"))),

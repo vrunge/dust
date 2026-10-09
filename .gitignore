@@ -8,8 +8,7 @@
 README.html
 
 # Local package builds
-src/Makevars
-src/*.o
+src/**/*.o
 src/*.a
 src/*.so
 src/*.dll

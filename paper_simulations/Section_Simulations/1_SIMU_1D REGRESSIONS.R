@@ -9,7 +9,6 @@ models <- c("gauss", "poisson")
 sizes <- sim_grid(profile, exp(seq(log(100), log(1e6), length.out = 100)), c(100, 5000, 7500, 10000))
 sizes <- unique(as.integer(round(sizes)))
 repetitions <- sim_grid(profile, 100L, 2L)
-backend <- Sys.getenv("DUST_SIM_BACKEND", "highway")
 rows <- vector("list", length(models) * length(sizes) * repetitions * 2L)
 k <- 0L
 set.seed(as.integer(Sys.getenv("DUST_SIM_SEED", "20261005")))
@@ -17,7 +16,7 @@ for (model in models) for (replicate in seq_len(repetitions)) for (n in sizes) {
   y <- sim_data(n, model, changes = 0L)
   penalty <- sim_penalty(n, model)
   for (algorithm in c("dust", "fpop")) {
-    result <- sim_measure(y, model, penalty, algorithm, backend = backend)
+    result <- sim_measure(y, model, penalty, algorithm)
     fit <- result$fit
     candidates <- if (algorithm == "dust") tail(fit$nb, 1L) else NA_integer_
     k <- k + 1L

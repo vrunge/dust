@@ -7,10 +7,10 @@
 dust.object.MD(
   model = "gauss",
   method = "exact",
-  backend = "highway",
   constraints = 1L,
   nbIterations = NULL,
-  epsilon = NULL
+  epsilon = NULL,
+  threads = .default_threads(method)
 )
 }
 \arguments{
@@ -26,13 +26,13 @@ dust.object.MD(
   \item \code{"OP"}: no pruning
 }}
 
-\item{backend}{\code{"highway"} (default) or \code{"scalar"}. The scalar engine is used if Highway is not available.}
-
 \item{constraints}{number of indices used in the pruning test (1 by default). With \code{NULL}, the number of rows of the data.}
 
 \item{nbIterations}{number of iterations (sweeps for \code{"coordinateDescent"}, steps for \code{"QN"}, random points for \code{"randomEval"}). By default, 1 for \code{"coordinateDescent"} and 10 otherwise.}
 
 \item{epsilon}{stopping rule for \code{"coordinateDescent"} and \code{"QN"} when \code{nbIterations} is \code{NULL}: the search stops when the decision function increases by less than \code{epsilon} (at most 1000 iterations)}
+
+\item{threads}{number of threads for the scan of the indices. By default, all the cores for \code{"OP"}, \code{"PELT"} and \code{"PELTpar"} (many indices), 1 otherwise.}
 }
 \value{
 A DUST object with the methods

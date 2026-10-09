@@ -14,7 +14,6 @@ profile <- sim_profile()
 models <- c("gauss", "negbin")
 sizes <- sim_grid(profile, c(1e4, 1e8), c(500, 2000))
 repetitions <- sim_grid(profile, 100L, 2L)
-backend <- Sys.getenv("DUST_SIM_BACKEND", "highway")
 tasks <- lapply(seq_len(length(models) * length(sizes) * repetitions), function(i) {
   g <- expand.grid(replicate = seq_len(repetitions), n = sizes, model = models,
                    stringsAsFactors = FALSE)[i, ]
@@ -22,7 +21,7 @@ tasks <- lapply(seq_len(length(models) * length(sizes) * repetitions), function(
 })
 rows <- sim_parallel(tasks, function(task) {
   y <- sim_data(task$n, task$model, changes = 0L)
-  fit <- sim_dust(y, task$model, sim_penalty(task$n, task$model), backend = backend)
+  fit <- sim_dust(y, task$model, sim_penalty(task$n, task$model))
   ticks <- unique(as.integer(round(seq(1, task$n, length.out = min(2000L, task$n)))))
   message("Completed trajectory: model=", task$model, ", n=", task$n, ", replicate=", task$replicate)
   data.frame(

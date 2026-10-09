@@ -1,5 +1,3 @@
-Rcpp::loadModule("DUSTMODULEMD", TRUE)
-
 #' Multiple Change-Point Detection for Multivariate Data Using the DUST Algorithm
 #'
 #' @description Change-point detection in independent multivariate time series with the DUST pruning rule.
@@ -17,16 +15,15 @@ Rcpp::loadModule("DUSTMODULEMD", TRUE)
 #'   \item \code{"PELT"}: PELT pruning rule
 #'   \item \code{"OP"}: no pruning
 #' }
-#' @param backend \code{"highway"} (default) or \code{"scalar"}. The scalar engine is used if Highway is not available.
 #' @param constraints number of indices used in the pruning test (the largest active indices smaller than the tested index), between 1 and \code{nrow(data)}. Default is 1.
 #' @param nbIterations number of iterations (sweeps for \code{"coordinateDescent"}, steps for \code{"QN"}, random points for \code{"randomEval"}). By default, 1 for \code{"coordinateDescent"} and 10 otherwise.
+#' @param threads number of threads for the scan of the indices. By default, all the cores for \code{"OP"}, \code{"PELT"} and \code{"PELTpar"} (many indices), 1 otherwise.
 #' @param epsilon stopping rule for \code{"coordinateDescent"} and \code{"QN"} when \code{nbIterations} is \code{NULL}: the search stops when the decision function increases by less than \code{epsilon} (at most 1000 iterations)
 #'
 #' @return A list containing the information computed by the DUST algorithm.
 #' \itemize{
 #'   \item \code{changepoints}: the sequence of optimal change points
 #'   \item \code{lastIndexSet}: the last non-pruned indices at time step n
-#'   \item \code{backend}: the backend used
 #'   \item \code{nb}: number of non-pruned indices over time
 #'   \item \code{costQ}: optimal (penalized) segmentation cost over time
 #' }
@@ -45,16 +42,15 @@ Rcpp::loadModule("DUSTMODULEMD", TRUE)
 dust.MD <- function(data,
                     penalty = 2 * nrow(data) * log(ncol(data)),
                     model = "gauss", method = "exact",
-                    backend = "highway", constraints = 1L,
-                    nbIterations = NULL, epsilon = NULL) {
+                    constraints = 1L, nbIterations = NULL, epsilon = NULL,
+                    threads = .default_threads(method)) {
   if (!is.matrix(data) || !is.numeric(data) ||
       nrow(data) < 1L || ncol(data) < 1L)
     stop("data must be a nonempty numeric matrix", call. = FALSE)
   if (!is.numeric(penalty) || length(penalty) != 1L ||
       !is.finite(penalty) || penalty < 0)
     stop("penalty must be a finite nonnegative number", call. = FALSE)
-  object <- dust.object.MD(model, method, backend, constraints,
-                           nbIterations, epsilon)
+  object <- dust.object.MD(model, method, constraints, nbIterations, epsilon, threads)
   object$dust(data, penalty)
 }
 
@@ -86,13 +82,12 @@ dust.MD <- function(data,
 #' obj$get_partition()$changepoints
 #' @export
 dust.object.MD <- function(model = "gauss", method = "exact",
-                           backend = "highway", constraints = 1L,
-                           nbIterations = NULL, epsilon = NULL) {
+                           constraints = 1L, nbIterations = NULL, epsilon = NULL,
+                           threads = .default_threads(method)) {
   model <- match.arg(model, c("gauss", "poisson", "exp", "geom", "bern",
                               "binom", "negbin", "variance"))
   method <- match.arg(method, c("exact", "coordinateDescent", "QN",
                                "randomEval", "PELT", "OP"))
-  backend <- .dust_backend(backend)
   if (!is.null(constraints) &&
       (!is.numeric(constraints) || length(constraints) != 1L ||
        !is.finite(constraints) || constraints != floor(constraints) ||
@@ -115,7 +110,7 @@ dust.object.MD <- function(model = "gauss", method = "exact",
     method %in% c("coordinateDescent", "QN")
   iterations <- if (!is.null(nbIterations)) nbIterations else
     if (use_epsilon) 1000L else if (method == "coordinateDescent") 1L else 10L
-  new(DUST_MD, model, method, backend,
+  new(Detector, model, method,
       if (is.null(constraints)) 0L else as.integer(constraints),
-      as.integer(iterations), if (use_epsilon) as.double(epsilon) else -1)
+      as.integer(iterations), if (use_epsilon) as.double(epsilon) else -1, as.integer(threads))
 }

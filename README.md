@@ -68,10 +68,7 @@ command:
 
     remotes::install_github("vrunge/dust")
 
-If the Highway library is found (with `pkg-config`), the SIMD backend is
-used. Otherwise, the package uses the scalar engine. Set
-`DUST_FORCE_SCALAR=1` before installation to always use the scalar
-engine.
+The [Google Highway](https://github.com/google/highway) library (SIMD and threads) is a git submodule in `src/highway`, downloaded by `remotes::install_github`. From a clone: `git clone --recursive https://github.com/vrunge/dust` (or `git submodule update --init` in an existing clone), and `git submodule update --remote` to use the latest Highway.
 
 ### A simple example
 
@@ -98,8 +95,6 @@ For the Gaussian model, the data should first be normalized with
   segments)
 
 - `lastIndexSet`: the non-pruned indices at the end of the analysis
-
-- `backend`: the backend used (“highway” or “scalar”)
 
 - `nb`: the number of indices to consider at each time step (its length
   is equal to data length)
@@ -168,7 +163,7 @@ of `append_data`.
 
 `dust.object.meanVar` and `dust.object.MD` work the same way (with
 matrices for `dust.object.MD`). The `get_info` method gives the
-parameters of the object and the backend used.
+parameters of the object.
 
 [(Back to Top)](#top)
 

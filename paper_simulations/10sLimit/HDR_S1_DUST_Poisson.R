@@ -45,7 +45,7 @@ for (i in seq(from = 3.5, to = 4.0, by = 0.1)) {
     data <- data_normalization_1D(build_data(n, nb_seg), type = "poisson")
 
     timing <- system.time(
-      res <- dust.1D(data, penalty = 2 * log(n), model = "poisson", method = "DUST", backend = "highway")
+      res <- dust.1D(data, penalty = 2 * log(n), model = "poisson", method = "DUST")
     )
 
     n_detected <- length(res$changepoints)
@@ -104,7 +104,7 @@ for (i in seq(from = 4.1, to = 4.6, by = 0.1)) {
     data <- data_normalization_1D(build_data(n, nb_seg), type = "poisson")
 
     timing <- system.time(
-      res <- dust.1D(data, penalty = 2 * log(n), model = "poisson", method = "DUST", backend = "highway")
+      res <- dust.1D(data, penalty = 2 * log(n), model = "poisson", method = "DUST")
     )
 
     n_detected <- length(res$changepoints)
@@ -163,7 +163,7 @@ for (i in seq(from = 5.1, to = 5.6, by = 0.1)) {
     data <- data_normalization_1D(build_data(n, nb_seg), type = "poisson")
 
     timing <- system.time(
-      res <- dust.1D(data, penalty = 2 * log(n), model = "poisson", method = "DUST", backend = "highway")
+      res <- dust.1D(data, penalty = 2 * log(n), model = "poisson", method = "DUST")
     )
 
     n_detected <- length(res$changepoints)

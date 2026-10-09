@@ -10,7 +10,10 @@
 ^README\.html$
 ^paper_simulations$
 ^tools$
-^src/Makevars$
 ^src/.*\.(o|so|dll|dylib)$
 ^.*\.Rcheck$
 ^dust_.*\.tar\.gz$
+^src/highway/(?!hwy(/|$)|LICENSE$)
+^src/highway/hwy/(tests|examples)/
+^src/highway/hwy/contrib/(?!math(/|$)|thread_pool(/|$))
+_test\.cc$

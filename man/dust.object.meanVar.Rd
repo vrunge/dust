@@ -4,12 +4,12 @@
 \alias{dust.object.meanVar}
 \title{dust.object.meanVar}
 \usage{
-dust.object.meanVar(method = "1D", backend = "highway")
+dust.object.meanVar(method = "1D", threads = .default_threads(method))
 }
 \arguments{
 \item{method}{\code{"1D"} (default, one constraint), \code{"2D"} (two constraints) or \code{"PELT"}}
 
-\item{backend}{\code{"highway"} (default) or \code{"scalar"}}
+\item{threads}{number of threads for the scan of the indices. By default, all the cores for \code{"PELT"} (many indices), 1 otherwise.}
 }
 \value{
 A DUST object with the methods \code{append_data(data, penalty)}, \code{update_partition()}, \code{get_partition()}, \code{get_info()} and \code{dust(data, penalty)}

@@ -5,9 +5,9 @@
 #' @param data a numeric vector
 #' @param penalty the penalty for a change point. By default, \code{4 log(length(data))}
 #' @param method \code{"1D"} (default, one constraint), \code{"2D"} (two constraints) or \code{"PELT"}
-#' @param backend \code{"highway"} (default) or \code{"scalar"}
+#' @param threads number of threads for the scan of the indices. By default, all the cores for \code{"PELT"} (many indices), 1 otherwise.
 #'
-#' @return A list with \code{changepoints}, \code{lastIndexSet}, \code{backend}, \code{nb} (number of non-pruned indices over time) and \code{costQ} (optimal costs over time)
+#' @return A list with \code{changepoints}, \code{lastIndexSet}, \code{nb} (number of non-pruned indices over time) and \code{costQ} (optimal costs over time)
 #'
 #' @note A segment needs at least two different values to have a finite cost.
 #'
@@ -19,14 +19,13 @@
 #' dust.meanVar(y, method = "2D")$changepoints
 #' @export
 dust.meanVar <- function(data, penalty = 4 * log(length(data)),
-                         method = "1D", backend = "highway") {
+                         method = "1D", threads = .default_threads(method)) {
   method <- match.arg(method, c("1D", "2D", "PELT"))
-  backend <- .dust_backend(backend)
   if (!is.numeric(data) || !is.null(dim(data)) || length(data) == 0L || any(!is.finite(data)))
     stop("data must be a nonempty finite numeric vector", call. = FALSE)
   if (!is.numeric(penalty) || length(penalty) != 1L || !is.finite(penalty) || penalty < 0)
     stop("penalty must be a finite nonnegative number", call. = FALSE)
-  object <- dust.object.meanVar(method, backend)
+  object <- dust.object.meanVar(method, threads)
   object$dust(data, penalty)
 }
 
@@ -49,8 +48,7 @@ dust.meanVar <- function(data, penalty = 4 * log(length(data)),
 #' ob$update_partition()
 #' ob$get_partition()$changepoints
 #' @export
-dust.object.meanVar <- function(method = "1D", backend = "highway") {
+dust.object.meanVar <- function(method = "1D", threads = .default_threads(method)) {
   method <- match.arg(method, c("1D", "2D", "PELT"))
-  backend <- .dust_backend(backend)
-  new(DUST_meanVar2, method, if (backend == "highway") "highway" else "scalar")
+  new(Detector, "meanVar", method, 1L, 1L, -1, as.integer(threads))
 }

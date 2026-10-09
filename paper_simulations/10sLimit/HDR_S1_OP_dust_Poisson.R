@@ -10,7 +10,7 @@ build_data <- function(n, nb_seg) {
 
 ################################################################################
 ################################################################################
-##### method = "OP": a single anchor for all nb_seg (dust.1D, backend = "highway")
+##### method = "OP": a single anchor for all nb_seg (dust.1D)
 ################################################################################
 ################################################################################
 ### method="OP" is now DUST_1D_OP_T/DUST_1D_HW_OP_T, a standalone engine with
@@ -82,7 +82,7 @@ run_op_block <- function(nb_seg) {
       data <- data_normalization_1D(build_data(n, nb_seg), type = "poisson")
 
       timing <- system.time(
-        res <- dust.1D(data, penalty = 2 * log(n), model = "poisson", method = "OP", backend = "highway")
+        res <- dust.1D(data, penalty = 2 * log(n), model = "poisson", method = "OP", threads = 1)
       )
 
       n_detected <- length(res$changepoints)

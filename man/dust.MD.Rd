@@ -9,10 +9,10 @@ dust.MD(
   penalty = 2 * nrow(data) * log(ncol(data)),
   model = "gauss",
   method = "exact",
-  backend = "highway",
   constraints = 1L,
   nbIterations = NULL,
-  epsilon = NULL
+  epsilon = NULL,
+  threads = .default_threads(method)
 )
 }
 \arguments{
@@ -32,20 +32,19 @@ dust.MD(
   \item \code{"OP"}: no pruning
 }}
 
-\item{backend}{\code{"highway"} (default) or \code{"scalar"}. The scalar engine is used if Highway is not available.}
-
 \item{constraints}{number of indices used in the pruning test (the largest active indices smaller than the tested index), between 1 and \code{nrow(data)}. Default is 1.}
 
 \item{nbIterations}{number of iterations (sweeps for \code{"coordinateDescent"}, steps for \code{"QN"}, random points for \code{"randomEval"}). By default, 1 for \code{"coordinateDescent"} and 10 otherwise.}
 
 \item{epsilon}{stopping rule for \code{"coordinateDescent"} and \code{"QN"} when \code{nbIterations} is \code{NULL}: the search stops when the decision function increases by less than \code{epsilon} (at most 1000 iterations)}
+
+\item{threads}{number of threads for the scan of the indices. By default, all the cores for \code{"OP"}, \code{"PELT"} and \code{"PELTpar"} (many indices), 1 otherwise.}
 }
 \value{
 A list containing the information computed by the DUST algorithm.
 \itemize{
   \item \code{changepoints}: the sequence of optimal change points
   \item \code{lastIndexSet}: the last non-pruned indices at time step n
-  \item \code{backend}: the backend used
   \item \code{nb}: number of non-pruned indices over time
   \item \code{costQ}: optimal (penalized) segmentation cost over time
 }
