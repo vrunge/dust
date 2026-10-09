@@ -1,5 +1,4 @@
-## default number of threads: all the cores for the methods keeping many
-## indices (OP, PELT, PELTpar), 2 under R CMD check --as-cran, 1 otherwise
+## all the cores for the methods keeping many indices (2 under R CMD check --as-cran)
 .default_threads <- function(method)
 {
   if (!method[1] %in% c("OP", "PELT", "PELTpar")) return(1L)

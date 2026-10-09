@@ -1,5 +1,3 @@
-/// R bindings of the C++ core (src/dust): R names, R defaults and conversions
-
 #include <Rcpp.h>
 #include <optional>
 
@@ -23,7 +21,7 @@ dust::Cost parse_model(const std::string& model)
   stop("Unrecognized model \"" + model + "\".");
 }
 
-/// R method names: method and solver (meanVar "1D" and "2D": DUST with 1 or 2 constraints)
+/// meanVar "1D" and "2D": DUST with 1 or 2 constraints
 std::pair<dust::Method, dust::Solver> parse_method(const std::string& method)
 {
   using M = dust::Method;
@@ -38,9 +36,7 @@ std::pair<dust::Method, dust::Solver> parse_method(const std::string& method)
   stop("Unrecognized method \"" + method + "\".");
 }
 
-/// R object: data added with append_data, analysed with update_partition.
-/// The detector is built at the first nonempty append (the default penalty
-/// 2 * dof * log(n) depends on the first data).
+/// built at the first nonempty append: the default penalty depends on the first data
 class RDetector
 {
 public:
@@ -51,11 +47,9 @@ public:
   {
     options_ = {parsed_.second, method_ == "2D" ? 2 : constraints, iterations, epsilon, threads,
                 [] { return unif_rand(); }};
-    // checks the parameters now
     dust::Detector(parsed_.first, cost_, 0.0, options_);
   }
 
-  /// data: a vector (one feature) or a matrix (one feature per row)
   void append_data(NumericVector data, Nullable<double> penalty)
   {
     size_t d = 1, n = data.size();

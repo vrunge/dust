@@ -1,4 +1,4 @@
-/// Highway errors as C++ exceptions (instead of a message on stderr and abort)
+/// Highway errors as exceptions (no stderr, no abort in R)
 
 #include <cstdarg>
 #include <cstdio>

@@ -1,6 +1,3 @@
-/// Multivariate pruning test: the decision function and its derivatives
-/// (searches in exact_search.h, coordinate_search.h, qn_search.h, random_search.h)
-
 #ifndef DUST_DECISION_H
 #define DUST_DECISION_H
 
@@ -15,7 +12,7 @@
 
 namespace dust {
 
-/// sum of A*(z_i), infinite outside the domain (scale: sum of |A*(z_i)|)
+/// infinite outside the domain
 template <Cost K>
 double sum_conjugate(const std::vector<double>& z, double& scale)
 {
@@ -32,11 +29,9 @@ double sum_conjugate(const std::vector<double>& z, double& scale)
   return total;
 }
 
-/// distance to the boundary of the domain or of a half-space for the searches
 constexpr double kInside = 1e-12;
 
-/// mean moved inside the domain (for the searches only, D is always
-/// evaluated at the true mean)
+/// for the searches only, D is evaluated at the true mean
 template <Cost K>
 double interior_mean(double z)
 {
@@ -45,9 +40,7 @@ double interior_mean(double z)
   else return std::max(z, Family<K>::lower + kInside);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/// decision function D(x) = - sum A*(a + Mx) - c - u.x, x >= 0
-/// (Runge, Truong and Querne 2025, arXiv:2507.02467)
+/// D(x) = - sum A*(a + Mx) - c - u.x, x >= 0
 template <Cost K>
 struct Decision
 {
@@ -57,7 +50,7 @@ struct Decision
   std::vector<double> matrix; // one column per constraint
   std::vector<double> u;
   double c;
-  mutable std::vector<double> scratch, work_x, work_z, work_v;   // workspace
+  mutable std::vector<double> scratch, work_x, work_z, work_v;
 
   void resize(size_t d, size_t k)
   {
@@ -69,7 +62,6 @@ struct Decision
     u.resize(k);
   }
 
-  /// z = a + Mx
   void mean(const std::vector<double>& x, std::vector<double>& z) const
   {
     z.assign(a.begin(), a.end());
@@ -104,8 +96,7 @@ struct Decision
     return dust::positive(score, scale);
   }
 
-  // gradient of D at x (+ trace of the curvature for the first step)
-  // false if x is outside the domain
+  // false outside the domain; trace of the curvature for the first step
   bool derivatives(const std::vector<double>& x,
                    std::vector<double>& gradient, double* trace = nullptr) const
   {
@@ -157,7 +148,6 @@ struct Decision
     return -conjugate - linear_base - u[j] * at;
   }
 
-  // first and second derivative of D along coordinate j
   std::pair<double, double> coordinate_slope_curvature(
     const std::vector<double>& base, size_t j, double at) const
   {
@@ -205,12 +195,7 @@ struct Decision
   }
 };
 
-
-////////////////////////////////////////////////////////////////////////////////
-/// NO PRUNING certificate (weak duality)
-/// for v with M'v + u >= 0 : max D <= A(v) - a.v - c
-/// v = theta(z) at the current point, projected on {M'v + u >= 0}
-/// true if this bound is negative -> we can stop the search
+/// weak duality: max D <= A(v) - a.v - c for M'v + u >= 0, v = theta(z) projected
 template <Cost K>
 bool no_pruning_certificate(const Decision<K>& test, const double* z)
 {
@@ -261,10 +246,7 @@ bool no_pruning_certificate(const Decision<K>& test, const double* z)
   return std::isfinite(bound) && positive(-bound, scale);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/// argmax of D along column j on [lower, upper] (positive slope at lower)
-/// Newton steps inside the bracket, bisection or doubling otherwise
-/// returns {point, unbounded}
+/// argmax of D along column j on [lower, upper]: Newton, bisection or doubling; {point, unbounded}
 template <Cost K>
 std::pair<double, bool> coordinate_argmax(const Decision<K>& test,
                                           const std::vector<double>& base,

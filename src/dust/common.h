@@ -1,5 +1,3 @@
-/// Shared pieces of the segmentation engines
-
 #ifndef DUST_COMMON_H
 #define DUST_COMMON_H
 
@@ -16,10 +14,7 @@ inline bool positive(double value, double scale)
   return std::isfinite(value) && std::isfinite(scale) && value > guard * (1 + scale);
 }
 
-/// prefix sums of d series, (t, row) at t * d + row, t = 0..n
-/// with the rounding errors of the sums in `lo` (TwoSum): with plain sums,
-/// S_t - S_s loses the small values when S_t is large (e.g. y^2 ~ 1e-14
-/// after 1e6 points) and gives false one-point segments
+/// prefix sums of d series at t * d + row, rounding errors in lo (TwoSum: tiny y^2 after large ones)
 struct PrefixSums
 {
   size_t d = 0;
@@ -46,7 +41,6 @@ struct PrefixSums
   const double* hi_at(size_t t) const { return hi.data() + t * d; }
   const double* lo_at(size_t t) const { return lo.data() + t * d; }
 
-  /// sum over (s, t] for series `row`
   double diff(size_t t, size_t s, size_t row) const
   {
     return (hi[t * d + row] - hi[s * d + row]) + (lo[t * d + row] - lo[s * d + row]);

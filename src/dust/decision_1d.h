@@ -1,9 +1,5 @@
-/// Univariate pruning tests with one constraint (Runge, Truong and Querne
-/// 2025, arXiv:2507.02467). Candidate s is pruned at time t if the dual
-///   D(mu) = -(c - mu d) - (1 - mu) A*((a - mu b) / (1 - mu))
-/// is positive for some mu in [0, mu_max], with r < s the constraint and
-///   a = mean on (s, t], b = mean on (r, s],
-///   c = (Q_t - Q_s) / (t - s), d = (Q_s - Q_r) / (s - r).
+/// One feature: s is pruned if D(mu) = -(c - mu d) - (1 - mu) A*((a - mu b) / (1 - mu)) > 0,
+/// a, b the means on (s, t], (r, s] and c, d the slopes of Q on them
 
 #ifndef DUST_DECISION_1D_H
 #define DUST_DECISION_1D_H
@@ -13,17 +9,15 @@
 
 namespace dust {
 
-////////////////////////////////////////////////////////////////////////////////
-/// Solver::Exact: closed-form maximum of the dual
+/// closed-form maximum of D
 template <Cost K>
 bool closed_form_prunes(double a, double b, double c, double d)
 {
   using M = Family<K>;
   constexpr double inf = std::numeric_limits<double>::infinity();
-  // means within 1e-9 of a boundary are on it (a is obtained by a division)
+  // a is a quotient: within 1e-9 of a boundary is on it
   const bool left = K != Cost::GaussianMean && a < M::lower + 1e-9;
   const bool right = M::bounded && a > 1 - 1e-9;
-  // A* on the boundary (infinite for gauss, exp and variance)
   constexpr double bound = K == Cost::GaussianMean || K == Cost::Exponential || K == Cost::GaussianVariance ? inf : 0.0;
 
   double mu_max = 1;
@@ -32,7 +26,7 @@ bool closed_form_prunes(double a, double b, double c, double d)
   else if constexpr (K != Cost::GaussianMean)
     if (b != M::lower) mu_max = std::min(1.0, (a - M::lower) / (b - M::lower));
 
-  // one point segment or same means: D at mu = 0 and mu = mu_max
+  // one-point segment or same means: D at mu = 0 and mu = mu_max
   if (left || right || std::abs(a - b) < 1e-14)
   {
     const double conj = left || right ? bound : M::conjugate(a);
@@ -66,8 +60,7 @@ bool closed_form_prunes(double a, double b, double c, double d)
   return M::partition(theta_star) - theta_star * a > c;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/// Solver::ExactIB (DUSTib): same test with explicit domain checks and rounding guards
+/// same test with explicit domain checks and rounding guards (DUSTib)
 template <Cost K>
 bool closed_form_ib_prunes(double a, double b, double c, double d)
 {
@@ -88,9 +81,7 @@ bool closed_form_ib_prunes(double a, double b, double c, double d)
   return positive(ar - ra - c, std::abs(ar) + std::abs(ra) + std::abs(c));
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/// GaussianMeanVariance (one feature): m and m2 the means of y and y^2 and
-/// q = (Q_t - Q_s) / (t - s) on (s, t], the same on (r, s] for the constraints r
+/// GaussianMeanVariance: means of y and y^2, slope of Q
 struct Moments
 {
   double m, m2, q;
@@ -98,7 +89,6 @@ struct Moments
 
 namespace detail {
 
-/// one constraint: maximum of the dual (x = 0 first if zero_first)
 template <bool zero_first>
 bool one_constraint(const Moments& a, const Moments& b)
 {
@@ -153,7 +143,6 @@ bool one_constraint(const Moments& a, const Moments& b)
   return evaluate(std::max(0.0, x));
 }
 
-/// dual with two constraints at (x1, x2)
 inline double dual(const Moments& a, const Moments& b1, const Moments& b2, double x1, double x2)
 {
   if (!(x1 >= 0.0 && x2 >= 0.0) || !std::isfinite(x1) || !std::isfinite(x2)) return -std::numeric_limits<double>::infinity();
@@ -167,13 +156,11 @@ inline double dual(const Moments& a, const Moments& b1, const Moments& b2, doubl
 
 } // namespace detail
 
-/// one constraint
 inline bool mean_variance_prunes(const Moments& a, const Moments& b)
 {
   return detail::one_constraint<true>(a, b);
 }
 
-/// two constraints: the one-constraint maxima, then the critical point
 inline bool mean_variance_prunes(const Moments& a, const Moments& b1, const Moments& b2)
 {
   if (detail::one_constraint<false>(a, b1) || detail::one_constraint<false>(a, b2)) return true;

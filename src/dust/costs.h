@@ -1,11 +1,4 @@
-/// Costs of a segment
-///
-/// The costs are exponential families with sufficient statistics per sample
-/// and feature: y, or y^2 for GaussianVariance, (y, y^2) for
-/// GaussianMeanVariance. For the one-parameter costs K and the mean a of the
-/// statistic on a segment, the segment cost is -length * conjugate(a). The
-/// pruning tests use the conjugate A*, its derivative theta = A*' (natural
-/// parameter), mean = theta^-1, the log-partition A and the curvature A*''.
+/// Exponential families: segment cost -length * A*(a), a the mean of the statistic
 
 #ifndef DUST_COSTS_H
 #define DUST_COSTS_H
@@ -19,7 +12,6 @@
 
 namespace dust {
 
-/// cost of a segment (Cost::GaussianMean: GaussianMeanCost in the Python package changepoints)
 enum class Cost
 {
   GaussianMean,       // y ~ N(mu, 1)
@@ -33,7 +25,6 @@ enum class Cost
   GaussianMeanVariance
 };
 
-/// f(std::integral_constant<Cost, K>{}) for the cost K
 template <class F>
 decltype(auto) with_cost(Cost K, F&& f)
 {
@@ -54,11 +45,11 @@ decltype(auto) with_cost(Cost K, F&& f)
 template <Cost K>
 struct Family
 {
-  static constexpr size_t statistics = K == Cost::GaussianMeanVariance ? 2 : 1;   // per feature
+  static constexpr size_t statistics = K == Cost::GaussianMeanVariance ? 2 : 1;
   static constexpr bool bounded = K == Cost::Bernoulli || K == Cost::Binomial;    // mean in [0, 1]
   static constexpr bool negative = K == Cost::Exponential || K == Cost::Geometric ||
                                    K == Cost::NegativeBinomial || K == Cost::GaussianVariance;   // theta < 0
-  static constexpr double lower = K == Cost::Geometric ? 1.0 : 0.0;   // smallest mean (not gauss)
+  static constexpr double lower = K == Cost::Geometric ? 1.0 : 0.0;
 
   static void statistic(double y, double* s)
   {
@@ -75,7 +66,7 @@ struct Family
     return a >= lower;
   }
 
-  /// mean on a boundary of the domain (one-point segment)
+  /// one-point segment
   static bool boundary(double a)
   {
     if constexpr (K == Cost::GaussianMean || K == Cost::Exponential || K == Cost::GaussianVariance) return false;

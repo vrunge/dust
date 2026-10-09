@@ -1,5 +1,3 @@
-/// Multivariate pruning test: exact maximum for the Gaussian model, k >= 3 (method "exact")
-
 #ifndef DUST_GAUSS_EXACT_SEARCH_H
 #define DUST_GAUSS_EXACT_SEARCH_H
 
@@ -10,9 +8,7 @@
 
 namespace dust {
 
-////////////////////////////////////////////////////////////////////////////////
-/// GAUSS: D(x) = D(0) + h'x - x'Gx/2, h = -M'S - u, G = M'M
-/// on each face: G_II x_I = h_I + KKT conditions
+/// D(x) = D(0) + h'x - x'Gx/2, G = M'M: on each face G_II x_I = h_I, then KKT
 enum class GaussMaximum { finite, unbounded, unresolved };
 
 struct GaussMaximumResult

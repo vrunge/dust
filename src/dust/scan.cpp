@@ -1,5 +1,3 @@
-/// SIMD scans of the candidates, compiled for each Highway target
-
 #include <cmath>
 
 #include "scan.h"
@@ -15,7 +13,6 @@ namespace dust {
 namespace HWY_NAMESPACE {
 namespace hn = hwy::HWY_NAMESPACE;
 
-/// one-parameter cost of a segment from the sum `diff` of the statistic over `dt` points
 template <Cost K, class D, class V = hn::Vec<D>>
 HWY_INLINE V SegmentCost(D d, V diff, V dt)
 {
@@ -59,7 +56,6 @@ HWY_INLINE V SegmentCost(D d, V diff, V dt)
   }
 }
 
-/// GaussianMeanVariance: cost of a segment from the sums of y and y^2,
 /// infinite for 1 point or a variance 0
 template <class D, class V = hn::Vec<D>>
 HWY_INLINE V MeanVarianceCost(D d, V sum, V sum2, V dt)
@@ -72,15 +68,13 @@ HWY_INLINE V MeanVarianceCost(D d, V sum, V sum2, V dt)
   return hn::IfThenElse(valid, val, hn::Set(d, HUGE_VAL));
 }
 
-/// the arrays of the live candidates, from the first one
 struct Arrays
 {
   const double *pos, *cost, *hi, *lo;   // series row at hi + row * stride
   size_t stride, d;
 };
 
-/// Q_s + C(s, t) for the m candidates from i (m = lanes if kFull),
-/// positions s in `at` if consecutive
+/// m = lanes if kFull
 template <Cost K, bool kConsecutive, bool kFull, class D, class V = hn::Vec<D>>
 HWY_INLINE V CandidateCosts(D d, const Arrays& a, const double* hi_t, const double* lo_t,
                             V vt, V at, size_t i, size_t m)
@@ -89,8 +83,7 @@ HWY_INLINE V CandidateCosts(D d, const Arrays& a, const double* hi_t, const doub
     if constexpr (kFull) return hn::LoadU(d, p);
     else return hn::LoadN(d, p, m);
   };
-  // sum of the statistic `row` on (s, t], with the rounding errors of the
-  // sums of y^2 (many orders of magnitude)
+  // with the rounding errors of the sums of y^2
   const auto diff = [&](size_t row) HWY_ATTR {
     V sum = hn::Sub(hn::Set(d, hi_t[row]), load(d, a.hi + row * a.stride + i, m));
     if constexpr (K == Cost::GaussianVariance || K == Cost::GaussianMeanVariance)
@@ -105,7 +98,6 @@ HWY_INLINE V CandidateCosts(D d, const Arrays& a, const double* hi_t, const doub
   return v;
 }
 
-/// scan of the live candidates [b, e) (see scan in scan.h)
 template <Cost K, bool kConsecutive>
 size_t ScanCandidates(const Candidates& c, const PrefixSums& sums, size_t t,
                       size_t b, size_t e, double* val)
@@ -116,7 +108,6 @@ size_t ScanCandidates(const Candidates& c, const PrefixSums& sums, size_t t,
   const double *hi_t = sums.hi_at(t), *lo_t = sums.lo_at(t);
   const auto vt = hn::Set(d, static_cast<double>(t)), step = hn::Set(d, static_cast<double>(N));
   auto index = hn::Iota(d, static_cast<double>(b));
-  // positions of consecutive candidates
   auto at = hn::Iota(d, (c.size() ? a.pos[0] : 0.0) + static_cast<double>(b));
   auto best = hn::Set(d, HUGE_VAL);
   auto best_index = index;

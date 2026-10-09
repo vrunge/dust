@@ -1,11 +1,4 @@
-/// Multivariate pruning test: method "exact", D evaluated at its maximum
-///
-/// 1 constraint : one evaluation (closed form for gauss and for d = 1,
-///                Newton steps otherwise)
-/// 2 constraints: as in dust.meanVar, the 2 one-constraint maxima and the
-///                critical point (exact for gauss, d = 2 otherwise)
-/// k >= 3       : face solver for gauss (gauss_exact_search.h), 2 constraints
-///                for the other models
+/// D at its maximum; at most 2 constraints but for GaussianMean (face solver)
 
 #ifndef DUST_EXACT_SEARCH_H
 #define DUST_EXACT_SEARCH_H
@@ -15,8 +8,7 @@
 
 namespace dust {
 
-////////////////////////////////////////////////////////////////////////////////
-/// argmax of D in x_j (other multipliers = 0), returns {x_j, unbounded}
+/// argmax in x_j (other multipliers = 0): {x_j, unbounded}
 template <Cost K>
 std::pair<double, bool> single_constraint_argmax(const Decision<K>& test,
                                                  size_t j)
@@ -62,7 +54,6 @@ bool positive_on_axis(const Decision<K>& test, size_t j, double value)
   return test.positive(x);
 }
 
-/// one constraint: evaluation at the maximum
 template <Cost K>
 bool exact_one_constraint(const Decision<K>& test, size_t j)
 {
@@ -77,10 +68,7 @@ bool exact_one_constraint(const Decision<K>& test, size_t j)
   return std::isfinite(best.first) && positive_on_axis(test, j, best.first);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/// 2 constraints, D without maximum (not gauss): D can go to +infinity along
-/// x = l (1 - w, w). We need M d >= 0 (M d = 0 for poisson, bern and binom),
-/// then D ~ -u.d l and we try the two ends of the w interval.
+/// D unbounded along x = l (1 - w, w) if M d >= 0 (= 0 for poisson, bern, binom): ends of the w interval
 template <Cost K>
 bool exact_two_unbounded(const Decision<K>& test)
 {

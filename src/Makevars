@@ -1,10 +1,9 @@
 CXX_STD = CXX17
-## Highway (git submodule): no 128-bit integers (ISO C++), std::sort to tune
-## the thread pool (no vqsort), no AVX10.2 (rejected by some clang >= 23)
+# Highway: no __int128 (ISO C++), std::sort to tune the pool, no AVX10.2 (broken in some clang)
 PKG_CPPFLAGS = -I. -Ihighway -DHWY_HAVE_MULHIGH64=0 -DHWY_HAVE_DIVHIGH64=0 -DHWY_AUTOTUNE_STDSORT \
                -DHWY_BROKEN_AVX10_2=HWY_AVX10_2
 PKG_CXXFLAGS = -pthread
 PKG_LIBS = -pthread
-HWY = highway/hwy/aligned_allocator.o highway/hwy/profiler.o highway/hwy/targets.o \
-      highway/hwy/timer.o highway/hwy/contrib/thread_pool/thread_pool.o highway/hwy/contrib/thread_pool/topology.o
+HWY = highway/hwy/aligned_allocator.o highway/hwy/profiler.o highway/hwy/targets.o highway/hwy/timer.o \
+      highway/hwy/contrib/thread_pool/thread_pool.o
 OBJECTS = bindings.o RcppExports.o dust/detector.o dust/highway_errors.o dust/preprocessing.o dust/scan.o $(HWY)

@@ -36,8 +36,6 @@ Detector::Detector(Method method, Cost cost, double penalty, Options options)
     };
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/// one time step of the dynamic programming for the cost K
 template <Cost K>
 class Detector::Step
 {
@@ -56,10 +54,8 @@ public:
   }
 
 private:
-  /// val_ = Q_s + C(s, t) for the candidates, returns the argmin. A run of
-  /// the pool costs about 1 microsecond per thread, the threads share the
-  /// candidates from kPerThread candidates per thread (4 tasks per thread for
-  /// the work stealing between cores of different speeds)
+  /// a pool run costs ~1 us per thread: parallel from kPerThread candidates per thread,
+  /// 4 tasks per thread for the work stealing between fast and slow cores
   size_t scan(size_t t)
   {
     constexpr size_t kPerThread = 4096;
@@ -78,7 +74,6 @@ private:
     return best;
   }
 
-  /// dual test after the PELT test
   enum class Dual { None, ClosedForm, ClosedFormIB, MeanVariance, Search };
 
   void prune(size_t t)
@@ -100,7 +95,6 @@ private:
     }
   }
 
-  /// PELT test on the smallest candidates only
   void prune_front(size_t t)
   {
     size_t i = 0;
@@ -114,7 +108,6 @@ private:
   {
     Candidates& c = s_.candidates_;
     const size_t k = c.size();
-    // one feature: sums of the statistics (0, and 1 for GaussianMeanVariance)
     const double *pos = c.positions(), *cost = c.costs(), *hi = c.sums_hi(0), *lo = c.sums_lo(0);
     const double *hi_t = s_.sums_.hi_at(t), *lo_t = s_.sums_.lo_at(t);
     const double qt = s_.costs_.data()[t], tt = static_cast<double>(t);
@@ -159,7 +152,7 @@ private:
     c.resize(kept);
   }
 
-  /// Q_s + C(s, t) > Q_t (beyond rounding errors)
+  /// beyond rounding errors
   bool pelt_prunes(size_t t, size_t i) const
   {
     const double value = val_.data()[i], qt = s_.costs_.data()[t];
@@ -168,7 +161,6 @@ private:
     return positive(value - qt, std::abs(qs) + std::abs(value - qs) + std::abs(qt));
   }
 
-  /// maximum of the decision function, the last kept candidates as constraints
   bool search_prunes(size_t t, size_t i, size_t kept)
   {
     const Detector& s = s_;
@@ -182,7 +174,6 @@ private:
     if (exact && K != Cost::GaussianMean) count = std::min<size_t>(count, 2);
     Decision<K>& test = decision_;
     test.resize(dim, count);
-    // prefix sums of the features at one time are contiguous
     const PrefixSums& sums = s.sums_;
     const double *hi_s = sums.hi_at(at), *lo_s = sums.lo_at(at), *hi_t = sums.hi_at(t), *lo_t = sums.lo_at(t);
     test.c = (s.costs_[t] - qs) / span;
@@ -211,8 +202,8 @@ private:
 
   Detector& s_;
   hwy::ThreadPool* pool_;
-  std::vector<double> val_;      // Q_s + C(s, t) for the candidates
-  std::vector<size_t> argmins_;  // of the scan tasks
+  std::vector<double> val_;   // Q_s + C(s, t)
+  std::vector<size_t> argmins_;
   Decision<K> decision_;
 };
 
@@ -260,7 +251,6 @@ Detector& Detector::partial_fit(const double* X, size_t n_samples, size_t n_feat
     n_samples_ += n_samples;
     n_features_ = n_features;
 
-    // threads for the scans during this call (the caller is one of them)
     hwy::AlignedUniquePtr<hwy::ThreadPool> pool;
     if (options_.num_threads > 1) pool = hwy::MakeUniqueAligned<hwy::ThreadPool>(options_.num_threads - 1);
     Step<K> step(*this, pool.get());

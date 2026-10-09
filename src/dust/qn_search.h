@@ -1,5 +1,3 @@
-/// Multivariate pruning test: quasi-Newton (method "QN")
-
 #ifndef DUST_QN_SEARCH_H
 #define DUST_QN_SEARCH_H
 
@@ -7,9 +5,7 @@
 
 namespace dust {
 
-////////////////////////////////////////////////////////////////////////////////
-/// max of D over x >= 0: BFGS + Armijo line search
-/// projected gradient step if the BFGS step fails
+/// BFGS + Armijo line search, projected gradient if the BFGS step fails
 
 template <Cost K>
 bool qn_search(const Decision<K>& test, unsigned int iterations,
@@ -147,13 +143,11 @@ bool qn_search(const Decision<K>& test, unsigned int iterations,
     x.swap(trial);
     gradient.swap(next_gradient);
     score = next_score;
-    // stop if no pruning is possible
     test.mean(x, test.work_z);
     if (no_pruning_certificate(test, test.work_z.data())) return false;
   }
   return false;
 }
-
 
 } // namespace dust
 

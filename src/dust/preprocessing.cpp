@@ -1,5 +1,3 @@
-/// Data preprocessing: noise level and normalization for the default penalty
-
 #include <algorithm>
 #include <cmath>
 #include <numeric>
@@ -16,7 +14,7 @@ bool all_finite(const std::vector<double>& y)
   return std::all_of(y.begin(), y.end(), [](double z) { return std::isfinite(z); });
 }
 
-// median of x (x is reordered)
+// x is reordered
 double median(std::vector<double>& x)
 {
   const size_t n = x.size();

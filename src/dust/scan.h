@@ -1,5 +1,3 @@
-/// Candidates for the last change point and their SIMD scan (Highway)
-
 #ifndef DUST_SCAN_H
 #define DUST_SCAN_H
 
@@ -11,9 +9,8 @@
 
 namespace dust {
 
-/// candidates s in increasing order, in contiguous arrays: position, Q_s and
-/// the prefix sums at s of each series (one row of `stride` values per
-/// series). Live candidates: [first, pos.size()), accessors from the first one.
+/// candidates in increasing order: position, Q_s, prefix sums (one row of stride values per series);
+/// live ones from `first`
 struct Candidates
 {
   size_t d = 0, first = 0, stride = 0;
@@ -37,7 +34,6 @@ struct Candidates
   size_t position(size_t i) const { return static_cast<size_t>(positions()[i]); }
   double cost_at(size_t i) const { return costs()[i]; }
 
-  /// sum of the series `row` between candidates j < i
   double sum(size_t row, size_t j, size_t i) const
   {
     const double *h = sums_hi(row), *l = sums_lo(row);
@@ -57,7 +53,7 @@ struct Candidates
     }
   }
 
-  /// pruning in place: candidate i moved to j < i, then resize(kept)
+  /// pruning in place: move(i, j < i), then resize
   void move(size_t i, size_t j)
   {
     i += first;
@@ -77,7 +73,7 @@ struct Candidates
     cost.resize(first + kept);
   }
 
-  /// removes the k smallest candidates (memory moved when half is unused)
+  /// memory moved when half is unused
   void drop_front(size_t k)
   {
     first += k;
@@ -108,13 +104,11 @@ private:
   }
 };
 
-/// val[i] = Q_s + C(s, t) (sum over the features) for the live candidates
-/// b <= i < e, returns the argmin (smallest one on ties)
+/// val[i] = Q_s + C(s, t) for the candidates b <= i < e, returns the first argmin
 using ScanFunction = size_t (*)(const Candidates&, const PrefixSums&, size_t t,
                                 size_t b, size_t e, double* val);
 
-/// scan of the cost, compiled for the best SIMD target of this CPU
-/// (consecutive: positions of the candidates s, s + 1, ... not loaded)
+/// for the best SIMD target of this CPU (consecutive: positions s, s + 1, ... not loaded)
 ScanFunction scan_function(Cost cost, bool consecutive);
 
 } // namespace dust

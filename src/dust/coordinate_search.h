@@ -1,5 +1,3 @@
-/// Multivariate pruning test: coordinate descent (method "coordinateDescent")
-
 #ifndef DUST_COORDINATE_SEARCH_H
 #define DUST_COORDINATE_SEARCH_H
 
@@ -7,9 +5,7 @@
 
 namespace dust {
 
-////////////////////////////////////////////////////////////////////////////////
-/// GAUSS: D(x) = -|z|^2/2 - c - u.x, z = a + Mx (quadratic)
-/// closed form update x_j <- max(0, x_j + g_j / |M_j|^2), g_j = -u_j - M_j.z
+/// D quadratic: x_j <- max(0, x_j + g_j / |M_j|^2), g_j = -u_j - M_j.z
 inline bool gauss_coordinate_search(const Decision<Cost::GaussianMean>& test,
                                     unsigned int sweeps, double epsilon)
 {

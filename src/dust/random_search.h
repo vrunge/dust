@@ -1,5 +1,3 @@
-/// Multivariate pruning test: random evaluations of D (method "randomEval")
-
 #ifndef DUST_RANDOM_SEARCH_H
 #define DUST_RANDOM_SEARCH_H
 
@@ -9,7 +7,6 @@
 
 namespace dust {
 
-/// uniform random numbers on (0, 1)
 using Uniform = std::function<double()>;
 
 template <Cost K>
