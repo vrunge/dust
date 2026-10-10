@@ -7,7 +7,8 @@
 dust.object.1D(
   model = "gauss",
   method = "DUST",
-  threads = .default_threads(method)
+  threads = .default_threads(method),
+  size = NULL
 )
 }
 \arguments{
@@ -26,6 +27,8 @@ dust.object.1D(
 \item{method}{the pruning method: \code{"DUST"} (default), \code{"DUSTib"}, \code{"PELT"}, \code{"PELTpar"} or \code{"OP"} (see \code{\link{dust.1D}})}
 
 \item{threads}{number of threads (see \code{\link{dust.1D}})}
+
+\item{size}{number of trials (\code{"binom"}) or of successes (\code{"negbin"}), see \code{\link{dust.1D}}}
 }
 \value{
 A DUST 1D object with the methods
@@ -42,7 +45,7 @@ Constructs a DUST 1D object for multiple change-point detection in univariate ti
 Data can be added step by step with \code{append_data} and \code{update_partition}.
 }
 \details{
-The penalty is fixed at the first call of \code{append_data}. With \code{NULL}, it is \code{2 log(n)} with n the size of the first data vector.
+The penalty is fixed at the first call of \code{append_data}. With \code{NULL}, it is \code{2 log(n)} with n the size of the first data vector (BIC).
 Call \code{update_partition()} before \code{get_partition()}.
 }
 \examples{

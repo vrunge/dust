@@ -3,7 +3,7 @@
 #' @description Detection of changes in mean and variance in a Gaussian time series with the DUST pruning rule (two-parameter model).
 #'
 #' @param data a numeric vector
-#' @param penalty the penalty for a change point. By default, \code{4 log(length(data))}
+#' @param penalty the penalty for a change point. By default, \code{3 log(length(data))}
 #' @param method \code{"1D"} (default, one constraint), \code{"2D"} (two constraints) or \code{"PELT"}
 #' @param threads number of threads for the scan of the indices. By default, all the cores for \code{"PELT"} (many indices), 1 otherwise.
 #'
@@ -20,7 +20,7 @@
 #' dust.meanVar(y)$changepoints
 #' dust.meanVar(y, method = "2D")$changepoints
 #' @export
-dust.meanVar <- function(data, penalty = 4 * log(length(data)),
+dust.meanVar <- function(data, penalty = 3 * log(length(data)),
                          method = "1D", threads = .default_threads(method)) {
   method <- match.arg(method, c("1D", "2D", "PELT"))
   if (!is.numeric(data) || !is.null(dim(data)) || length(data) == 0L || any(!is.finite(data)))
@@ -37,7 +37,7 @@ dust.meanVar <- function(data, penalty = 4 * log(length(data)),
 #'
 #' @inheritParams dust.meanVar
 #'
-#' @details The penalty is fixed at the first call of \code{append_data} (with \code{NULL}, \code{4 log(n)} with n the size of the first data).
+#' @details The penalty is fixed at the first call of \code{append_data} (with \code{NULL}, \code{3 log(n)} with n the size of the first data).
 #'
 #' @return A DUST object with the methods \code{append_data(data, penalty)}, \code{update_partition()}, \code{get_partition()}, \code{get_info()} and \code{dust(data, penalty)}
 #'
@@ -52,5 +52,5 @@ dust.meanVar <- function(data, penalty = 4 * log(length(data)),
 #' @export
 dust.object.meanVar <- function(method = "1D", threads = .default_threads(method)) {
   method <- match.arg(method, c("1D", "2D", "PELT"))
-  new(Detector, "meanVar", method, 1L, 1L, -1, as.integer(threads))
+  new(Detector, "meanVar", method, 1L, 1L, -1, as.integer(threads), NA_real_)
 }

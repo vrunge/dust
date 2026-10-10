@@ -10,7 +10,8 @@ dust.object.MD(
   constraints = 1L,
   nbIterations = NULL,
   epsilon = NULL,
-  threads = .default_threads(method)
+  threads = .default_threads(method),
+  size = NULL
 )
 }
 \arguments{
@@ -33,6 +34,8 @@ dust.object.MD(
 \item{epsilon}{stopping rule for \code{"coordinateDescent"} and \code{"QN"} when \code{nbIterations} is \code{NULL}: the search stops when the decision function increases by less than \code{epsilon} (at most 1000 iterations)}
 
 \item{threads}{number of threads for the scan of the indices. By default, all the cores for \code{"OP"}, \code{"PELT"} and \code{"PELTpar"} (many indices), 1 otherwise.}
+
+\item{size}{number of trials (\code{"binom"}) or of successes (\code{"negbin"}), \code{NULL} otherwise. With \code{size}, \code{data} are the raw counts and the penalty is on the -2 log-likelihood scale (see \code{\link{dust.1D}}).}
 }
 \value{
 A DUST object with the methods
@@ -48,7 +51,7 @@ A DUST object with the methods
 Constructs a DUST object for multivariate data, with methods to add data and update the segmentation
 }
 \details{
-The penalty is fixed at the first call of \code{append_data} (with \code{NULL}, \code{2 * nrow * log(ncol)} of this first data matrix).
+The penalty is fixed at the first call of \code{append_data} (with \code{NULL}, \code{(nrow + 1) * log(ncol)} of this first data matrix).
 }
 \examples{
 y <- dataGenerator_MD(chpts = c(50, 100), parameters = cbind(c(0, 2), c(0, -1)), type = "gauss")

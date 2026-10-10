@@ -29,7 +29,7 @@ Model-specific transformations of univariate data
 \details{
 For Poisson likelihood segmentation, use the original counts with the default penalty.
 If the counts are divided by their mean, divide the penalty by the same mean to preserve the objective.
-For binomial and negative binomial data, divide the penalty by \code{size} as well.
+For binomial and negative binomial data, divide the penalty by \code{size} as well, or pass the raw counts and \code{size} to \code{dust.1D}, which does both.
 Exponential rescaling only adds a segmentation-independent constant to the cost.
 }
 \examples{

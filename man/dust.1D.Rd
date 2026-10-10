@@ -9,13 +9,14 @@ dust.1D(
   penalty = 2 * log(length(data)),
   model = "gauss",
   method = "DUST",
-  threads = .default_threads(method)
+  threads = .default_threads(method),
+  size = NULL
 )
 }
 \arguments{
 \item{data}{a numeric vector (the univariate time series). To add data later, see \code{\link{dust.object.1D}}.}
 
-\item{penalty}{the penalty for a change point. By default, \code{2 log(length(data))}.}
+\item{penalty}{the penalty for a change point. By default, \code{2 log(length(data))} (BIC: one parameter per segment and the change location).}
 
 \item{model}{the model: \code{"gauss"} (default), \code{"poisson"}, \code{"exp"}, \code{"geom"}, \code{"bern"}, \code{"binom"}, \code{"negbin"} or \code{"variance"}}
 
@@ -30,6 +31,8 @@ dust.1D(
 The constraint is always the largest non-pruned index smaller than the tested index.}
 
 \item{threads}{number of threads for the scan of the indices. By default, all the cores for \code{"OP"}, \code{"PELT"} and \code{"PELTpar"} (many indices), 1 otherwise.}
+
+\item{size}{number of trials (\code{"binom"}) or of successes (\code{"negbin"}), \code{NULL} otherwise. With \code{size}, \code{data} are the raw counts: they are divided by \code{size} and the penalty is divided by \code{size} too, so that the default penalty and \code{costQ} are on the -2 log-likelihood scale. With \code{NULL}, the data have to be the proportions (binomial) or the counts divided by the number of successes (negative binomial), and the penalty is used as is.}
 }
 \value{
 A list containing the information computed by the DUST algorithm.
@@ -46,7 +49,7 @@ Detects multiple change points in univariate time series data using the DUST alg
 \note{
 The input data should be first normalized by function \code{data_normalization_1D} to use the default penalty in Gaussian model, instead of value \code{2 sdDiff(data)^2 log(length(data))}.
 The smallest index, non-pruned, is always tested for pruning with the PELT rule.
-Binomial and negative binomial data have to be divided by the number of trials (or successes): see \code{data_normalization_1D}.
+For binomial and negative binomial data, give the raw counts and \code{size}; without \code{size}, divide the data by the number of trials (or successes), see \code{data_normalization_1D}, and the penalty too.
 }
 \examples{
 y <- dataGenerator_1D(chpts = c(300, 600, 900), parameters = c(0, 2, -1), type = "gauss")
@@ -58,6 +61,9 @@ dust.1D(y, model = "poisson")$changepoints
 
 y <- dataGenerator_1D(chpts = c(300, 600), parameters = c(0.6, 0.2), type = "geom")
 dust.1D(y, model = "geom")$changepoints
+
+y <- dataGenerator_1D(chpts = c(300, 600), parameters = c(0.6, 0.2), nbTrials = 10, type = "binom")
+dust.1D(y, model = "binom", size = 10)$changepoints
 }
 \seealso{
 \code{\link{dataGenerator_1D}} to generate data,

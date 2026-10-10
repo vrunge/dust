@@ -4,7 +4,7 @@
 #' Each row of \code{data} is a time series, all with the same model and the same change points.
 #'
 #' @param data a matrix (one time series per row)
-#' @param penalty the penalty for a change point. By default, \code{2 * nrow(data) * log(ncol(data))}
+#' @param penalty the penalty for a change point. By default, \code{(nrow(data) + 1) * log(ncol(data))}
 #' @param model the model: \code{"gauss"} (default), \code{"poisson"}, \code{"exp"}, \code{"geom"}, \code{"bern"}, \code{"binom"}, \code{"negbin"} or \code{"variance"}
 #' @param method the pruning method:
 #' \itemize{
@@ -18,6 +18,7 @@
 #' @param constraints number of indices used in the pruning test (the largest active indices smaller than the tested index), between 1 and \code{nrow(data)}. Default is 1. With \code{"exact"}, non-Gaussian models use at most two constraints.
 #' @param nbIterations number of iterations (sweeps for \code{"coordinateDescent"}, steps for \code{"QN"}, random points for \code{"randomEval"}). By default, 1 for \code{"coordinateDescent"} and 10 otherwise.
 #' @param threads number of threads for the scan of the indices. By default, all the cores for \code{"OP"}, \code{"PELT"} and \code{"PELTpar"} (many indices), 1 otherwise.
+#' @param size number of trials (\code{"binom"}) or of successes (\code{"negbin"}), \code{NULL} otherwise. With \code{size}, \code{data} are the raw counts and the penalty is on the -2 log-likelihood scale (see \code{\link{dust.1D}}).
 #' @param epsilon stopping rule for \code{"coordinateDescent"} and \code{"QN"} when \code{nbIterations} is \code{NULL}: the search stops when the decision function increases by less than \code{epsilon} (at most 1000 iterations)
 #'
 #' @return A list containing the information computed by the DUST algorithm.
@@ -40,17 +41,17 @@
 #' dust.MD(y, method = "QN", constraints = 2, epsilon = 1e-8)$changepoints
 #' @export
 dust.MD <- function(data,
-                    penalty = 2 * nrow(data) * log(ncol(data)),
+                    penalty = (nrow(data) + 1) * log(ncol(data)),
                     model = "gauss", method = "exact",
                     constraints = 1L, nbIterations = NULL, epsilon = NULL,
-                    threads = .default_threads(method)) {
+                    threads = .default_threads(method), size = NULL) {
   if (!is.matrix(data) || !is.numeric(data) ||
       nrow(data) < 1L || ncol(data) < 1L)
     stop("data must be a nonempty numeric matrix", call. = FALSE)
   if (!is.numeric(penalty) || length(penalty) != 1L ||
       !is.finite(penalty) || penalty < 0)
     stop("penalty must be a finite nonnegative number", call. = FALSE)
-  object <- dust.object.MD(model, method, constraints, nbIterations, epsilon, threads)
+  object <- dust.object.MD(model, method, constraints, nbIterations, epsilon, threads, size)
   object$dust(data, penalty)
 }
 
@@ -61,7 +62,7 @@ dust.MD <- function(data,
 #' @inheritParams dust.MD
 #' @param constraints number of indices used in the pruning test (1 by default). With \code{NULL}, the number of rows of the data. With \code{"exact"}, non-Gaussian models use at most two; \code{get_info()} reports this limit.
 #'
-#' @details The penalty is fixed at the first call of \code{append_data} (with \code{NULL}, \code{2 * nrow * log(ncol)} of this first data matrix).
+#' @details The penalty is fixed at the first call of \code{append_data} (with \code{NULL}, \code{(nrow + 1) * log(ncol)} of this first data matrix).
 #'
 #' @return A DUST object with the methods
 #' \itemize{
@@ -83,7 +84,7 @@ dust.MD <- function(data,
 #' @export
 dust.object.MD <- function(model = "gauss", method = "exact",
                            constraints = 1L, nbIterations = NULL, epsilon = NULL,
-                           threads = .default_threads(method)) {
+                           threads = .default_threads(method), size = NULL) {
   model <- match.arg(model, c("gauss", "poisson", "exp", "geom", "bern",
                               "binom", "negbin", "variance"))
   method <- match.arg(method, c("exact", "coordinateDescent", "QN",
@@ -112,5 +113,5 @@ dust.object.MD <- function(model = "gauss", method = "exact",
     if (use_epsilon) 1000L else if (method == "coordinateDescent") 1L else 10L
   new(Detector, model, method,
       if (is.null(constraints)) 0L else as.integer(constraints),
-      as.integer(iterations), if (use_epsilon) as.double(epsilon) else -1, as.integer(threads))
+      as.integer(iterations), if (use_epsilon) as.double(epsilon) else -1, as.integer(threads), .size_arg(size))
 }

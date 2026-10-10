@@ -115,7 +115,7 @@ rows have the same model and the same change points.
 
     ## [1]  80 160
 
-The default penalty is `2 * nrow(data) * log(ncol(data))`.
+The default penalty is `(nrow(data) + 1) * log(ncol(data))`.
 
 ### Changes in mean and variance
 
@@ -125,7 +125,7 @@ The default penalty is `2 * nrow(data) * log(ncol(data))`.
 
     dust.meanVar(z, method = "2D")$changepoints
 
-Here the default penalty is `4 log(n)` and methods `"1D"` and `"2D"` use
+Here the default penalty is `3 log(n)` and methods `"1D"` and `"2D"` use
 one or two constraints in the pruning test.
 Segments need at least two different values. Pruning certificates are applied only after the replacement segment also contains two different values; `nb` includes candidates waiting for this condition.
 
@@ -212,14 +212,14 @@ multivariate data (one time series per row) with the same models.
 <tr>
 <td style="text-align: left;"><code>binom</code></td>
 <td style="text-align: left;">probability</td>
-<td style="text-align: left;">counts divided by the number of
-trials</td>
+<td style="text-align: left;">counts (with <code>size</code>: number of
+trials)</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>negbin</code></td>
 <td style="text-align: left;">probability</td>
-<td style="text-align: left;">counts divided by the number of
-successes</td>
+<td style="text-align: left;">counts (with <code>size</code>: number of
+successes)</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>variance</code></td>
@@ -233,9 +233,7 @@ successes</td>
     counts <- dataGenerator_1D(chpts = c(60, 120, 180), parameters = c(2, 8, 3), type = "poisson")
     dust.1D(counts, model = "poisson")$changepoints
 
-For binomial and negative binomial data, use
-`data_normalization_1D(y, type, size)` with the number of trials (or
-successes) and divide the penalty by the same value.
+For binomial and negative binomial data, give the raw counts and `size` (number of trials, or of successes): `dust.1D(y, model = "binom", size = 10)`. The counts and the penalty are divided by `size` internally, so the default penalty and `costQ` stay on the -2 log-likelihood scale. Without `size`, divide the data by it (`data_normalization_1D(y, type, size)`) and divide the penalty by the same value.
 For Poisson likelihood segmentation, use the original counts. If you divide them by their positive mean `m`, divide the penalty by `m` too; leaving the penalty unchanged changes the optimization problem. Exponential rescaling only adds a constant independent of the segmentation.
 
 [(Back to Top)](#top)

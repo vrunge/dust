@@ -37,14 +37,20 @@ std::pair<dust::Method, dust::Solver> parse_method(const std::string& method)
 }
 
 /// built at the first nonempty append: the default penalty depends on the first data
+/// size (binom, negbin): the counts are divided by it, the engine works on the -2 log-likelihood / size
 class RDetector
 {
 public:
   RDetector(std::string model, std::string method, int constraints, int iterations,
-            double epsilon, int threads)
+            double epsilon, int threads, double size)
     : model_(std::move(model)), method_(std::move(method)), cost_(parse_model(model_)),
-      parsed_(parse_method(method_))
+      parsed_(parse_method(method_)), size_(size)
   {
+    if (!ISNAN(size_))
+    {
+      if (model_ != "binom" && model_ != "negbin") stop("size is only for the binom and negbin models");
+      if (!(size_ > 0) || !std::isfinite(size_)) stop("size must be a positive number");
+    }
     options_ = {parsed_.second, method_ == "2D" ? 2 : constraints, iterations, epsilon, threads,
                 [] { return unif_rand(); }};
     dust::Detector(parsed_.first, cost_, 0.0, options_);
@@ -64,16 +70,20 @@ public:
     if (n == 0) return;
     if (cost_ == dust::Cost::GaussianMeanVariance && d != 1)
       stop("meanVar requires one feature");
+    std::vector<double> values(data.begin(), data.end());
+    if (!ISNAN(size_)) values = dust::normalize_1d(std::move(values), model_, size_);
+    const double scale = ISNAN(size_) ? 1.0 : size_;
     const double dof = cost_ == dust::Cost::GaussianMeanVariance ? 2.0 : static_cast<double>(d);
     if (!detector_)
     {
-      const double value = penalty.isNull() ? 2.0 * dof * std::log(static_cast<double>(n)) : as<double>(penalty);
-      detector_.emplace(parsed_.first, cost_, value, options_);
+      const double value = penalty.isNull() ? (dof + 1.0) * std::log(static_cast<double>(n)) : as<double>(penalty);
+      detector_.emplace(parsed_.first, cost_, value / scale, options_);
+      penalty_ = value;
       d_ = d;
     }
-    else if (!penalty.isNull() && as<double>(penalty) != detector_->penalty())
+    else if (!penalty.isNull() && as<double>(penalty) != penalty_)
       stop("penalty cannot change after the first nonempty append");
-    pending_.insert(pending_.end(), data.begin(), data.end());
+    pending_.insert(pending_.end(), values.begin(), values.end());
     length_ += n;
   }
 
@@ -91,7 +101,8 @@ public:
     if (!pending_.empty()) stop("update_partition before requesting a partition");
     std::vector<int> changepoints = detector_->chgpts();
     changepoints.push_back(static_cast<int>(detector_->n_samples()));
-    const std::vector<double> costs = detector_->min_costs();
+    std::vector<double> costs = detector_->min_costs();
+    if (!ISNAN(size_)) for (double& v : costs) v *= size_;
     return List::create(
       _["changepoints"] = changepoints,
       _["lastIndexSet"] = detector_->candidates(),
@@ -108,7 +119,7 @@ public:
     return List::create(
       _["data_length"] = length_,
       _["dimension"] = d_,
-      _["current_penalty"] = detector_ ? detector_->penalty() : 0.0,
+      _["current_penalty"] = penalty_,
       _["model"] = model_,
       _["pruning_algo"] = method_,
       _["constraints"] = constraints,
@@ -130,6 +141,7 @@ private:
   std::pair<dust::Method, dust::Solver> parsed_;
   dust::Options options_;
   std::optional<dust::Detector> detector_;
+  double size_, penalty_ = 0.0;
   size_t d_ = 0, length_ = 0;
   std::vector<double> pending_;   // appended, not analysed yet
 };
@@ -139,7 +151,7 @@ private:
 RCPP_MODULE(DUSTMODULE)
 {
   class_<RDetector>("Detector")
-    .constructor<std::string, std::string, int, int, double, int>()
+    .constructor<std::string, std::string, int, int, double, int, double>()
     .method("append_data", &RDetector::append_data)
     .method("update_partition", &RDetector::update_partition)
     .method("get_partition", &RDetector::get_partition)
@@ -192,7 +204,7 @@ double sdDiff(std::vector<double> y, std::string method = "HALL")
 //' @return the normalized data
 //' @details For Poisson likelihood segmentation, use the original counts with the default penalty.
 //' If the counts are divided by their mean, divide the penalty by the same mean to preserve the objective.
-//' For binomial and negative binomial data, divide the penalty by \code{size} as well.
+//' For binomial and negative binomial data, divide the penalty by \code{size} as well, or pass the raw counts and \code{size} to \code{dust.1D}, which does both.
 //' Exponential rescaling only adds a segmentation-independent constant to the cost.
 //' @examples
 //' y <- dataGenerator_1D(chpts = c(300, 600), parameters = c(0, 1), sdNoise = 2, type = "gauss")

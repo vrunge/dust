@@ -16,9 +16,9 @@ test_that("dust.object.meanVar gives the same result with data added step by ste
   y <- c(rnorm(80), rnorm(80, 1, 2))
  
   {
-    one <- dust.meanVar(y, 4 * log(160), "2D")
+    one <- dust.meanVar(y, 3 * log(160), "2D")
     ob <- dust.object.meanVar("2D")
-    ob$append_data(y[1:50], 4 * log(160))
+    ob$append_data(y[1:50], 3 * log(160))
     ob$update_partition()
     ob$append_data(y[51:160], NULL)
     ob$update_partition()
@@ -28,10 +28,10 @@ test_that("dust.object.meanVar gives the same result with data added step by ste
 
 test_that("meanVar DUST keeps the optimal costs and fewer indices than PELT", {
   y <- sin((1:40) * 1.31) + cos((1:40) * 0.37)
-  pelt <- dust.meanVar(y, 4 * log(40), "PELT")
+  pelt <- dust.meanVar(y, 3 * log(40), "PELT")
   for (method in c("1D", "2D"))
   {
-    res <- dust.meanVar(y, 4 * log(40), method)
+    res <- dust.meanVar(y, 3 * log(40), method)
     expect_equal(res$costQ, pelt$costQ, info = method)
     expect_true(all(res$nb <= pelt$nb), info = method)
   }

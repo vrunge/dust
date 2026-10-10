@@ -6,19 +6,20 @@
 \usage{
 dust.MD(
   data,
-  penalty = 2 * nrow(data) * log(ncol(data)),
+  penalty = (nrow(data) + 1) * log(ncol(data)),
   model = "gauss",
   method = "exact",
   constraints = 1L,
   nbIterations = NULL,
   epsilon = NULL,
-  threads = .default_threads(method)
+  threads = .default_threads(method),
+  size = NULL
 )
 }
 \arguments{
 \item{data}{a matrix (one time series per row)}
 
-\item{penalty}{the penalty for a change point. By default, \code{2 * nrow(data) * log(ncol(data))}}
+\item{penalty}{the penalty for a change point. By default, \code{(nrow(data) + 1) * log(ncol(data))}}
 
 \item{model}{the model: \code{"gauss"} (default), \code{"poisson"}, \code{"exp"}, \code{"geom"}, \code{"bern"}, \code{"binom"}, \code{"negbin"} or \code{"variance"}}
 
@@ -39,6 +40,8 @@ dust.MD(
 \item{epsilon}{stopping rule for \code{"coordinateDescent"} and \code{"QN"} when \code{nbIterations} is \code{NULL}: the search stops when the decision function increases by less than \code{epsilon} (at most 1000 iterations)}
 
 \item{threads}{number of threads for the scan of the indices. By default, all the cores for \code{"OP"}, \code{"PELT"} and \code{"PELTpar"} (many indices), 1 otherwise.}
+
+\item{size}{number of trials (\code{"binom"}) or of successes (\code{"negbin"}), \code{NULL} otherwise. With \code{size}, \code{data} are the raw counts and the penalty is on the -2 log-likelihood scale (see \code{\link{dust.1D}}).}
 }
 \value{
 A list containing the information computed by the DUST algorithm.

@@ -32,8 +32,9 @@ Rcpp::loadModule("DUSTMODULE", TRUE)
 #' }
 #' @param method the pruning method: \code{"DUST"} (default), \code{"DUSTib"}, \code{"PELT"}, \code{"PELTpar"} or \code{"OP"} (see \code{\link{dust.1D}})
 #' @param threads number of threads (see \code{\link{dust.1D}})
+#' @param size number of trials (\code{"binom"}) or of successes (\code{"negbin"}), see \code{\link{dust.1D}}
 #'
-#' @details The penalty is fixed at the first call of \code{append_data}. With \code{NULL}, it is \code{2 log(n)} with n the size of the first data vector.
+#' @details The penalty is fixed at the first call of \code{append_data}. With \code{NULL}, it is \code{2 log(n)} with n the size of the first data vector (BIC).
 #' Call \code{update_partition()} before \code{get_partition()}.
 #'
 #' @return A DUST 1D object with the methods
@@ -61,7 +62,8 @@ dust.object.1D <- function(
     model = "gauss"
     , method = "DUST"
     , threads = .default_threads(method)
+    , size = NULL
 )
 {
-  new(Detector, model, method, 1L, 1L, -1, as.integer(threads))
+  new(Detector, model, method, 1L, 1L, -1, as.integer(threads), .size_arg(size))
 }

@@ -18,7 +18,7 @@ A DUST object with the methods \code{append_data(data, penalty)}, \code{update_p
 Constructs a DUST object for changes in mean and variance, with methods to add data and update the segmentation
 }
 \details{
-The penalty is fixed at the first call of \code{append_data} (with \code{NULL}, \code{4 log(n)} with n the size of the first data).
+The penalty is fixed at the first call of \code{append_data} (with \code{NULL}, \code{3 log(n)} with n the size of the first data).
 }
 \examples{
 y <- c(rnorm(80), rnorm(80, mean = 2, sd = 1.5))

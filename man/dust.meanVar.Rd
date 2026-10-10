@@ -6,7 +6,7 @@
 \usage{
 dust.meanVar(
   data,
-  penalty = 4 * log(length(data)),
+  penalty = 3 * log(length(data)),
   method = "1D",
   threads = .default_threads(method)
 )
@@ -14,7 +14,7 @@ dust.meanVar(
 \arguments{
 \item{data}{a numeric vector}
 
-\item{penalty}{the penalty for a change point. By default, \code{4 log(length(data))}}
+\item{penalty}{the penalty for a change point. By default, \code{3 log(length(data))}}
 
 \item{method}{\code{"1D"} (default, one constraint), \code{"2D"} (two constraints) or \code{"PELT"}}
 
